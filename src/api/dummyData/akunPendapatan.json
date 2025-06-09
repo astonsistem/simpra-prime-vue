@@ -1,0 +1,454 @@
+{
+  "data": [
+    {
+      "no": 1,
+      "id": "AP001",
+      "kode": "KAP001",
+      "nama": "Pendapatan Operasional 1",
+      "rekening": "1001",
+      "namaRekening": "Kas Operasional 1",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 2,
+      "id": "AP002",
+      "kode": "KAP002",
+      "nama": "Pendapatan Non-Operasional 2",
+      "rekening": "1002",
+      "namaRekening": "Kas Non-Operasional 2",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 3,
+      "id": "AP003",
+      "kode": "KAP003",
+      "nama": "Pendapatan Operasional 3",
+      "rekening": "1003",
+      "namaRekening": "Kas Operasional 3",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 4,
+      "id": "AP004",
+      "kode": "KAP004",
+      "nama": "Pendapatan Non-Operasional 4",
+      "rekening": "1004",
+      "namaRekening": "Kas Non-Operasional 4",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 5,
+      "id": "AP005",
+      "kode": "KAP005",
+      "nama": "Pendapatan Operasional 5",
+      "rekening": "1005",
+      "namaRekening": "Kas Operasional 5",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 6,
+      "id": "AP006",
+      "kode": "KAP006",
+      "nama": "Pendapatan Non-Operasional 6",
+      "rekening": "1006",
+      "namaRekening": "Kas Non-Operasional 6",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 7,
+      "id": "AP007",
+      "kode": "KAP007",
+      "nama": "Pendapatan Operasional 7",
+      "rekening": "1007",
+      "namaRekening": "Kas Operasional 7",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 8,
+      "id": "AP008",
+      "kode": "KAP008",
+      "nama": "Pendapatan Non-Operasional 8",
+      "rekening": "1008",
+      "namaRekening": "Kas Non-Operasional 8",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 9,
+      "id": "AP009",
+      "kode": "KAP009",
+      "nama": "Pendapatan Operasional 9",
+      "rekening": "1009",
+      "namaRekening": "Kas Operasional 9",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 10,
+      "id": "AP010",
+      "kode": "KAP010",
+      "nama": "Pendapatan Non-Operasional 10",
+      "rekening": "1010",
+      "namaRekening": "Kas Non-Operasional 10",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 11,
+      "id": "AP011",
+      "kode": "KAP011",
+      "nama": "Pendapatan Operasional 11",
+      "rekening": "1011",
+      "namaRekening": "Kas Operasional 11",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 12,
+      "id": "AP012",
+      "kode": "KAP012",
+      "nama": "Pendapatan Non-Operasional 12",
+      "rekening": "1012",
+      "namaRekening": "Kas Non-Operasional 12",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 13,
+      "id": "AP013",
+      "kode": "KAP013",
+      "nama": "Pendapatan Operasional 13",
+      "rekening": "1013",
+      "namaRekening": "Kas Operasional 13",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 14,
+      "id": "AP014",
+      "kode": "KAP014",
+      "nama": "Pendapatan Non-Operasional 14",
+      "rekening": "1014",
+      "namaRekening": "Kas Non-Operasional 14",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 15,
+      "id": "AP015",
+      "kode": "KAP015",
+      "nama": "Pendapatan Operasional 15",
+      "rekening": "1015",
+      "namaRekening": "Kas Operasional 15",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 16,
+      "id": "AP016",
+      "kode": "KAP016",
+      "nama": "Pendapatan Non-Operasional 16",
+      "rekening": "1016",
+      "namaRekening": "Kas Non-Operasional 16",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 17,
+      "id": "AP017",
+      "kode": "KAP017",
+      "nama": "Pendapatan Operasional 17",
+      "rekening": "1017",
+      "namaRekening": "Kas Operasional 17",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 18,
+      "id": "AP018",
+      "kode": "KAP018",
+      "nama": "Pendapatan Non-Operasional 18",
+      "rekening": "1018",
+      "namaRekening": "Kas Non-Operasional 18",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 19,
+      "id": "AP019",
+      "kode": "KAP019",
+      "nama": "Pendapatan Operasional 19",
+      "rekening": "1019",
+      "namaRekening": "Kas Operasional 19",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 20,
+      "id": "AP020",
+      "kode": "KAP020",
+      "nama": "Pendapatan Non-Operasional 20",
+      "rekening": "1020",
+      "namaRekening": "Kas Non-Operasional 20",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 21,
+      "id": "AP021",
+      "kode": "KAP021",
+      "nama": "Pendapatan Operasional 21",
+      "rekening": "1021",
+      "namaRekening": "Kas Operasional 21",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 22,
+      "id": "AP022",
+      "kode": "KAP022",
+      "nama": "Pendapatan Non-Operasional 22",
+      "rekening": "1022",
+      "namaRekening": "Kas Non-Operasional 22",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 23,
+      "id": "AP023",
+      "kode": "KAP023",
+      "nama": "Pendapatan Operasional 23",
+      "rekening": "1023",
+      "namaRekening": "Kas Operasional 23",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 24,
+      "id": "AP024",
+      "kode": "KAP024",
+      "nama": "Pendapatan Non-Operasional 24",
+      "rekening": "1024",
+      "namaRekening": "Kas Non-Operasional 24",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 25,
+      "id": "AP025",
+      "kode": "KAP025",
+      "nama": "Pendapatan Operasional 25",
+      "rekening": "1025",
+      "namaRekening": "Kas Operasional 25",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 26,
+      "id": "AP026",
+      "kode": "KAP026",
+      "nama": "Pendapatan Non-Operasional 26",
+      "rekening": "1026",
+      "namaRekening": "Kas Non-Operasional 26",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 27,
+      "id": "AP027",
+      "kode": "KAP027",
+      "nama": "Pendapatan Operasional 27",
+      "rekening": "1027",
+      "namaRekening": "Kas Operasional 27",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 28,
+      "id": "AP028",
+      "kode": "KAP028",
+      "nama": "Pendapatan Non-Operasional 28",
+      "rekening": "1028",
+      "namaRekening": "Kas Non-Operasional 28",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 29,
+      "id": "AP029",
+      "kode": "KAP029",
+      "nama": "Pendapatan Operasional 29",
+      "rekening": "1029",
+      "namaRekening": "Kas Operasional 29",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 30,
+      "id": "AP030",
+      "kode": "KAP030",
+      "nama": "Pendapatan Non-Operasional 30",
+      "rekening": "1030",
+      "namaRekening": "Kas Non-Operasional 30",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 31,
+      "id": "AP031",
+      "kode": "KAP031",
+      "nama": "Pendapatan Operasional 31",
+      "rekening": "1031",
+      "namaRekening": "Kas Operasional 31",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 32,
+      "id": "AP032",
+      "kode": "KAP032",
+      "nama": "Pendapatan Non-Operasional 32",
+      "rekening": "1032",
+      "namaRekening": "Kas Non-Operasional 32",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 33,
+      "id": "AP033",
+      "kode": "KAP033",
+      "nama": "Pendapatan Operasional 33",
+      "rekening": "1033",
+      "namaRekening": "Kas Operasional 33",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 34,
+      "id": "AP034",
+      "kode": "KAP034",
+      "nama": "Pendapatan Non-Operasional 34",
+      "rekening": "1034",
+      "namaRekening": "Kas Non-Operasional 34",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 35,
+      "id": "AP035",
+      "kode": "KAP035",
+      "nama": "Pendapatan Operasional 35",
+      "rekening": "1035",
+      "namaRekening": "Kas Operasional 35",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 36,
+      "id": "AP036",
+      "kode": "KAP036",
+      "nama": "Pendapatan Non-Operasional 36",
+      "rekening": "1036",
+      "namaRekening": "Kas Non-Operasional 36",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 37,
+      "id": "AP037",
+      "kode": "KAP037",
+      "nama": "Pendapatan Operasional 37",
+      "rekening": "1037",
+      "namaRekening": "Kas Operasional 37",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 38,
+      "id": "AP038",
+      "kode": "KAP038",
+      "nama": "Pendapatan Non-Operasional 38",
+      "rekening": "1038",
+      "namaRekening": "Kas Non-Operasional 38",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 39,
+      "id": "AP039",
+      "kode": "KAP039",
+      "nama": "Pendapatan Operasional 39",
+      "rekening": "1039",
+      "namaRekening": "Kas Operasional 39",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 40,
+      "id": "AP040",
+      "kode": "KAP040",
+      "nama": "Pendapatan Non-Operasional 40",
+      "rekening": "1040",
+      "namaRekening": "Kas Non-Operasional 40",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 41,
+      "id": "AP041",
+      "kode": "KAP041",
+      "nama": "Pendapatan Operasional 41",
+      "rekening": "1041",
+      "namaRekening": "Kas Operasional 41",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 42,
+      "id": "AP042",
+      "kode": "KAP042",
+      "nama": "Pendapatan Non-Operasional 42",
+      "rekening": "1042",
+      "namaRekening": "Kas Non-Operasional 42",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 43,
+      "id": "AP043",
+      "kode": "KAP043",
+      "nama": "Pendapatan Operasional 43",
+      "rekening": "1043",
+      "namaRekening": "Kas Operasional 43",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 44,
+      "id": "AP044",
+      "kode": "KAP044",
+      "nama": "Pendapatan Non-Operasional 44",
+      "rekening": "1044",
+      "namaRekening": "Kas Non-Operasional 44",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 45,
+      "id": "AP045",
+      "kode": "KAP045",
+      "nama": "Pendapatan Operasional 45",
+      "rekening": "1045",
+      "namaRekening": "Kas Operasional 45",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 46,
+      "id": "AP046",
+      "kode": "KAP046",
+      "nama": "Pendapatan Non-Operasional 46",
+      "rekening": "1046",
+      "namaRekening": "Kas Non-Operasional 46",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 47,
+      "id": "AP047",
+      "kode": "KAP047",
+      "nama": "Pendapatan Operasional 47",
+      "rekening": "1047",
+      "namaRekening": "Kas Operasional 47",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 48,
+      "id": "AP048",
+      "kode": "KAP048",
+      "nama": "Pendapatan Non-Operasional 48",
+      "rekening": "1048",
+      "namaRekening": "Kas Non-Operasional 48",
+      "kelompok": "Pendapatan Lainnya"
+    },
+    {
+      "no": 49,
+      "id": "AP049",
+      "kode": "KAP049",
+      "nama": "Pendapatan Operasional 49",
+      "rekening": "1049",
+      "namaRekening": "Kas Operasional 49",
+      "kelompok": "Pendapatan Utama"
+    },
+    {
+      "no": 50,
+      "id": "AP050",
+      "kode": "KAP050",
+      "nama": "Pendapatan Non-Operasional 50",
+      "rekening": "1050",
+      "namaRekening": "Kas Non-Operasional 50",
+      "kelompok": "Pendapatan Lainnya"
+    }
+  ]
+}
