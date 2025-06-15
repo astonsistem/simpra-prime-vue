@@ -1,40 +1,52 @@
-import apiClient from '../api/client'; // Import your apiClient
+import axios from 'axios'
 
-const RESOURCE_ENDPOINT = '/login'; // Or your auth endpoint base URL, adjust if needed
+const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:8001/simpra'
 
 export const authService = {
-    async login(credentials) {
-        try {
-            return await apiClient.post(`${RESOURCE_ENDPOINT}`, credentials);
-        } catch (error) {
-            console.error("Login error:", error);
-            throw error;
-        }
-    },
+  async login({ username, password }) {
+    const data = new URLSearchParams()
+    data.append('username', username)
+    data.append('password', password)
+    data.append('grant_type', '')
+    data.append('scope', '')
+    data.append('client_id', '')
+    data.append('client_secret', '')
 
-    async logout() {
-        try {
-            // await apiClient.post(`${RESOURCE_ENDPOINT}/logout`); // Assuming you have a logout endpoint
-            localStorage.removeItem('accessToken'); // Clear token on logout
-            localStorage.removeItem('userRole');    // Clear role on logout
-        } catch (error) {
-            console.error("Logout error:", error);
-            // Consider whether to still clear token and role even if logout request fails from server side.
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('userRole');
-            throw error; // Or you might choose to handle error silently and just clear local storage
-        }
-    },
+    const response = await axios.post(`${BASE_URL}/auth/login_token`, data)
+    return response.data
+  },
 
-    getAccessToken() {
-        return localStorage.getItem('accessToken');
-    },
+  async getCurrentUser(token) {
+    const response = await axios.get(`${BASE_URL}/auth/user/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    return response.data
+  },
 
-    getUserRole() {
-        return localStorage.getItem('userRole');
-    },
-
-    isAuthenticated() {
-        return !!localStorage.getItem('accessToken'); // Check if access token exists
+  decodeJWT(token) {
+    try {
+      const payload = token.split('.')[1]
+      const decoded = JSON.parse(atob(payload))
+      return decoded?.data || null
+    } catch (e) {
+      console.error('Failed to decode token:', e)
+      return null
     }
-};
+  },
+
+  isAuthenticated() {
+    return !!localStorage.getItem('accessToken')
+  },
+
+  getUser() {
+    const token = localStorage.getItem('accessToken')
+    return token ? this.decodeJWT(token) : null
+  },
+
+  getUserRole() {
+    const user = this.getUser()
+    return user?.role || null
+  },
+}

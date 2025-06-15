@@ -1,16 +1,18 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import kasir from '../../../api/dummyData/kasir.json'
+import { ref, onMounted, defineExpose } from 'vue'
+import api from '@/services/http.js'
 
 const data = ref([])
 const loading = ref(false)
 
-const fetchData = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(kasir.data)
-    }, 500)
-  })
+const fetchData = async () => {
+  const response = await api.get('/kasir')
+
+  return response.data.items.map((item, index) => ({
+    no: index + 1,
+    id: item.kasir_id,
+    nama: item.kasir_nama.trim(),
+  }))
 }
 
 const loadData = async () => {
@@ -24,17 +26,17 @@ const loadData = async () => {
   }
 }
 
+// 👉 Tambahkan fungsi ini
+const setLoading = (value) => {
+  loading.value = value
+}
+
 onMounted(() => {
   loadData()
 })
 
-const handleEdit = (item) => {
-  console.log('Edit item:', item)
-}
-
-const handleDelete = (item) => {
-  console.log('Delete item:', item)
-}
+// 👉 expose juga fungsi setLoading
+defineExpose({ loadData, setLoading })
 </script>
 
 <template>

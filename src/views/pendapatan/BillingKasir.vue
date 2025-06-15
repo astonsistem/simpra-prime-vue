@@ -1,5 +1,5 @@
 <script setup>
-import BillingKasir from '../../components/pendapatan/billingKasir/DataBillingKasir.vue'
+import BillingKasir from '@/components/pendapatan/billingKasir/DataBillingKasir.vue'
 </script>
 
 <template>

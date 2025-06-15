@@ -1,5 +1,5 @@
 <script setup>
-import PendapatanPelayanan from '../../components/pendapatan/pendapatanPelayanan/DataPendapatanPelayanan.vue'
+import PendapatanPelayanan from '@/components/pendapatan/pendapatanPelayanan/DataPendapatanPelayanan.vue'
 </script>
 
 <template>
