@@ -173,26 +173,18 @@ const router = createRouter({
   ],
 })
 
-// router.beforeEach((to, from, next) => {
-//   const isPublicRoute = to.meta.public
-//   const routeRoles = to.meta.roles
-//   const authenticated = isAuthenticated()
-//   const userRole = getUserRole()
+router.beforeEach((to, from, next) => {
+  const isPublicRoute = to.meta.public
+  const authenticated = isAuthenticated()
 
-//   if (!isPublicRoute && !authenticated) {
-//     next({
-//       name: 'admin-login',
-//       params: { nextUrl: to.fullPath },
-//     })
-//   } else if (routeRoles && authenticated) {
-//     if (!routeRoles.includes(userRole)) {
-//       next('/')
-//     } else {
-//       next()
-//     }
-//   } else {
-//     next()
-//   }
-// })
+  if (!isPublicRoute && !authenticated) {
+    next({
+      name: 'admin-login',
+      params: { nextUrl: to.fullPath },
+    })
+  } else {
+    next()
+  }
+})
 
 export default router

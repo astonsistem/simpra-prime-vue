@@ -1,16 +1,18 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import kasir from '../../../api/dummyData/kasir.json'
+import { ref, onMounted, defineExpose } from 'vue'
+import api from '@/services/http.js'
 
 const data = ref([])
 const loading = ref(false)
 
-const fetchData = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(kasir.data)
-    }, 500)
-  })
+const fetchData = async () => {
+  const response = await api.get('/instalasi')
+
+  return response.data.items.map((item, index) => ({
+    no: index + 1,
+    id: item.instalasi_id,
+    nama: item.instalasi_nama.trim(),
+  }))
 }
 
 const loadData = async () => {
@@ -24,17 +26,15 @@ const loadData = async () => {
   }
 }
 
+const setLoading = (val) => {
+  loading.value = val
+}
+
 onMounted(() => {
   loadData()
 })
 
-const handleEdit = (item) => {
-  console.log('Edit item:', item)
-}
-
-const handleDelete = (item) => {
-  console.log('Delete item:', item)
-}
+defineExpose({ loadData, setLoading })
 </script>
 
 <template>
@@ -50,7 +50,7 @@ const handleDelete = (item) => {
     >
       <Column field="no" header="No" style="width: 10%" />
       <Column field="id" header="ID" style="width: 40%" />
-      <Column field="nama" header="Nama" style="width: 50%" />
+      <Column field="nama" header="Nama Instalasi" style="width: 50%" />
     </DataTable>
   </div>
 </template>

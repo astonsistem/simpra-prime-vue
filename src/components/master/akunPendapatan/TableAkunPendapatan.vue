@@ -1,89 +1,131 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import akunPendapatanData from '../../../api/dummyData/akunPendapatan.json'
+import AkunPendapatanModal from './modal/AddAkunPendapatan.vue'
+import api from '@/services/http.js'
+
+import Button from 'primevue/button'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import SplitButton from 'primevue/splitbutton'
 
 const data = ref([])
 const loading = ref(false)
+const modalRef = ref(null)
+const selectedItem = ref(null)
+const isEdit = ref(false)
 
-const fetchData = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(akunPendapatanData.data)
-    }, 500)
-  })
+const fetchData = async () => {
+  const response = await api.get('/akun')
+  return response.data.items.map((item, index) => ({
+    no: index + 1,
+    id: item.id,
+    akun_id: item.akun_id,
+    kode: item.akun_kode,
+    nama: item.akun_nama,
+    rekening: item.rek_id,
+    namaRekening: item.rek_nama,
+    kelompok: item.akun_kelompok,
+  }))
 }
 
 const loadData = async () => {
+  loading.value = true
   try {
-    loading.value = true
     data.value = await fetchData()
-  } catch (error) {
-    console.error('Error loading data:', error)
+  } catch (e) {
+    console.error(e)
   } finally {
     loading.value = false
   }
 }
 
-onMounted(() => {
-  loadData()
-})
+onMounted(loadData)
 
-const handleEdit = (item) => {
-  console.log('Edit item:', item)
+const handleAdd = () => {
+  selectedItem.value = null
+  isEdit.value = false
+  modalRef.value.open()
 }
 
-const handleDelete = (item) => {
-  console.log('Delete item:', item)
+const handleEdit = (item) => {
+  selectedItem.value = { ...item }
+  isEdit.value = true
+  modalRef.value.open()
+}
+
+const handleDelete = async (item) => {
+  try {
+    await api.delete(`/akun/${item.id}`)
+    await loadData()
+  } catch (e) {
+    console.error('Delete failed:', e)
+  }
+}
+
+const handleSubmit = async (payload) => {
+  try {
+    if (isEdit.value) {
+      await api.put(`/akun/${payload.id}`, payload)
+    } else {
+      await api.post(`/akun`, payload)
+    }
+    await loadData()
+    modalRef.value.close()
+  } catch (e) {
+    console.error('Submit failed:', e)
+  }
 }
 </script>
 
 <template>
-  <div class="card">
+  <div>
+    <Button label="Baru" icon="pi pi-plus" class="mb-3" @click="handleAdd" />
+
     <DataTable
       :value="data"
       :loading="loading"
       responsiveLayout="scroll"
-      class="p-datatable-sm"
       paginator
       :rows="10"
       :rowsPerPageOptions="[5, 10, 20]"
+      class="p-datatable-sm"
     >
       <Column field="no" header="No" style="width: 5%" />
       <Column header="Action" style="width: 15%">
         <template #body="slotProps">
-          <div class="flex gap-2">
-            <Button
-              icon="pi pi-pencil"
-              rounded
-              text
-              severity="info"
-              aria-label="Edit"
-              @click="handleEdit(slotProps.data)"
-            />
-            <Button
-              icon="pi pi-trash"
-              rounded
-              text
-              severity="danger"
-              aria-label="Delete"
-              @click="handleDelete(slotProps.data)"
-            />
-          </div>
+          <SplitButton
+            label="Aksi"
+            icon="pi pi-ellipsis-v"
+            size="small"
+            severity="secondary"
+            :model="[
+              {
+                label: 'Ubah',
+                icon: 'pi pi-pencil',
+                command: () => handleEdit(slotProps.data),
+              },
+              {
+                label: 'Hapus',
+                icon: 'pi pi-trash',
+                command: () => handleDelete(slotProps.data),
+              },
+            ]"
+          />
         </template>
       </Column>
-      <Column field="id" header="ID" style="width: 10%" />
-      <Column field="kode" header="Kode" style="width: 10%" />
-      <Column field="nama" header="Nama" style="width: 15%" />
-      <Column field="rekening" header="Rekening" style="width: 10%" />
-      <Column field="namaRekening" header="Nama Rekening" style="width: 20%" />
-      <Column field="kelompok" header="Kelompok" style="width: 15%" />
+      <Column field="akun_id" header="ID" />
+      <Column field="kode" header="Kode" />
+      <Column field="nama" header="Nama" />
+      <Column field="rekening" header="Rekening" />
+      <Column field="namaRekening" header="Nama Rekening" />
+      <Column field="kelompok" header="Kelompok" />
     </DataTable>
+
+    <AkunPendapatanModal
+      ref="modalRef"
+      :item="selectedItem"
+      :isEdit="isEdit"
+      @submit="handleSubmit"
+    />
   </div>
 </template>
-
-<style scoped>
-::v-deep(.p-datatable thead th) {
-  background-color: #f8fafc;
-  color: #000000;
-}
-</style>
