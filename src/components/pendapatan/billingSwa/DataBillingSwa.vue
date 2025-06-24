@@ -18,10 +18,10 @@ const filters = ref({
   tglAkhir: null,
   bulanAwal: '',
   bulanAkhir: '',
-  loketKasir: '',
-  bank: '',
+  sumberTransaksi: '',
   caraPembayaran: '',
-  noClosingKasir: '',
+  bank: '',
+  uraian: '',
 })
 
 const tahunPeriodeOptions = Array.from(
@@ -51,14 +51,16 @@ const loketKasirOptions = ref([
   { label: 'Loket 2', value: 'Loket 2' },
 ])
 const bankOptions = ref([
-  { label: 'Mandiri', value: 'Mandiri' },
-  { label: 'BRI', value: 'BRI' },
+  { label: 'Tunai', value: 'TUNAI' },
+  { label: 'Jatim', value: 'JATIM' },
+  { label: 'Mandiri', value: 'MANDIRI' },
   { label: 'BCA', value: 'BCA' },
 ])
 const caraPembayaranOptions = ref([
-  { label: 'Tunai', value: 'Tunai' },
-  { label: 'Kartu Debit', value: 'Kartu Debit' },
-  { label: 'Transfer', value: 'Transfer' },
+  { label: 'Tunai', value: 'TUNAI' },
+  { label: 'Transfer', value: 'TRANSFER' },
+  { label: 'QRIS', value: 'QRIS' },
+  { label: 'EDC', value: 'EDC' },
 ])
 
 const data = ref([])
@@ -67,16 +69,21 @@ const rows = ref(10)
 const first = ref(0)
 const loading = ref(false)
 
+const sumberTransaksiOptions = [
+  { label: '118', value: '118' },
+  { label: 'SWAB', value: 'SWAB' },
+]
+
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
     size: pageSize,
   }
   if (filters.value.tahunPeriode) q.year = filters.value.tahunPeriode
-  if (filters.value.loketKasir) q.loket = filters.value.loketKasir
-  if (filters.value.bank) q.bank = filters.value.bank
+  if (filters.value.sumberTransaksi) q.sumber_transaksi = filters.value.sumberTransaksi
   if (filters.value.caraPembayaran) q.cara_pembayaran = filters.value.caraPembayaran
-  if (filters.value.noClosingKasir) q.no_closingkasir = filters.value.noClosingKasir
+  if (filters.value.bank) q.bank = filters.value.bank
+  if (filters.value.uraian) q.uraian = filters.value.uraian
   if (filters.value.jenisPeriode) q.periode = filters.value.jenisPeriode
   if (filters.value.tglAwal && filters.value.jenisPeriode === 'tanggal')
     q.tgl_awal = filters.value.tglAwal
@@ -93,8 +100,8 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   loading.value = true
   try {
     const query = buildQuery(page, pageSize)
-    // Replace with real API endpoint
-    const response = await api.get('/billing_kasir', { params: query })
+    // Use correct API endpoint for BillingSwa
+    const response = await api.get('/billing_swa', { params: query })
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
         ...item,
@@ -125,10 +132,10 @@ const resetFilter = () => {
     tglAkhir: null,
     bulanAwal: '',
     bulanAkhir: '',
-    loketKasir: '',
-    bank: '',
+    sumberTransaksi: '',
     caraPembayaran: '',
-    noClosingKasir: '',
+    bank: '',
+    uraian: '',
   }
   first.value = 0
   loadData(1, rows.value)
@@ -249,24 +256,13 @@ onMounted(() => {
           </div>
         </template>
         <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Loket Kasir</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Sumber Transaksi</label>
           <Dropdown
-            v-model="filters.loketKasir"
-            :options="loketKasirOptions"
+            v-model="filters.sumberTransaksi"
+            :options="sumberTransaksiOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="-- Pilih Loket Kasir --"
-            class="w-full"
-          />
-        </div>
-        <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Bank</label>
-          <Dropdown
-            v-model="filters.bank"
-            :options="bankOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Pilih Bank"
+            placeholder="-- Pilih Sumber Transaksi --"
             class="w-full"
           />
         </div>
@@ -282,11 +278,22 @@ onMounted(() => {
           />
         </div>
         <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">No. Closing Kasir</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Bank</label>
+          <Dropdown
+            v-model="filters.bank"
+            :options="bankOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Pilih Bank"
+            class="w-full"
+          />
+        </div>
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Uraian</label>
           <input
-            v-model="filters.noClosingKasir"
+            v-model="filters.uraian"
             type="text"
-            placeholder="No. Closing Kasir"
+            placeholder="Uraian"
             class="p-inputtext p-component w-full"
           />
         </div>
@@ -358,17 +365,16 @@ onMounted(() => {
             />
           </template>
         </Column>
-        <Column field="no_buktibayar" header="No Kwitansi" />
-        <Column field="tgl_buktibayar" header="Tgl Kwitansi" />
-        <Column field="no_closingkasir" header="No Closing" />
-        <Column field="pasien_nama" header="Nama Pasien" />
-        <Column field="no_pendaftaran" header="No Pendaftaran" />
-        <Column field="tgl_pelayanan" header="Tgl Pelayanan" />
-        <Column field="jenis_tagihan" header="Jenis Tagihan" />
-        <Column field="metode_bayar" header="Metode Bayar" />
-        <Column field="carabayar_nama" header="Cara Pembayaran" />
+        <Column field="no_bayar" header="No Bayar" />
+        <Column field="tgl_bayar" header="Tgl Bayar" />
+        <Column field="pihak3" header="Pasien" />
+        <Column field="uraian" header="Uraian" />
+        <Column field="no_dokumen" header="No Dokumen" />
+        <Column field="tgl_dokumen" header="Tgl Dokumen" />
+        <Column field="sumber_transaksi" header="Sumber Transaksi" />
+        <Column field="metode_pembayaran" header="Metode Bayar" />
+        <Column field="cara_pembayaran" header="Cara Pembayaran" />
         <Column field="bank_tujuan" header="Bank" />
-        <Column field="kasir_nama" header="Loket Kasir" />
         <Column field="total" header="Jumlah Bruto" />
         <Column field="admin_kredit" header="Biaya Admin EDC" />
         <Column field="admin_debit" header="Biaya Admin QRIS" />

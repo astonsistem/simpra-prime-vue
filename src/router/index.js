@@ -65,22 +65,25 @@ const router = createRouter({
           meta: { roles: ['admin', 'accountant'], breadcrumb: ['Pendapatan', 'Billing Kasir'] },
         },
         {
-          path: 'pendapatan/billing-siwa',
-          name: 'pendapatan-billing-siwa',
-          // component: () => import('../views/pendapatan/BillingSiwa.vue'),
-          meta: { roles: ['admin', 'accountant'] },
+          path: 'pendapatan/billing-swa',
+          name: 'pendapatan-billing-swa',
+          component: () => import('../views/pendapatan/BillingSwa.vue'),
+          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Pendapatan', 'Billing Swa'] },
         },
         {
           path: 'pendapatan/penerimaan-lainnya',
           name: 'pendapatan-penerimaan-lainnya',
-          // component: () => import('../views/pendapatan/PenerimaanLainnya.vue'),
-          meta: { roles: ['admin', 'accountant'] },
+          component: () => import('../views/pendapatan/PenerimaanLainya.vue'),
+          meta: {
+            roles: ['admin'],
+            breadcrumb: ['Pendapatan', 'Penerimaan Lainya'],
+          },
         },
         {
           path: 'pendapatan/potensi-pelayanan',
           name: 'pendapatan-potensi-pelayanan',
-          // component: () => import('../views/pendapatan/PotensiPelayanan.vue'),
-          meta: { roles: ['admin', 'accountant'] },
+          component: () => import('../views/pendapatan/PotensiPelayanan.vue'),
+          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Pendapatan', 'Potensi Pelayanan'] },
         },
         {
           path: 'pendapatan/potensi-lainnya',

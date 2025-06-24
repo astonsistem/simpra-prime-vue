@@ -33,8 +33,8 @@ const menuItems = ref([
         to: '/pendapatan/billing-kasir',
       },
       {
-        label: 'Billing Siwa',
-        to: '/pendapatan/billing-siwa',
+        label: 'Billing Swa',
+        to: '/pendapatan/billing-swa',
       },
       {
         label: 'Penerimaan Lainnya',
