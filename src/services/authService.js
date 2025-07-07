@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:8001/simpra'
+const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:8000/api'
 
 export const authService = {
   async login({ username, password }) {
@@ -12,7 +12,7 @@ export const authService = {
     data.append('client_id', '')
     data.append('client_secret', '')
 
-    const response = await axios.post(`${BASE_URL}/auth/login_token`, data)
+    const response = await axios.post(`${BASE_URL}/auth/logintoken`, data)
     return response.data
   },
 

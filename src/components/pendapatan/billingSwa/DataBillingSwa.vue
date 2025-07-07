@@ -1,13 +1,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import Calendar from 'primevue/calendar'
-import Dropdown from 'primevue/dropdown'
+import DatePicker from 'primevue/datepicker'
+import Select from 'primevue/select'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import InputText from 'primevue/inputtext'
 import SplitButton from 'primevue/splitbutton'
+import Menu from 'primevue/menu'
 import api from '@/services/http.js'
 import { useToast } from 'primevue/usetoast'
+import ModalSyncPenerimaan from '@/components/ModalSyncPenerimaan.vue'
+import ModalEditPenerimaan from '@/components/ModalEditPenerimaan.vue'
+import Toast from 'primevue/toast'
 
 const toast = useToast()
 
@@ -22,6 +27,8 @@ const filters = ref({
   caraPembayaran: '',
   bank: '',
   uraian: '',
+  caraBayar: '',
+  penjamin: '',
 })
 
 const tahunPeriodeOptions = Array.from(
@@ -73,6 +80,22 @@ const sumberTransaksiOptions = [
   { label: '118', value: '118' },
   { label: 'SWAB', value: 'SWAB' },
 ]
+
+const caraBayarOptions = ref([
+  { label: 'Tunai', value: 'TUNAI' },
+  { label: 'Transfer', value: 'TRANSFER' },
+  { label: 'QRIS', value: 'QRIS' },
+  { label: 'EDC', value: 'EDC' },
+])
+
+const penjaminOptions = ref([
+  { label: 'Penjamin 1', value: 'Penjamin 1' },
+  { label: 'Penjamin 2', value: 'Penjamin 2' },
+])
+
+const selectedItem = ref(null)
+const showModalEdit = ref(false)
+const showModalSync = ref(false)
 
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
@@ -136,6 +159,8 @@ const resetFilter = () => {
     caraPembayaran: '',
     bank: '',
     uraian: '',
+    caraBayar: '',
+    penjamin: '',
   }
   first.value = 0
   loadData(1, rows.value)
@@ -164,32 +189,90 @@ const tarikData = () => {
   })
 }
 
-const handleEdit = (item) => {
-  toast.add({
-    severity: 'info',
-    summary: 'Edit',
-    detail: `Edit data: ${item.no_buktibayar || ''}`,
-    life: 2000,
-  })
-}
-const handleValidasi = (item) => {
-  toast.add({
-    severity: 'info',
-    summary: 'Validasi',
-    detail: `Validasi data: ${item.no_buktibayar || ''}`,
-    life: 2000,
-  })
-}
-const handleDelete = (item) => {
-  toast.add({
-    severity: 'warn',
-    summary: 'Hapus',
-    detail: `Hapus data: ${item.no_buktibayar || ''}`,
-    life: 2000,
-  })
+const handleAdd = () => {
+  selectedItem.value = null
+  showModalEdit.value = true
 }
 
-onMounted(() => {
+const handleEdit = (item) => {
+  selectedItem.value = { ...item }
+  showModalEdit.value = true
+}
+
+const handleValidasi = (item) => {
+  console.log('Validasi item:', item)
+  // TODO: Implement validasi functionality
+}
+
+const handleBuktiBayar = (item) => {
+  console.log('Bukti Bayar item:', item)
+  // TODO: Implement bukti bayar functionality
+}
+
+const handleDelete = async (item) => {
+  if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return
+  try {
+    await api.delete(`/billing_swa/${item.id}`)
+    toast.add({
+      severity: 'success',
+      summary: 'Berhasil',
+      detail: 'Data berhasil dihapus',
+      life: 3000,
+    })
+    loadData(1, rows.value)
+  } catch (error) {
+    console.error('Gagal menghapus data:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal',
+      detail: 'Gagal menghapus data. Silakan coba lagi.',
+      life: 3000,
+    })
+  }
+}
+
+const handleSaved = () => {
+  showModalEdit.value = false
+  toast.add({
+    severity: 'success',
+    summary: 'Berhasil',
+    detail: 'Data berhasil disimpan',
+    life: 3000,
+  })
+  loadData(1, rows.value)
+}
+
+const fetchCaraBayar = async () => {
+  try {
+    const response = await api.get('/carabayar')
+    if (response.data && response.data.items) {
+      caraBayarOptions.value = response.data.items.map((item) => ({
+        label: item.carabayar_nama,
+        value: item.carabayar_id,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data cara bayar:', error)
+  }
+}
+
+const fetchPenjamin = async () => {
+  try {
+    const response = await api.get('/penjamin')
+    if (response.data && response.data.items) {
+      penjaminOptions.value = response.data.items.map((item) => ({
+        label: item.penjamin_nama,
+        value: item.penjamin_id,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data penjamin:', error)
+  }
+}
+
+onMounted(async () => {
+  await fetchCaraBayar()
+  await fetchPenjamin()
   loadData(1, rows.value)
 })
 </script>
@@ -197,22 +280,22 @@ onMounted(() => {
 <template>
   <div class="p-4">
     <div
-      class="bg-white dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 border border-surface-200 dark:border-surface-700 w-full"
+      class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
     >
       <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
       <div class="grid grid-cols-3 gap-4">
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
-          <Dropdown
+          <Select
             v-model="filters.tahunPeriode"
             :options="tahunPeriodeOptions"
-            placeholder="Pilih Tahun"
+            placeholder="Tahun Periode"
             class="w-full"
           />
         </div>
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
-          <Dropdown
+          <Select
             v-model="filters.jenisPeriode"
             :options="jenisPeriodeOptions"
             optionLabel="label"
@@ -224,17 +307,22 @@ onMounted(() => {
         <template v-if="filters.jenisPeriode === 'tanggal'">
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Tgl Awal</label>
-            <Calendar v-model="filters.tglAwal" placeholder="Tgl Awal" showIcon class="w-full" />
+            <DatePicker v-model="filters.tglAwal" placeholder="Tgl Awal" showIcon class="w-full" />
           </div>
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Tgl Akhir</label>
-            <Calendar v-model="filters.tglAkhir" placeholder="Tgl Akhir" showIcon class="w-full" />
+            <DatePicker
+              v-model="filters.tglAkhir"
+              placeholder="Tgl Akhir"
+              showIcon
+              class="w-full"
+            />
           </div>
         </template>
         <template v-else-if="filters.jenisPeriode === 'bulan'">
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Awal</label>
-            <Dropdown
+            <Select
               v-model="filters.bulanAwal"
               :options="bulanOptions"
               optionLabel="label"
@@ -245,7 +333,7 @@ onMounted(() => {
           </div>
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Akhir</label>
-            <Dropdown
+            <Select
               v-model="filters.bulanAkhir"
               :options="bulanOptions"
               optionLabel="label"
@@ -256,45 +344,25 @@ onMounted(() => {
           </div>
         </template>
         <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Sumber Transaksi</label>
-          <Dropdown
-            v-model="filters.sumberTransaksi"
-            :options="sumberTransaksiOptions"
+          <label class="block mb-1 text-sm font-medium text-gray-700">Cara Bayar</label>
+          <Select
+            v-model="filters.caraBayar"
+            :options="caraBayarOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="-- Pilih Sumber Transaksi --"
+            placeholder="Cara Bayar"
             class="w-full"
           />
         </div>
         <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Cara Pembayaran</label>
-          <Dropdown
-            v-model="filters.caraPembayaran"
-            :options="caraPembayaranOptions"
+          <label class="block mb-1 text-sm font-medium text-gray-700">Penjamin</label>
+          <Select
+            v-model="filters.penjamin"
+            :options="penjaminOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="-- Cara Pembayaran --"
+            placeholder="Penjamin"
             class="w-full"
-          />
-        </div>
-        <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Bank</label>
-          <Dropdown
-            v-model="filters.bank"
-            :options="bankOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Pilih Bank"
-            class="w-full"
-          />
-        </div>
-        <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Uraian</label>
-          <input
-            v-model="filters.uraian"
-            type="text"
-            placeholder="Uraian"
-            class="p-inputtext p-component w-full"
           />
         </div>
       </div>
@@ -309,23 +377,24 @@ onMounted(() => {
       </div>
     </div>
     <div
-      class="bg-white dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 border border-surface-200 dark:border-surface-700 w-full"
+      class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
     >
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xl font-semibold text-[#17316E]">Data Billing Kasir</h3>
+        <h3 class="text-xl font-semibold text-[#17316E]">Data Billing Swa</h3>
         <div class="flex gap-2">
+          <Button
+            label="Tambah Data"
+            icon="pi pi-plus"
+            class="p-button-primary"
+            @click="handleAdd"
+          />
           <Button
             label="Tarik Data"
             icon="pi pi-refresh"
             class="p-button-success"
-            @click="tarikData"
+            @click="showModalSync = true"
           />
-          <Button
-            label="Export Excel"
-            icon="pi pi-file-excel"
-            class="p-button-success"
-            @click="exportExcel"
-          />
+          <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" />
         </div>
       </div>
       <DataTable
@@ -341,8 +410,8 @@ onMounted(() => {
         @page="onPageChange"
         class="p-datatable-sm"
       >
-        <Column field="no" header="No" style="width: 3rem" />
-        <Column header="Action" style="width: 10%">
+        <Column field="no" header="No" style="width: 5%" />
+        <Column header="Action" style="width: 15%">
           <template #body="slotProps">
             <SplitButton
               label="Aksi"
@@ -350,7 +419,12 @@ onMounted(() => {
               size="small"
               severity="secondary"
               :model="[
-                { label: 'Edit', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
+                { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
+                {
+                  label: 'Bukti Bayar',
+                  icon: 'pi pi-file',
+                  command: () => handleBuktiBayar(slotProps.data),
+                },
                 {
                   label: 'Validasi',
                   icon: 'pi pi-check',
@@ -365,23 +439,48 @@ onMounted(() => {
             />
           </template>
         </Column>
-        <Column field="no_bayar" header="No Bayar" />
-        <Column field="tgl_bayar" header="Tgl Bayar" />
-        <Column field="pihak3" header="Pasien" />
-        <Column field="uraian" header="Uraian" />
         <Column field="no_dokumen" header="No Dokumen" />
         <Column field="tgl_dokumen" header="Tgl Dokumen" />
-        <Column field="sumber_transaksi" header="Sumber Transaksi" />
-        <Column field="metode_pembayaran" header="Metode Bayar" />
-        <Column field="cara_pembayaran" header="Cara Pembayaran" />
-        <Column field="bank_tujuan" header="Bank" />
-        <Column field="total" header="Jumlah Bruto" />
-        <Column field="admin_kredit" header="Biaya Admin EDC" />
-        <Column field="admin_debit" header="Biaya Admin QRIS" />
-        <Column field="selisih" header="Selisih" />
-        <Column field="jumlah_netto" header="Jumlah Netto" />
+        <Column field="cara_pembayaran" header="Cara Bayar" />
+        <Column field="penjamin_nama" header="Penjamin" />
+        <Column field="uraian" header="Uraian" />
+        <Column field="tgl_pendaftaran" header="Tgl Pendaftaran" />
+        <Column field="no_pendaftaran" header="No Pendaftaran" />
+        <Column field="nama_pasien" header="Nama Pasien" />
+        <Column field="total" header="Total" style="text-align: right">
+          <template #body="slotProps">
+            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.total || 0) }}
+          </template>
+        </Column>
+        <Column field="admin_debit" header="Admin Debit" style="text-align: right">
+          <template #body="slotProps">
+            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.admin_debit || 0) }}
+          </template>
+        </Column>
+        <Column field="admin_kredit" header="Admin Kredit" style="text-align: right">
+          <template #body="slotProps">
+            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.admin_kredit || 0) }}
+          </template>
+        </Column>
+        <Column field="selisih" header="Selisih" style="text-align: right">
+          <template #body="slotProps">
+            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.selisih || 0) }}
+          </template>
+        </Column>
+        <Column field="jumlah_netto" header="Jumlah Netto" style="text-align: right">
+          <template #body="slotProps">
+            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlah_netto || 0) }}
+          </template>
+        </Column>
       </DataTable>
     </div>
+    <ModalSyncPenerimaan v-model="showModalSync" @sync="loadData" />
+    <ModalEditPenerimaan
+      :id="selectedItem?.id"
+      v-model="showModalEdit"
+      :item="selectedItem"
+      @saved="handleSaved"
+    />
     <Toast />
   </div>
 </template>

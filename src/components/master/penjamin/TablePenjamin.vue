@@ -55,13 +55,13 @@ defineExpose({ loadData, setLoading: (val) => (loading.value = val) })
 
 <template>
   <div class="card">
-    <div class="mb-4 flex items-center gap-2">
+    <div class="mb-4 flex items-center gap-2 justify-end">
       <input
         v-model="search"
         @keyup.enter="handleSearch"
         type="text"
         placeholder="Cari nama penjamin..."
-        class="border px-3 py-2 rounded w-full text-sm"
+        class="border px-3 py-2 rounded text-sm w-64"
       />
       <Button
         icon="pi pi-search"

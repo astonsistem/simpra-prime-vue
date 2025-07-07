@@ -3,55 +3,26 @@ import { ref, onMounted } from 'vue'
 import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
 import Button from 'primevue/button'
-import SplitButton from 'primevue/splitbutton'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import Toast from 'primevue/toast'
+import InputText from 'primevue/inputtext'
+import SplitButton from 'primevue/splitbutton'
+import Menu from 'primevue/menu'
 import api from '@/services/http.js'
+import ModalSyncPenerimaan from '../potensiLainya/modal/TarikDataPotensiLainya.vue'
+import ModalEditPenerimaan from '../potensiLainya/modal/EditPotensiLainya.vue'
 import { useToast } from 'primevue/usetoast'
-import ModalSyncPenerimaan from '@/components/ModalSyncPenerimaan.vue'
-import ModalEditPenerimaan from '@/components/ModalEditPenerimaan.vue'
+import Toast from 'primevue/toast'
 
-const toast = useToast()
-
-const filters = ref({
-  tglAwal: null,
-  tglAkhir: null,
-  jenisPelayanan: '',
-  penjamin: '',
-  instalasi: '',
-  status: '',
-  tahunPeriode: '',
-  jenisPeriode: '',
-  bulanAwal: '',
-  bulanAkhir: '',
-  caraBayar: '',
-})
-
-const jenisPelayananOptions = [
-  { label: 'Semua', value: '' },
-  { label: 'Rawat Jalan', value: 'Rawat Jalan' },
-  { label: 'Rawat Inap', value: 'Rawat Inap' },
-  { label: 'Farmasi', value: 'Farmasi' },
-  { label: '118', value: '118' },
-  { label: 'SWAB', value: 'SWAB' },
-  { label: 'LAB', value: 'LAB' },
-]
-
-const statusOptions = [
-  { label: 'Semua', value: '' },
-  { label: 'Selesai', value: 'selesai' },
-  { label: 'Proses', value: 'proses' },
-  { label: 'Batal', value: 'batal' },
-]
-
-const tahunPeriodeOptions = ref([])
+// Filter state
+const tahunPeriodeOptions = Array.from(
+  { length: 10 },
+  (_, i) => `${new Date().getFullYear() - 5 + i}`
+)
 const jenisPeriodeOptions = [
-  { label: 'Pilih Jenis Periode', value: '' },
   { label: 'Tanggal', value: 'tanggal' },
   { label: 'Bulan', value: 'bulan' },
 ]
-
 const bulanOptions = [
   { label: 'Januari', value: '01' },
   { label: 'Februari', value: '02' },
@@ -67,42 +38,51 @@ const bulanOptions = [
   { label: 'Desember', value: '12' },
 ]
 
-const caraBayarOptions = ref([])
-const penjaminOptions = ref([])
-const instalasiOptions = ref([
-  { label: 'IGD', value: 'IGD' },
-  { label: 'Poli Umum', value: 'Poli Umum' },
-  { label: 'Poli Gigi', value: 'Poli Gigi' },
-])
+const filters = ref({
+  tahunPeriode: '',
+  jenisPeriode: '',
+  tglAwal: null,
+  tglAkhir: null,
+  bulanAwal: '',
+  bulanAkhir: '',
+  pihak3: '',
+  uraian: '',
+})
+
 const data = ref([])
+const loading = ref(false)
+const showModalSync = ref(false)
+const showModalEdit = ref(false)
+const selectedItem = ref(null)
 const totalRecords = ref(0)
 const rows = ref(10)
 const first = ref(0)
-const loading = ref(false)
-const selectedItem = ref(null)
-const showModalEdit = ref(false)
-const showModalSync = ref(false)
+const toast = useToast()
 
-const buildQuery = (page = 1, pageSize = rows.value) => {
-  const q = {
-    page,
-    size: pageSize,
+const buildQuery = () => {
+  const q = {}
+  if (filters.value.tahunPeriode) q.year = filters.value.tahunPeriode
+  if (filters.value.jenisPeriode) q.periode = filters.value.jenisPeriode
+  if (filters.value.pihak3) q.pihak3 = filters.value.pihak3
+  if (filters.value.uraian) q.uraian = filters.value.uraian
+  if (filters.value.jenisPeriode === 'tanggal') {
+    if (filters.value.tglAwal) q.tgl_awal = filters.value.tglAwal
+    if (filters.value.tglAkhir) q.tgl_akhir = filters.value.tglAkhir
   }
-  if (filters.value.tglAwal) q.tgl_awal = filters.value.tglAwal
-  if (filters.value.tglAkhir) q.tgl_akhir = filters.value.tglAkhir
-  if (filters.value.jenisPelayanan) q.jenis_pelayanan = filters.value.jenisPelayanan
-  if (filters.value.penjamin) q.penjamin = filters.value.penjamin
-  if (filters.value.instalasi) q.instalasi = filters.value.instalasi
-  if (filters.value.status) q.status = filters.value.status
+  if (filters.value.jenisPeriode === 'bulan') {
+    if (filters.value.bulanAwal) q.bulan_awal = filters.value.bulanAwal
+    if (filters.value.bulanAkhir) q.bulan_akhir = filters.value.bulanAkhir
+  }
   return q
 }
 
 const loadData = async (page = 1, pageSize = rows.value) => {
   loading.value = true
   try {
-    const query = buildQuery(page, pageSize)
-    // Replace with real API endpoint
-    const response = await api.get('/pendapatan_pelayanan', { params: query })
+    const query = buildQuery()
+    query.page = page
+    query.size = pageSize
+    const response = await api.get('/potensi_lain', { params: query })
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
         ...item,
@@ -112,7 +92,6 @@ const loadData = async (page = 1, pageSize = rows.value) => {
     }
   } catch (error) {
     console.error('Gagal memuat data:', error)
-    toast.add({ severity: 'error', summary: 'Gagal', detail: 'Gagal memuat data', life: 3000 })
   } finally {
     loading.value = false
   }
@@ -127,17 +106,14 @@ const onPageChange = (event) => {
 
 const resetFilter = () => {
   filters.value = {
-    tglAwal: null,
-    tglAkhir: null,
-    jenisPelayanan: '',
-    penjamin: '',
-    instalasi: '',
-    status: '',
     tahunPeriode: '',
     jenisPeriode: '',
+    tglAwal: null,
+    tglAkhir: null,
     bulanAwal: '',
     bulanAkhir: '',
-    caraBayar: '',
+    pihak3: '',
+    uraian: '',
   }
   first.value = 0
   loadData(1, rows.value)
@@ -158,20 +134,15 @@ const handleEdit = (item) => {
   showModalEdit.value = true
 }
 
-const handleValidasi = (item) => {
-  console.log('Validasi item:', item)
-  // TODO: Implement validasi functionality
-}
-
-const handleBuktiBayar = (item) => {
-  console.log('Bukti Bayar item:', item)
-  // TODO: Implement bukti bayar functionality
+const handleTerima = (item) => {
+  console.log('Terima item:', item)
+  // TODO: Implement terima functionality
 }
 
 const handleDelete = async (item) => {
   if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return
   try {
-    await api.delete(`/pendapatan_pelayanan/${item.id}`)
+    await api.delete(`/potensi_lain/${item.id}`)
     toast.add({
       severity: 'success',
       summary: 'Berhasil',
@@ -201,47 +172,7 @@ const handleSaved = () => {
   loadData(1, rows.value)
 }
 
-const fetchCaraBayar = async () => {
-  try {
-    const response = await api.get('/carabayar')
-    if (response.data && response.data.items) {
-      caraBayarOptions.value = response.data.items.map((item) => ({
-        label: item.carabayar_nama,
-        value: item.carabayar_id,
-      }))
-    }
-  } catch (error) {
-    console.error('Gagal memuat data cara bayar:', error)
-  }
-}
-
-const fetchPenjamin = async () => {
-  try {
-    const response = await api.get('/penjamin')
-    if (response.data && response.data.items) {
-      penjaminOptions.value = response.data.items.map((item) => ({
-        label: item.penjamin_nama,
-        value: item.penjamin_id,
-      }))
-    }
-  } catch (error) {
-    console.error('Gagal memuat data penjamin:', error)
-  }
-}
-
-const generateTahunPeriodeOptions = () => {
-  const currentYear = new Date().getFullYear()
-  const years = []
-  for (let year = currentYear - 5; year <= currentYear + 1; year++) {
-    years.push({ label: year.toString(), value: year.toString() })
-  }
-  tahunPeriodeOptions.value = years
-}
-
 onMounted(async () => {
-  generateTahunPeriodeOptions()
-  await fetchCaraBayar()
-  await fetchPenjamin()
   loadData(1, rows.value)
 })
 </script>
@@ -313,26 +244,12 @@ onMounted(async () => {
           </div>
         </template>
         <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Cara Bayar</label>
-          <Select
-            v-model="filters.caraBayar"
-            :options="caraBayarOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Cara Bayar"
-            class="w-full"
-          />
+          <label class="block mb-1 text-sm font-medium text-gray-700">Pihak 3</label>
+          <InputText v-model="filters.pihak3" placeholder="Pihak 3" class="w-full" />
         </div>
         <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Penjamin</label>
-          <Select
-            v-model="filters.penjamin"
-            :options="penjaminOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Penjamin"
-            class="w-full"
-          />
+          <label class="block mb-1 text-sm font-medium text-gray-700">Uraian</label>
+          <InputText v-model="filters.uraian" placeholder="Uraian" class="w-full" />
         </div>
       </div>
       <div class="mt-4 flex gap-2">
@@ -349,7 +266,7 @@ onMounted(async () => {
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
     >
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xl font-semibold text-[#17316E]">Data Pendapatan Pelayanan</h3>
+        <h3 class="text-xl font-semibold text-[#17316E]">Data Potensi Lainnya</h3>
         <div class="flex gap-2">
           <Button
             label="Tambah Data"
@@ -390,14 +307,9 @@ onMounted(async () => {
               :model="[
                 { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
                 {
-                  label: 'Bukti Bayar',
-                  icon: 'pi pi-file',
-                  command: () => handleBuktiBayar(slotProps.data),
-                },
-                {
-                  label: 'Validasi',
+                  label: 'Terima',
                   icon: 'pi pi-check',
-                  command: () => handleValidasi(slotProps.data),
+                  command: () => handleTerima(slotProps.data),
                 },
                 {
                   label: 'Hapus',
@@ -410,15 +322,13 @@ onMounted(async () => {
         </Column>
         <Column field="no_dokumen" header="No Dokumen" />
         <Column field="tgl_dokumen" header="Tgl Dokumen" />
-        <Column field="cara_pembayaran" header="Cara Bayar" />
-        <Column field="penjamin_nama" header="Penjamin" />
+        <Column field="pihak3" header="Pihak ke-3" />
         <Column field="uraian" header="Uraian" />
-        <Column field="tgl_pendaftaran" header="Tgl Pendaftaran" />
-        <Column field="no_pendaftaran" header="No Pendaftaran" />
-        <Column field="nama_pasien" header="Nama Pasien" />
-        <Column field="jumlah" header="Jumlah" style="text-align: right">
+        <Column field="tgl_berlaku" header="Tgl Berlaku" />
+        <Column field="tgl_akhir" header="Tgl Berakhir" />
+        <Column field="total" header="Jumlah" style="text-align: right">
           <template #body="slotProps">
-            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlah || 0) }}
+            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.total || 0) }}
           </template>
         </Column>
         <Column field="terbayar" header="Terbayar" style="text-align: right">
@@ -426,9 +336,9 @@ onMounted(async () => {
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.terbayar || 0) }}
           </template>
         </Column>
-        <Column field="sisa_potensi" header="Sisa Potensi" style="text-align: right">
+        <Column field="sisa" header="Sisa Potensi" style="text-align: right">
           <template #body="slotProps">
-            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.sisa_potensi || 0) }}
+            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.sisa || 0) }}
           </template>
         </Column>
       </DataTable>
@@ -444,4 +354,16 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.p-datatable .p-datatable-thead > tr > th {
+  white-space: nowrap;
+  text-align: center;
+  padding: 0.5rem 0.75rem;
+}
+
+.p-datatable .p-datatable-tbody > tr > td {
+  white-space: nowrap;
+  padding: 0.5rem 0.75rem;
+  vertical-align: middle;
+}
+</style>

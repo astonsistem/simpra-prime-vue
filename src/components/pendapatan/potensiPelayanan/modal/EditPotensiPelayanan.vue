@@ -2,7 +2,7 @@
 import { ref, reactive, watch, onMounted } from 'vue'
 import api from '@/services/http.js'
 import Dropdown from 'primevue/dropdown'
-import DatePicker from 'primevue/datepicker'
+import Calendar from 'primevue/calendar'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
 import InputNumber from 'primevue/inputnumber'
@@ -167,7 +167,7 @@ onMounted(() => {
 
       <div>
         <label class="block mb-1 font-medium text-sm">Tgl Bayar</label>
-        <DatePicker v-model="form.tgl_bayar" dateFormat="dd-mm-yy" showIcon class="w-full" />
+        <Calendar v-model="form.tgl_bayar" dateFormat="dd-mm-yy" showIcon class="w-full" />
       </div>
 
       <div>
@@ -192,7 +192,7 @@ onMounted(() => {
 
       <div>
         <label class="block mb-1 font-medium text-sm">Tgl Dokumen</label>
-        <DatePicker v-model="form.tgl_dokumen" dateFormat="dd-mm-yy" showIcon class="w-full" />
+        <Calendar v-model="form.tgl_dokumen" dateFormat="dd-mm-yy" showIcon class="w-full" />
       </div>
 
       <div>

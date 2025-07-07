@@ -154,7 +154,7 @@ const logout = async () => {
         </div>
       </div>
 
-      <nav class="flex-1 p-2 space-y-1 overflow-y-auto">
+      <nav class="flex-1 p-2 space-y-1 overflow-y-auto hide-scrollbar">
         <template v-for="item in menuItems" :key="item.label">
           <div v-if="item.children" class="space-y-1">
             <button
@@ -208,3 +208,13 @@ const logout = async () => {
     <div v-if="mobileOpen" class="fixed inset-0 md:hidden z-10" @click="$emit('close-mobile')" />
   </aside>
 </template>
+<style scoped>
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
