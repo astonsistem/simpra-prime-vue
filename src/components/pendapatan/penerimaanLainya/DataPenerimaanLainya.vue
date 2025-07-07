@@ -1,18 +1,24 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import Calendar from 'primevue/calendar'
-import Dropdown from 'primevue/dropdown'
+import DatePicker from 'primevue/datepicker'
+import Select from 'primevue/select'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import SplitButton from 'primevue/splitbutton'
 import Menu from 'primevue/menu'
+import { useToast } from 'primevue/usetoast'
 import api from '@/services/http.js'
-import ModalSyncPenerimaan from './modal/TarikData.vue'
+import ModalSyncPenerimaan from './modal/TarikDataPenerimaanLainya.vue'
 import ModalEditPenerimaan from './modal/EditPenerimaan.vue'
+import Toast from 'primevue/toast'
+
+const toast = useToast()
 
 const jenisPenerimaOptions = ref([])
+const caraBayarOptions = ref([])
+const penjaminOptions = ref([])
 const data = ref([])
 const loading = ref(false)
 const showModalSync = ref(false)
@@ -69,6 +75,11 @@ const searchData = () => {
   loadData()
 }
 
+const handleAdd = () => {
+  selectedItem.value = null
+  showModalEdit.value = true
+}
+
 const handleEdit = (item) => {
   selectedItem.value = { ...item }
   showModalEdit.value = true
@@ -80,19 +91,72 @@ const handleSetor = (item) => {
 
 const handleValidasi = (item) => {
   console.log('Validasi item:', item)
+  // TODO: Implement validasi functionality
+}
+
+const handleBuktiBayar = (item) => {
+  console.log('Bukti Bayar item:', item)
+  // TODO: Implement bukti bayar functionality
 }
 
 const handleDelete = async (item) => {
-  if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) {
-    return
-  }
-
+  if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return
   try {
-    await api.delete(`/billing_swa/${item.id}`)
-    loadData() // Reload data after successful deletion
+    await api.delete(`/penerimaan_lain/${item.id}`)
+    toast.add({
+      severity: 'success',
+      summary: 'Berhasil',
+      detail: 'Data berhasil dihapus',
+      life: 3000,
+    })
+    loadData()
   } catch (error) {
     console.error('Gagal menghapus data:', error)
-    alert('Gagal menghapus data. Silakan coba lagi.')
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal',
+      detail: 'Gagal menghapus data. Silakan coba lagi.',
+      life: 3000,
+    })
+  }
+}
+
+const handleSaved = () => {
+  showModalEdit.value = false
+  toast.add({
+    severity: 'success',
+    summary: 'Berhasil',
+    detail: 'Data berhasil disimpan',
+    life: 3000,
+  })
+  loadData()
+}
+
+const fetchCaraBayar = async () => {
+  try {
+    const response = await api.get('/carabayar')
+    if (response.data && response.data.items) {
+      caraBayarOptions.value = response.data.items.map((item) => ({
+        label: item.carabayar_nama,
+        value: item.carabayar_id,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data cara bayar:', error)
+  }
+}
+
+const fetchPenjamin = async () => {
+  try {
+    const response = await api.get('/penjamin')
+    if (response.data && response.data.items) {
+      penjaminOptions.value = response.data.items.map((item) => ({
+        label: item.penjamin_nama,
+        value: item.penjamin_id,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data penjamin:', error)
   }
 }
 
@@ -105,6 +169,8 @@ onMounted(async () => {
         value: item.akun_id,
       }))
     }
+    await fetchCaraBayar()
+    await fetchPenjamin()
     loadData()
   } catch (error) {
     console.error('Gagal memuat data akun:', error)
@@ -121,7 +187,7 @@ onMounted(async () => {
       <div class="grid grid-cols-3 gap-4">
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
-          <Dropdown
+          <Select
             v-model="filters.tahunPeriode"
             :options="tahunPeriodeOptions"
             placeholder="Tahun Periode"
@@ -131,17 +197,17 @@ onMounted(async () => {
 
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Tgl Awal</label>
-          <Calendar v-model="filters.tglAwal" placeholder="Tgl Awal" showIcon class="w-full" />
+          <DatePicker v-model="filters.tglAwal" placeholder="Tgl Awal" showIcon class="w-full" />
         </div>
 
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Tgl Akhir</label>
-          <Calendar v-model="filters.tglAkhir" placeholder="Tgl Akhir" showIcon class="w-full" />
+          <DatePicker v-model="filters.tglAkhir" placeholder="Tgl Akhir" showIcon class="w-full" />
         </div>
 
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
-          <Dropdown
+          <Select
             v-model="filters.jenisPeriode"
             :options="jenisPeriodeOptions"
             placeholder="Jenis Periode"
@@ -151,7 +217,7 @@ onMounted(async () => {
 
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Penerima</label>
-          <Dropdown
+          <Select
             v-model="filters.jenisPenerima"
             :options="jenisPenerimaOptions"
             optionLabel="label"
@@ -184,6 +250,12 @@ onMounted(async () => {
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-xl font-semibold text-[#17316E]">Data Penerimaan Lainnya</h3>
         <div class="flex gap-2">
+          <Button
+            label="Tambah Data"
+            icon="pi pi-plus"
+            class="p-button-primary"
+            @click="handleAdd"
+          />
           <Button
             label="Tarik Data"
             icon="pi pi-refresh"
@@ -218,14 +290,14 @@ onMounted(async () => {
                   command: () => handleEdit(slotProps.data),
                 },
                 {
-                  label: 'Setor',
-                  icon: 'pi pi-wallet',
-                  command: () => handleSetor(slotProps.data),
+                  label: 'Bukti Bayar',
+                  icon: 'pi pi-file',
+                  command: () => handleBuktiBayar(slotProps.data),
                 },
                 {
                   label: 'Validasi',
                   icon: 'pi pi-check',
-                  command: () => handleSetor(slotProps.data),
+                  command: () => handleValidasi(slotProps.data),
                 },
                 {
                   label: 'Hapus',
@@ -273,18 +345,14 @@ onMounted(async () => {
         </Column>
       </DataTable>
     </div>
-    <ModalSyncPenerimaan v-model:visible="showModalSync" @sync="loadData" />
-    <!-- <ModalEditPenerimaan
-      v-model:visible="showModalEdit"
-      :id="selectedItem?.id"
-      @updated="loadData"
-      /> -->
+    <ModalSyncPenerimaan v-model="showModalSync" @sync="loadData" />
     <ModalEditPenerimaan
-      :id="selectedItem?.id"
-      v-model:visible="showModalEdit"
+      :visible="showModalEdit"
       :item="selectedItem"
-      @saved="loadData"
+      @update:visible="showModalEdit = $event"
+      @saved="handleSaved"
     />
+    <Toast />
   </div>
 </template>
 

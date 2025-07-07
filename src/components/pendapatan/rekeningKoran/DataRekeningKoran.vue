@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import DatePicker from 'primevue/datepicker'
-import Select from 'primevue/select'
+import Calendar from 'primevue/calendar'
+import Dropdown from 'primevue/dropdown'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -9,10 +9,7 @@ import InputText from 'primevue/inputtext'
 import SplitButton from 'primevue/splitbutton'
 import Menu from 'primevue/menu'
 import api from '@/services/http.js'
-import ModalSyncPenerimaan from './modal/TarikDataPotensiPelayanan.vue'
-import ModalEditPenerimaan from './modal/EditPotensiLainya.vue'
 import { useToast } from 'primevue/usetoast'
-import Toast from 'primevue/toast'
 
 // Filter state
 const tahunPeriodeOptions = Array.from(
@@ -45,16 +42,12 @@ const filters = ref({
   tglAkhir: null,
   bulanAwal: '',
   bulanAkhir: '',
-  caraBayar: '',
-  penjamin: '',
+  bank: '',
+  uraian: '',
 })
 
-const caraBayarOptions = ref([])
-const penjaminOptions = ref([])
 const data = ref([])
 const loading = ref(false)
-const showModalSync = ref(false)
-const showModalEdit = ref(false)
 const selectedItem = ref(null)
 const totalRecords = ref(0)
 const rows = ref(10)
@@ -65,8 +58,8 @@ const buildQuery = () => {
   const q = {}
   if (filters.value.tahunPeriode) q.year = filters.value.tahunPeriode
   if (filters.value.jenisPeriode) q.periode = filters.value.jenisPeriode
-  if (filters.value.caraBayar) q.cara_bayar = filters.value.caraBayar
-  if (filters.value.penjamin) q.penjamin = filters.value.penjamin
+  if (filters.value.bank) q.bank = filters.value.bank
+  if (filters.value.uraian) q.uraian = filters.value.uraian
   if (filters.value.jenisPeriode === 'tanggal') {
     if (filters.value.tglAwal) q.tgl_awal = filters.value.tglAwal
     if (filters.value.tglAkhir) q.tgl_akhir = filters.value.tglAkhir
@@ -84,7 +77,7 @@ const loadData = async (page = 1, pageSize = rows.value) => {
     const query = buildQuery()
     query.page = page
     query.size = pageSize
-    const response = await api.get('/potensi_pelayanan', { params: query })
+    const response = await api.get('/rekening_koran', { params: query })
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
         ...item,
@@ -114,8 +107,8 @@ const resetFilter = () => {
     tglAkhir: null,
     bulanAwal: '',
     bulanAkhir: '',
-    caraBayar: '',
-    penjamin: '',
+    bank: '',
+    uraian: '',
   }
   first.value = 0
   loadData(1, rows.value)
@@ -126,30 +119,30 @@ const searchData = () => {
   loadData(1, rows.value)
 }
 
-const handleAdd = () => {
-  selectedItem.value = null
-  showModalEdit.value = true
+const handleView = (item) => {
+  console.log('View item:', item)
+  // TODO: Implement view functionality
 }
 
 const handleEdit = (item) => {
-  selectedItem.value = { ...item }
-  showModalEdit.value = true
+  console.log('Edit item:', item)
+  // TODO: Implement edit functionality
 }
 
-const handleTerima = (item) => {
-  console.log('Terima item:', item)
-  // TODO: Implement terima functionality
+const handlePB = (item) => {
+  console.log('PB item:', item)
+  // TODO: Implement PB functionality
 }
 
-const handleRincian = (item) => {
-  console.log('Rincian item:', item)
-  // TODO: Implement rincian functionality
+const handleBKU = (item) => {
+  console.log('BKU item:', item)
+  // TODO: Implement BKU functionality
 }
 
 const handleDelete = async (item) => {
   if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return
   try {
-    await api.delete(`/potensi_pelayanan/${item.id}`)
+    await api.delete(`/rekening_koran/${item.id}`)
     toast.add({
       severity: 'success',
       summary: 'Berhasil',
@@ -168,48 +161,7 @@ const handleDelete = async (item) => {
   }
 }
 
-const handleSaved = () => {
-  showModalEdit.value = false
-  toast.add({
-    severity: 'success',
-    summary: 'Berhasil',
-    detail: 'Data berhasil disimpan',
-    life: 3000,
-  })
-  loadData(1, rows.value)
-}
-
-const fetchCaraBayar = async () => {
-  try {
-    const response = await api.get('/carabayar')
-    if (response.data && response.data.items) {
-      caraBayarOptions.value = response.data.items.map((item) => ({
-        label: item.carabayar_nama,
-        value: item.carabayar_id,
-      }))
-    }
-  } catch (error) {
-    console.error('Gagal memuat data cara bayar:', error)
-  }
-}
-
-const fetchPenjamin = async () => {
-  try {
-    const response = await api.get('/penjamin')
-    if (response.data && response.data.items) {
-      penjaminOptions.value = response.data.items.map((item) => ({
-        label: item.penjamin_nama,
-        value: item.penjamin_id,
-      }))
-    }
-  } catch (error) {
-    console.error('Gagal memuat data penjamin:', error)
-  }
-}
-
 onMounted(async () => {
-  await fetchCaraBayar()
-  await fetchPenjamin()
   loadData(1, rows.value)
 })
 </script>
@@ -223,7 +175,7 @@ onMounted(async () => {
       <div class="grid grid-cols-3 gap-4">
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
-          <Select
+          <Dropdown
             v-model="filters.tahunPeriode"
             :options="tahunPeriodeOptions"
             placeholder="Tahun Periode"
@@ -232,7 +184,7 @@ onMounted(async () => {
         </div>
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
-          <Select
+          <Dropdown
             v-model="filters.jenisPeriode"
             :options="jenisPeriodeOptions"
             optionLabel="label"
@@ -244,22 +196,17 @@ onMounted(async () => {
         <template v-if="filters.jenisPeriode === 'tanggal'">
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Tgl Awal</label>
-            <DatePicker v-model="filters.tglAwal" placeholder="Tgl Awal" showIcon class="w-full" />
+            <Calendar v-model="filters.tglAwal" placeholder="Tgl Awal" showIcon class="w-full" />
           </div>
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Tgl Akhir</label>
-            <DatePicker
-              v-model="filters.tglAkhir"
-              placeholder="Tgl Akhir"
-              showIcon
-              class="w-full"
-            />
+            <Calendar v-model="filters.tglAkhir" placeholder="Tgl Akhir" showIcon class="w-full" />
           </div>
         </template>
         <template v-else-if="filters.jenisPeriode === 'bulan'">
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Awal</label>
-            <Select
+            <Dropdown
               v-model="filters.bulanAwal"
               :options="bulanOptions"
               optionLabel="label"
@@ -270,7 +217,7 @@ onMounted(async () => {
           </div>
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Akhir</label>
-            <Select
+            <Dropdown
               v-model="filters.bulanAkhir"
               :options="bulanOptions"
               optionLabel="label"
@@ -281,26 +228,12 @@ onMounted(async () => {
           </div>
         </template>
         <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Cara Bayar</label>
-          <Select
-            v-model="filters.caraBayar"
-            :options="caraBayarOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Cara Bayar"
-            class="w-full"
-          />
+          <label class="block mb-1 text-sm font-medium text-gray-700">Bank</label>
+          <InputText v-model="filters.bank" placeholder="Bank" class="w-full" />
         </div>
         <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Penjamin</label>
-          <Select
-            v-model="filters.penjamin"
-            :options="penjaminOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Penjamin"
-            class="w-full"
-          />
+          <label class="block mb-1 text-sm font-medium text-gray-700">Uraian</label>
+          <InputText v-model="filters.uraian" placeholder="Uraian" class="w-full" />
         </div>
       </div>
       <div class="mt-4 flex gap-2">
@@ -317,20 +250,9 @@ onMounted(async () => {
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
     >
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xl font-semibold text-[#17316E]">Data Potensi Pelayanan</h3>
+        <h3 class="text-xl font-semibold text-[#17316E]">Data Rekening Koran</h3>
         <div class="flex gap-2">
-          <Button
-            label="Tambah Data"
-            icon="pi pi-plus"
-            class="p-button-primary"
-            @click="handleAdd"
-          />
-          <Button
-            label="Tarik Data"
-            icon="pi pi-refresh"
-            class="p-button-success"
-            @click="showModalSync = true"
-          />
+          <Button label="Upload File" icon="pi pi-upload" class="p-button-success" />
           <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" />
         </div>
       </div>
@@ -356,17 +278,14 @@ onMounted(async () => {
               size="small"
               severity="secondary"
               :model="[
+                { label: 'Lihat', icon: 'pi pi-eye', command: () => handleView(slotProps.data) },
                 { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
                 {
-                  label: 'Terima',
-                  icon: 'pi pi-check',
-                  command: () => handleTerima(slotProps.data),
+                  label: 'PB',
+                  icon: 'pi pi-check-square',
+                  command: () => handlePB(slotProps.data),
                 },
-                {
-                  label: 'Rincian',
-                  icon: 'pi pi-list',
-                  command: () => handleRincian(slotProps.data),
-                },
+                { label: 'BKU', icon: 'pi pi-file-edit', command: () => handleBKU(slotProps.data) },
                 {
                   label: 'Hapus',
                   icon: 'pi pi-trash',
@@ -376,38 +295,23 @@ onMounted(async () => {
             />
           </template>
         </Column>
-        <Column field="no_dokumen" header="No Dokumen" />
-        <Column field="tgl_dokumen" header="Tgl Dokumen" />
-        <Column field="cara_pembayaran" header="Cara Bayar" />
-        <Column field="penjamin_nama" header="Penjamin" />
+        <Column field="no_rc" header="No RC" />
+        <Column field="tgl_rc" header="Tgl RC" />
+        <Column field="bank" header="Bank" />
         <Column field="uraian" header="Uraian" />
-        <Column field="tgl_pendaftaran" header="Tgl Pendaftaran" />
-        <Column field="no_pendaftaran" header="No Pendaftaran" />
-        <Column field="nama_pasien" header="Nama Pasien" />
-        <Column field="jumlah" header="Jumlah" style="text-align: right">
+        <Column field="debit" header="Debit" style="text-align: right">
           <template #body="slotProps">
-            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlah || 0) }}
+            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.debit || 0) }}
           </template>
         </Column>
-        <Column field="terbayar" header="Terbayar" style="text-align: right">
+        <Column field="kredit" header="Kredit" style="text-align: right">
           <template #body="slotProps">
-            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.terbayar || 0) }}
+            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.kredit || 0) }}
           </template>
         </Column>
-        <Column field="sisa_potensi" header="Sisa Potensi" style="text-align: right">
-          <template #body="slotProps">
-            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.sisa_potensi || 0) }}
-          </template>
-        </Column>
+        <Column field="status" header="Status" />
       </DataTable>
     </div>
-    <ModalSyncPenerimaan v-model="showModalSync" @sync="loadData" />
-    <ModalEditPenerimaan
-      :id="selectedItem?.id"
-      v-model="showModalEdit"
-      :item="selectedItem"
-      @saved="handleSaved"
-    />
     <Toast />
   </div>
 </template>
