@@ -3,9 +3,26 @@ import { useLayout } from '../composables/useLayout'
 import AppConfig from './AppConfig.vue'
 import { useRoute } from 'vue-router'
 import { ref, watch } from 'vue'
+import Menu from 'primevue/menu'
 
 const route = useRoute()
 const breadcrumb = ref(route.meta.breadcrumb || [])
+const menu = ref()
+const items = ref([
+  {
+    label: 'Options',
+    items: [
+      { label: 'Profile', icon: 'pi pi-user' },
+      { label: 'Ganti Password', icon: 'pi pi-pencil' },
+      // { label: 'Ganti Device', icon: 'pi pi-cog' },
+      { label: 'Logout', icon: 'pi pi-power-off' },
+    ],
+  },
+])
+
+const toggle = (event) => {
+  menu.value.toggle(event)
+}
 
 watch(route, (newRoute) => {
   breadcrumb.value = newRoute.meta.breadcrumb || []
@@ -29,18 +46,24 @@ defineEmits(['toggle-mobile'])
 
       <div class="flex items-center">
         <Button
-          v-styleclass="{
-            selector: '@next',
-            enterFromClass: 'hidden',
-            enterActiveClass: 'animate-scalein',
-            leaveToClass: 'hidden',
-            leaveActiveClass: 'animate-fadeout',
-            hideOnOutsideClick: true,
-          }"
+          @click="toggle"
+          aria-haspopup="true"
+          aria-controls="overlay_menu"
           icon="pi pi-user"
           class="bg-blue-100 text-blue-500 rounded-full w-10 h-10 flex items-center justify-center"
-          aria-label="User"
         />
+        <Menu ref="menu" id="overlay_menu" :model="items" :popup="true">
+          <template #start>
+            <div class="flex flex-col items-center p-4">
+              <img
+                alt="logo"
+                src="https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png"
+                class="w-16 h-16 rounded-full"
+              />
+              <span class="font-bold mt-2">Admin</span>
+            </div>
+          </template>
+        </Menu>
         <AppConfig />
       </div>
     </div>

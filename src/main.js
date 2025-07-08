@@ -3,6 +3,7 @@ import './assets/styles/main.css'
 import Aura from '@primeuix/themes/aura'
 import Button from 'primevue/button'
 import PrimeVue from 'primevue/config'
+import ConfirmationService from 'primevue/confirmationservice'
 import FloatLabel from 'primevue/floatlabel'
 import InputText from 'primevue/inputtext'
 import SelectButton from 'primevue/selectbutton'
@@ -11,6 +12,7 @@ import ToggleSwitch from 'primevue/toggleswitch'
 import Toolbar from 'primevue/toolbar'
 import ToastService from 'primevue/toastservice'
 import Toast from 'primevue/toast'
+import ConfirmDialog from 'primevue/confirmdialog'
 import SplitButton from 'primevue/splitbutton'
 import { createApp } from 'vue'
 import router from './router'
@@ -31,6 +33,7 @@ app.use(PrimeVue, {
   },
 })
 app.use(ToastService)
+app.use(ConfirmationService)
 app.use(pinia)
 
 app.component('Button', Button)
@@ -40,6 +43,7 @@ app.component('Toolbar', Toolbar)
 app.component('ToggleSwitch', ToggleSwitch)
 app.component('SelectButton', SelectButton)
 app.component('Toast', Toast)
+app.component('ConfirmDialog', ConfirmDialog)
 app.component('Tabs', Tabs)
 app.component('Tab', Tab)
 app.component('TabList', TabList)

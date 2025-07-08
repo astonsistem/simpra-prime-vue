@@ -24,95 +24,94 @@ const menuItems = ref([
     label: 'Pendapatan',
     icon: 'pi pi-dollar',
     children: [
-      {
-        label: 'Pendapatan Pelayanan',
-        to: '/pendapatan/pelayanan',
-      },
-      {
-        label: 'Billing Kasir',
-        to: '/pendapatan/billing-kasir',
-      },
-      {
-        label: 'Billing Swa',
-        to: '/pendapatan/billing-swa',
-      },
-      {
-        label: 'Penerimaan Lainnya',
-        to: '/pendapatan/penerimaan-lainnya',
-      },
-      {
-        label: 'Potensi Pelayanan',
-        to: '/pendapatan/potensi-pelayanan',
-      },
-      {
-        label: 'Potensi Lainnya',
-        to: '/pendapatan/potensi-lainnya',
-      },
-      {
-        label: 'Bukti Setor',
-        to: '/pendapatan/bukti-setor',
-      },
-      {
-        label: 'Rekening Koran',
-        to: '/pendapatan/rekening-koran',
-      },
-      {
-        label: 'BKU',
-        to: '/pendapatan/bku',
-      },
-      {
-        label: 'Pelaporan',
-        to: '/pendapatan/pelaporan',
-      },
+      { label: 'Pendapatan Pelayanan', to: '/pendapatan/pelayanan' },
+      { label: 'Billing Kasir', to: '/pendapatan/billing-kasir' },
+      { label: 'Billing Swa', to: '/pendapatan/billing-swa' },
+      { label: 'Penerimaan Lainnya', to: '/pendapatan/penerimaan-lainnya' },
+      { label: 'Potensi Pelayanan', to: '/pendapatan/potensi-pelayanan' },
+      { label: 'Potensi Lainnya', to: '/pendapatan/potensi-lainnya' },
+      { label: 'Bukti Setor', to: '/pendapatan/bukti-setor' },
+      { label: 'Rekening Koran', to: '/pendapatan/rekening-koran' },
+      { label: 'BKU', to: '/pendapatan/bku' },
+      { label: 'Pelaporan', to: '/pendapatan/pelaporan' },
     ],
   },
   {
     label: 'Master',
     icon: 'pi pi-database',
     children: [
-      {
-        label: 'Akun Pendapatan',
-        to: '/master/akun-pendapatan',
-      },
-      {
-        label: 'Kasir',
-        to: '/master/kasir',
-      },
-      {
-        label: 'Loket/Lokasi',
-        to: '/master/loket-lokasi',
-      },
-      {
-        label: 'Instalasi',
-        to: '/master/instalasi',
-      },
-      {
-        label: 'cara Bayar',
-        to: '/master/cara-bayar',
-      },
-      {
-        label: 'Penjamin',
-        to: '/master/penjamin',
-      },
+      { label: 'Akun Pendapatan', to: '/master/akun-pendapatan' },
+      { label: 'Kasir', to: '/master/kasir' },
+      { label: 'Loket / Lokasi', to: '/master/loket-lokasi' },
+      { label: 'Instalasi', to: '/master/instalasi' },
+      { label: 'Cara Bayar', to: '/master/cara-bayar' },
+      { label: 'Penjamin', to: '/master/penjamin' },
     ],
   },
   {
     label: 'Admin',
     icon: 'pi pi-cog',
-    to: '/admin',
-    exact: true,
+    children: [
+      { label: 'Anggaran', to: '/admin/anggaran' },
+      { label: 'Manajemen User', to: '/admin/user-management' },
+      { label: 'Sinkronisasi', to: '/admin/sinkronisasi' },
+    ],
   },
   {
     label: 'Laporan',
     icon: 'pi pi-file',
-    to: '/laporan',
-    exact: true,
+    children: [
+      { label: 'Bruto Pendapatan Layanan Harian', to: '/laporan/bruto-pendapatan-layanan-harian' },
+      {
+        label: 'Bruto Pendapatan Layanan Bulanan',
+        to: '/laporan/bruto-pendapatan-layanan-bulanan',
+      },
+      {
+        label: 'Bruto Pendapatan Layanan Harian Per Instalasi',
+        to: '/laporan/bruto-pendapatan-layanan-harian-per-instalasi',
+      },
+      {
+        label: 'Bruto Pendapatan Layanan Bulanan Per Instalasi',
+        to: '/laporan/bruto-pendapatan-layanan-bulanan-per-instalasi',
+      },
+      {
+        label: 'Bruto Pendapatan Layanan Harian Per Cara Bayar',
+        to: '/laporan/bruto-pendapatan-layanan-harian-per-cara-bayar',
+      },
+      {
+        label: 'Bruto Pendapatan Layanan Bulanan Per Cara Bayar',
+        to: '/laporan/bruto-pendapatan-layanan-bulanan-per-cara-bayar',
+      },
+      {
+        label: 'Bruto Penerimaan Harian Layanan Per Bulan',
+        to: '/laporan/bruto-penerimaan-harian-layanan-per-bulan',
+      },
+      {
+        label: 'Bruto Penerimaan Instalasi Layanan Per Bulan',
+        to: '/laporan/bruto-penerimaan-instalasi-layanan-per-bulan',
+      },
+      {
+        label: 'Bruto Rincian Pendapatan Layanan Per Cara Bayar Per Bulan',
+        to: '/laporan/bruto-rincian-pendapatan-layanan-per-cara-bayar-per-bulan',
+      },
+      {
+        label: 'Bruto Penerimaan Instalasi Layanan Per Hari',
+        to: '/laporan/bruto-penerimaan-instalasi-layanan-per-hari',
+      },
+      {
+        label: 'Bruto Rincian Penerimaan Layanan Per Instalasi Per Hari',
+        to: '/laporan/bruto-rincian-penerimaan-layanan-per-instalasi-per-hari',
+      },
+      { label: 'Informasi Status Pasien BPJS', to: '/laporan/status-pasien-bpjs' },
+    ],
   },
   {
-    label: 'Laporan rekap',
+    label: 'Laporan Rekap',
     icon: 'pi pi-chart-bar',
-    to: '/laporan-rekap',
-    exact: true,
+    children: [
+      { label: 'Pasien Rawat Jalan BPJS', to: '/laporan-rekap/pasien-rawat-jalan-bpjs' },
+      { label: 'Pasien Rawat Inap BPJS', to: '/laporan-rekap/pasien-rawat-inap-bpjs' },
+    ],
   },
 ])
 
@@ -155,8 +154,8 @@ const logout = async () => {
       </div>
 
       <nav class="flex-1 p-2 space-y-1 overflow-y-auto hide-scrollbar">
-        <template v-for="item in menuItems" :key="item.label">
-          <div v-if="item.children" class="space-y-1">
+        <template v-for="item in menuItems">
+          <div v-if="item.children" class="space-y-1" :key="item.label">
             <button
               class="flex items-center gap-3 p-3 w-full rounded-lg transition-colors group text-white"
               :class="[
@@ -191,6 +190,7 @@ const logout = async () => {
 
           <router-link
             v-else
+            :key="item.label + '-link'"
             :to="item.to"
             class="flex items-center gap-3 p-3 rounded-lg transition-colors group text-white"
             :class="[
@@ -216,5 +216,8 @@ const logout = async () => {
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+hr {
+  border-color: #ffffff22;
 }
 </style>
