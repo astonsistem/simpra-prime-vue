@@ -171,6 +171,25 @@ const router = createRouter({
           // component: () => import('../views/LaporanRekap.vue'),
           meta: { roles: ['admin', 'accountant'] },
         },
+        // ADMIN ROUTES
+        {
+          path: 'admin/anggaran',
+          name: 'admin-anggaran',
+          component: () => import('../views/admin/Anggaran.vue'),
+          meta: { roles: ['admin'], breadcrumb: ['Admin', 'Anggaran'] },
+        },
+        {
+          path: 'admin/user-management',
+          name: 'admin-user-management',
+          component: () => import('../views/admin/UserManagement.vue'),
+          meta: { roles: ['admin'], breadcrumb: ['Admin', 'Manajemen User'] },
+        },
+        {
+          path: 'admin/sinkronisasi',
+          name: 'admin-sinkronisasi',
+          component: () => import('../views/admin/Sinkronisasi.vue'),
+          meta: { roles: ['admin'], breadcrumb: ['Admin', 'Sinkronisasi'] },
+        },
       ],
     },
   ],
