@@ -4,6 +4,7 @@ import AppConfig from './AppConfig.vue'
 import { useRoute } from 'vue-router'
 import { ref, watch } from 'vue'
 import Menu from 'primevue/menu'
+import { authService } from '../services/authService'
 
 const route = useRoute()
 const breadcrumb = ref(route.meta.breadcrumb || [])
@@ -15,7 +16,13 @@ const items = ref([
       { label: 'Profile', icon: 'pi pi-user' },
       { label: 'Ganti Password', icon: 'pi pi-pencil' },
       // { label: 'Ganti Device', icon: 'pi pi-cog' },
-      { label: 'Logout', icon: 'pi pi-power-off' },
+      {
+        label: 'Logout',
+        icon: 'pi pi-power-off',
+        command: () => {
+          authService.logout()
+        },
+      },
     ],
   },
 ])

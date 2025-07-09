@@ -49,4 +49,31 @@ export const authService = {
     const user = this.getUser()
     return user?.role || null
   },
+
+  getAccessToken() {
+    return localStorage.getItem('accessToken')
+  },
+
+  async logout() {
+    try {
+      const token = this.getAccessToken()
+      if (token) {
+        await axios.post(
+          `${BASE_URL}/auth/logout`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+      }
+    } catch (error) {
+      console.error('Logout failed:', error)
+    } finally {
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('user')
+      window.location.href = '/login'
+    }
+  },
 }
