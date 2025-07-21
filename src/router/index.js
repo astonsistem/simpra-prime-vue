@@ -48,66 +48,73 @@ const router = createRouter({
           path: '',
           redirect: '/dashboard',
         },
-        // Pendapatan Routes
+        // Kas Routes
         {
-          path: 'pendapatan/pelayanan',
-          name: 'pendapatan-pelayanan',
-          component: () => import('../views/pendapatan/PendapatanPelayanan.vue'),
-          meta: {
-            roles: ['admin', 'accountant'],
-            breadcrumb: ['Pendapatan', 'Pendapatan Pelayanan'],
-          },
-        },
-        {
-          path: 'pendapatan/billing-kasir',
-          name: 'pendapatan-billing-kasir',
+          path: 'kas/billing-kasir',
+          name: 'kas-billing-kasir',
           component: () => import('../views/pendapatan/BillingKasir.vue'),
-          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Pendapatan', 'Billing Kasir'] },
+          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Kas', 'Billing Kasir'] },
         },
         {
-          path: 'pendapatan/billing-swa',
-          name: 'pendapatan-billing-swa',
+          path: 'kas/billing-swa',
+          name: 'kas-billing-swa',
           component: () => import('../views/pendapatan/BillingSwa.vue'),
-          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Pendapatan', 'Billing Swa'] },
+          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Kas', 'Billing Swa'] },
         },
         {
-          path: 'pendapatan/penerimaan-lainnya',
-          name: 'pendapatan-penerimaan-lainnya',
+          path: 'kas/penerimaan-lainnya',
+          name: 'kas-penerimaan-lainnya',
           component: () => import('../views/pendapatan/PenerimaanLainya.vue'),
           meta: {
             roles: ['admin'],
-            breadcrumb: ['Pendapatan', 'Penerimaan Lainya'],
+            breadcrumb: ['Kas', 'Penerimaan Lainya'],
           },
         },
         {
-          path: 'pendapatan/potensi-pelayanan',
-          name: 'pendapatan-potensi-pelayanan',
-          component: () => import('../views/pendapatan/PotensiPelayanan.vue'),
-          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Pendapatan', 'Potensi Pelayanan'] },
-        },
-        {
-          path: 'pendapatan/potensi-lainnya',
-          name: 'pendapatan-potensi-lainnya',
-          component: () => import('../views/pendapatan/PotensiLainya.vue'),
-          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Pendapatan', 'Potensi Lainya'] },
-        },
-        {
-          path: 'pendapatan/bukti-setor',
-          name: 'pendapatan-bukti-setor',
-          component: () => import('../views/pendapatan/BuktiSetor.vue'),
-          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Pendapatan', 'Bukti Setor'] },
-        },
-        {
-          path: 'pendapatan/rekening-koran',
-          name: 'pendapatan-rekening-koran',
+          path: 'kas/rekening-koran',
+          name: 'kas-rekening-koran',
           component: () => import('../views/pendapatan/RekeningKoran.vue'),
-          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Pendapatan', 'Rekening Koran'] },
+          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Kas', 'Rekening Koran'] },
+        },
+
+        // Acrual routes
+        {
+          path: 'acrual/pelayanan',
+          name: 'acrual-pelayanan',
+          component: () => import('../views/pendapatan/PendapatanPelayanan.vue'),
+          meta: {
+            roles: ['admin', 'accountant'],
+            breadcrumb: ['Acrual', 'Pendapatan Pelayanan'],
+          },
         },
         {
-          path: 'pendapatan/bku',
-          name: 'pendapatan-bku',
+          path: 'acrual/potensi-pelayanan',
+          name: 'acrual-potensi-pelayanan',
+          component: () => import('../views/pendapatan/PotensiPelayanan.vue'),
+          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Acrual', 'Potensi Pelayanan'] },
+        },
+        {
+          path: 'acrual/potensi-lainnya',
+          name: 'acrual-potensi-lainnya',
+          component: () => import('../views/pendapatan/PotensiLainya.vue'),
+          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Acrual', 'Potensi Lainya'] },
+        },
+
+        // Pertanggung Jawaban Routes
+        {
+          path: 'pertanggung-jawaban/bukti-setor',
+          name: 'pertanggung-jawaban-bukti-setor',
+          component: () => import('../views/pendapatan/BuktiSetor.vue'),
+          meta: {
+            roles: ['admin', 'accountant'],
+            breadcrumb: ['Pertanggung Jawaban', 'Bukti Setor'],
+          },
+        },
+        {
+          path: 'pertanggung-jawaban/bku',
+          name: 'pertanggung-jawaban-bku',
           component: () => import('../views/pendapatan/BKU.vue'),
-          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Pendapatan', 'BKU'] },
+          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Pertanggung Jawaban', 'BKU'] },
         },
         {
           path: 'pendapatan/pelaporan',

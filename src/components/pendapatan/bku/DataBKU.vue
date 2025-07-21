@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { FilterMatchMode } from '@primevue/core/api'
 import Calendar from 'primevue/calendar'
 import Select from 'primevue/select'
 import Button from 'primevue/button'
@@ -8,6 +9,8 @@ import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import SplitButton from 'primevue/splitbutton'
 import Menu from 'primevue/menu'
+import IconField from 'primevue/iconfield'
+import InputIcon from 'primevue/inputicon'
 import api from '@/services/http.js'
 import { useToast } from 'primevue/usetoast'
 import ModalEditPenerimaan from '@/components/ModalEditPenerimaan.vue'
@@ -36,7 +39,7 @@ const bulanOptions = [
   { label: 'Desember', value: '12' },
 ]
 
-const filters = ref({
+const formFilters = ref({
   tahunPeriode: '',
   jenisPeriode: '',
   tglAwal: null,
@@ -47,6 +50,7 @@ const filters = ref({
   uraian: '',
 })
 
+const filters = ref()
 const data = ref([])
 const loading = ref(false)
 const selectedItem = ref(null)
@@ -58,18 +62,27 @@ const showModalEdit = ref(false)
 
 const buildQuery = () => {
   const q = {}
-  if (filters.value.tahunPeriode) q.year = filters.value.tahunPeriode
-  if (filters.value.jenisPeriode) q.periode = filters.value.jenisPeriode
-  if (filters.value.akun) q.akun = filters.value.akun
-  if (filters.value.uraian) q.uraian = filters.value.uraian
-  if (filters.value.jenisPeriode === 'tanggal') {
-    if (filters.value.tglAwal) q.tgl_awal = filters.value.tglAwal
-    if (filters.value.tglAkhir) q.tgl_akhir = filters.value.tglAkhir
+  if (formFilters.value.tahunPeriode) q.year = formFilters.value.tahunPeriode
+  if (formFilters.value.jenisPeriode) q.periode = formFilters.value.jenisPeriode
+  if (formFilters.value.akun) q.akun = formFilters.value.akun
+  if (formFilters.value.uraian) q.uraian = formFilters.value.uraian
+  if (formFilters.value.jenisPeriode === 'tanggal') {
+    if (formFilters.value.tglAwal) q.tgl_awal = formFilters.value.tglAwal
+    if (formFilters.value.tglAkhir) q.tgl_akhir = formFilters.value.tglAkhir
   }
-  if (filters.value.jenisPeriode === 'bulan') {
-    if (filters.value.bulanAwal) q.bulan_awal = filters.value.bulanAwal
-    if (filters.value.bulanAkhir) q.bulan_akhir = filters.value.bulanAkhir
+  if (formFilters.value.jenisPeriode === 'bulan') {
+    if (formFilters.value.bulanAwal) q.bulan_awal = formFilters.value.bulanAwal
+    if (formFilters.value.bulanAkhir) q.bulan_akhir = formFilters.value.bulanAkhir
   }
+
+  if (filters.value) {
+    Object.keys(filters.value).forEach((key) => {
+      if (filters.value[key].value) {
+        q[key] = filters.value[key].value
+      }
+    })
+  }
+
   return q
 }
 
@@ -102,7 +115,7 @@ const onPageChange = (event) => {
 }
 
 const resetFilter = () => {
-  filters.value = {
+  formFilters.value = {
     tahunPeriode: '',
     jenisPeriode: '',
     tglAwal: null,
@@ -192,6 +205,33 @@ const handleSaved = () => {
 onMounted(async () => {
   loadData(1, rows.value)
 })
+
+const onFilter = (event) => {
+  filters.value = event.filters
+  first.value = 0
+  loadData(1, rows.value)
+}
+
+const initFilters = () => {
+  filters.value = {
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    no_bku: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    tgl_bku: { value: null, matchMode: FilterMatchMode.DATE_IS },
+    akun_kode: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    akun_nama: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    uraian: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    debit: { value: null, matchMode: FilterMatchMode.EQUALS },
+    kredit: { value: null, matchMode: FilterMatchMode.EQUALS },
+    status: { value: null, matchMode: FilterMatchMode.EQUALS },
+  }
+}
+
+initFilters()
+
+const clearFilter = () => {
+  initFilters()
+  loadData(1, rows.value)
+}
 </script>
 
 <template>
@@ -204,7 +244,7 @@ onMounted(async () => {
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
           <Select
-            v-model="filters.tahunPeriode"
+            v-model="formFilters.tahunPeriode"
             :options="tahunPeriodeOptions"
             placeholder="Tahun Periode"
             class="w-full"
@@ -213,7 +253,7 @@ onMounted(async () => {
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
           <Select
-            v-model="filters.jenisPeriode"
+            v-model="formFilters.jenisPeriode"
             :options="jenisPeriodeOptions"
             optionLabel="label"
             optionValue="value"
@@ -221,21 +261,31 @@ onMounted(async () => {
             class="w-full"
           />
         </div>
-        <template v-if="filters.jenisPeriode === 'tanggal'">
+        <template v-if="formFilters.jenisPeriode === 'tanggal'">
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Tgl Awal</label>
-            <Calendar v-model="filters.tglAwal" placeholder="Tgl Awal" showIcon class="w-full" />
+            <Calendar
+              v-model="formFilters.tglAwal"
+              placeholder="Tgl Awal"
+              showIcon
+              class="w-full"
+            />
           </div>
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Tgl Akhir</label>
-            <Calendar v-model="filters.tglAkhir" placeholder="Tgl Akhir" showIcon class="w-full" />
+            <Calendar
+              v-model="formFilters.tglAkhir"
+              placeholder="Tgl Akhir"
+              showIcon
+              class="w-full"
+            />
           </div>
         </template>
-        <template v-else-if="filters.jenisPeriode === 'bulan'">
+        <template v-else-if="formFilters.jenisPeriode === 'bulan'">
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Awal</label>
             <Select
-              v-model="filters.bulanAwal"
+              v-model="formFilters.bulanAwal"
               :options="bulanOptions"
               optionLabel="label"
               optionValue="value"
@@ -246,7 +296,7 @@ onMounted(async () => {
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Akhir</label>
             <Select
-              v-model="filters.bulanAkhir"
+              v-model="formFilters.bulanAkhir"
               :options="bulanOptions"
               optionLabel="label"
               optionValue="value"
@@ -257,11 +307,11 @@ onMounted(async () => {
         </template>
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Akun</label>
-          <InputText v-model="filters.akun" placeholder="Akun" class="w-full" />
+          <InputText v-model="formFilters.akun" placeholder="Akun" class="w-full" />
         </div>
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Uraian</label>
-          <InputText v-model="filters.uraian" placeholder="Uraian" class="w-full" />
+          <InputText v-model="formFilters.uraian" placeholder="Uraian" class="w-full" />
         </div>
       </div>
       <div class="mt-4 flex gap-2">
@@ -290,6 +340,7 @@ onMounted(async () => {
         </div>
       </div>
       <DataTable
+        :filters="filters"
         :value="data"
         :loading="loading"
         responsiveLayout="scroll"
@@ -300,8 +351,29 @@ onMounted(async () => {
         :first="first"
         :rowsPerPageOptions="[5, 10, 20]"
         @page="onPageChange"
+        @filter="onFilter"
+        dataKey="id"
+        filterDisplay="menu"
+        :globalFilterFields="['no_bku', 'akun_kode', 'akun_nama', 'uraian']"
         class="p-datatable-sm"
       >
+        <template #header>
+          <div class="flex justify-between">
+            <Button
+              type="button"
+              icon="pi pi-filter-slash"
+              label="Clear"
+              outlined
+              @click="clearFilter()"
+            />
+            <IconField>
+              <InputIcon>
+                <i class="pi pi-search" />
+              </InputIcon>
+              <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
+            </IconField>
+          </div>
+        </template>
         <Column field="no" header="No" style="width: 5%" />
         <Column header="Action" style="width: 15%">
           <template #body="slotProps">
@@ -342,11 +414,75 @@ onMounted(async () => {
             />
           </template>
         </Column>
-        <Column field="no_bku" header="No BKU" />
-        <Column field="tgl_bku" header="Tgl BKU" />
-        <Column field="akun_kode" header="Kode Akun" />
-        <Column field="akun_nama" header="Nama Akun" />
-        <Column field="uraian" header="Uraian" />
+        <Column
+          field="no_bku"
+          header="No BKU"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.no_bku }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by No BKU" />
+          </template>
+        </Column>
+        <Column
+          field="tgl_bku"
+          header="Tgl BKU"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.tgl_bku }}
+          </template>
+          <template #filter="{ filterModel }">
+            <DatePicker
+              v-model="filterModel.value"
+              dateFormat="dd/mm/yy"
+              placeholder="dd/mm/yyyy"
+            />
+          </template>
+        </Column>
+        <Column
+          field="akun_kode"
+          header="Kode Akun"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.akun_kode }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Kode Akun" />
+          </template>
+        </Column>
+        <Column
+          field="akun_nama"
+          header="Nama Akun"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.akun_nama }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Nama Akun" />
+          </template>
+        </Column>
+        <Column
+          field="uraian"
+          header="Uraian"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.uraian }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
+          </template>
+        </Column>
         <Column field="debit" header="Debit" style="text-align: right">
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.debit || 0) }}

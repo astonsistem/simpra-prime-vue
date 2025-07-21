@@ -4,8 +4,8 @@ import BillingSwa from '@/components/pendapatan/billingSwa/DataBillingSwa.vue'
 
 <template>
   <div class="mb-3 p-4">
-    <h2 class="text-2xl font-bold text-[#17316E]">Billing Swa</h2>
-    <p class="text-s">Kelola Data Billing Swa</p>
+    <h2 class="text-2xl font-bold text-[#17316E]">Billing 118</h2>
+    <p class="text-s">Kelola Data Billing 118</p>
   </div>
   <BillingSwa />
 </template>

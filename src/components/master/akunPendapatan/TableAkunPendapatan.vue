@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { FilterMatchMode } from '@primevue/core/api'
 import AkunPendapatanModal from './modal/AddAkunPendapatan.vue'
 import api from '@/services/http.js'
 
@@ -7,12 +8,16 @@ import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import SplitButton from 'primevue/splitbutton'
+import InputText from 'primevue/inputtext'
+import IconField from 'primevue/iconfield'
+import InputIcon from 'primevue/inputicon'
 
 const data = ref([])
 const loading = ref(false)
 const modalRef = ref(null)
 const selectedItem = ref(null)
 const isEdit = ref(false)
+const filters = ref()
 
 const fetchData = async () => {
   const response = await api.get('/akun')
@@ -39,7 +44,10 @@ const loadData = async () => {
   }
 }
 
-onMounted(loadData)
+onMounted(() => {
+  loadData()
+  initFilters()
+})
 
 const handleAdd = () => {
   selectedItem.value = null
@@ -75,11 +83,44 @@ const handleSubmit = async (payload) => {
     console.error('Submit failed:', e)
   }
 }
+
+const initFilters = () => {
+  filters.value = {
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    akun_id: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    kode: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    nama: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    rekening: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    namaRekening: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    kelompok: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  }
+}
+
+const clearFilter = () => {
+  initFilters()
+}
 </script>
 
 <template>
   <div>
-    <Button label="Baru" icon="pi pi-plus" class="mb-3" @click="handleAdd" />
+    <div class="flex justify-between items-center mb-3">
+      <Button label="Baru" icon="pi pi-plus" @click="handleAdd" />
+      <div class="flex gap-2">
+        <Button
+          type="button"
+          icon="pi pi-filter-slash"
+          label="Clear"
+          outlined
+          @click="clearFilter()"
+        />
+        <IconField>
+          <InputIcon>
+            <i class="pi pi-search" />
+          </InputIcon>
+          <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
+        </IconField>
+      </div>
+    </div>
 
     <DataTable
       :value="data"
@@ -89,6 +130,9 @@ const handleSubmit = async (payload) => {
       :rows="10"
       :rowsPerPageOptions="[5, 10, 20]"
       class="p-datatable-sm"
+      :filters="filters"
+      filterDisplay="menu"
+      :globalFilterFields="['akun_id', 'kode', 'nama', 'rekening', 'namaRekening', 'kelompok']"
     >
       <Column field="no" header="No" style="width: 5%" />
       <Column header="Action" style="width: 15%">
@@ -113,12 +157,40 @@ const handleSubmit = async (payload) => {
           />
         </template>
       </Column>
-      <Column field="akun_id" header="ID" />
-      <Column field="kode" header="Kode" />
-      <Column field="nama" header="Nama" />
-      <Column field="rekening" header="Rekening" />
-      <Column field="namaRekening" header="Nama Rekening" />
-      <Column field="kelompok" header="Kelompok" />
+      <Column field="akun_id" header="ID" :showFilterMatchModes="false">
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by ID" />
+        </template>
+      </Column>
+      <Column field="kode" header="Kode" :showFilterMatchModes="false">
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by Kode" />
+        </template>
+      </Column>
+      <Column field="nama" header="Nama" :showFilterMatchModes="false">
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by Nama" />
+        </template>
+      </Column>
+      <Column field="rekening" header="Rekening" :showFilterMatchModes="false">
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by Rekening" />
+        </template>
+      </Column>
+      <Column field="namaRekening" header="Nama Rekening" :showFilterMatchModes="false">
+        <template #filter="{ filterModel }">
+          <InputText
+            v-model="filterModel.value"
+            type="text"
+            placeholder="Search by Nama Rekening"
+          />
+        </template>
+      </Column>
+      <Column field="kelompok" header="Kelompok" :showFilterMatchModes="false">
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by Kelompok" />
+        </template>
+      </Column>
     </DataTable>
 
     <AkunPendapatanModal

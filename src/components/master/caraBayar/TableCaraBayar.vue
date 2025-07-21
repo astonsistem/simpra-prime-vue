@@ -1,12 +1,20 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { FilterMatchMode } from '@primevue/core/api'
 import api from '@/services/http.js'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import InputText from 'primevue/inputtext'
+import IconField from 'primevue/iconfield'
+import InputIcon from 'primevue/inputicon'
+import Button from 'primevue/button'
 
 const data = ref([])
 const loading = ref(false)
 const totalRecords = ref(0)
 const rows = ref(10)
 const first = ref(0)
+const filters = ref()
 
 const fetchData = async (page = 1, size = 10) => {
   const response = await api.get(`/carabayar?page=${page}&size=${size}`)
@@ -39,6 +47,7 @@ const onPageChange = (event) => {
 
 onMounted(() => {
   loadData()
+  initFilters()
 })
 
 const handleEdit = (item) => {
@@ -48,10 +57,39 @@ const handleEdit = (item) => {
 const handleDelete = (item) => {
   console.log('Delete item:', item)
 }
+
+const initFilters = () => {
+  filters.value = {
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    id: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    nama: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  }
+}
+
+const clearFilter = () => {
+  initFilters()
+}
 </script>
 
 <template>
   <div class="card">
+    <div class="flex justify-end mb-3">
+      <div class="flex gap-2">
+        <Button
+          type="button"
+          icon="pi pi-filter-slash"
+          label="Clear"
+          outlined
+          @click="clearFilter()"
+        />
+        <IconField>
+          <InputIcon>
+            <i class="pi pi-search" />
+          </InputIcon>
+          <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
+        </IconField>
+      </div>
+    </div>
     <DataTable
       :value="data"
       :loading="loading"
@@ -64,10 +102,26 @@ const handleDelete = (item) => {
       @page="onPageChange"
       responsiveLayout="scroll"
       class="p-datatable-sm"
+      :filters="filters"
+      filterDisplay="menu"
+      :globalFilterFields="['id', 'nama']"
     >
       <Column field="no" header="No" style="width: 10%" />
-      <Column field="id" header="ID" style="width: 40%" />
-      <Column field="nama" header="Nama Cara Bayar" style="width: 50%" />
+      <Column field="id" header="ID" style="width: 40%" :showFilterMatchModes="false">
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by ID" />
+        </template>
+      </Column>
+      <Column
+        field="nama"
+        header="Nama Cara Bayar"
+        style="width: 50%"
+        :showFilterMatchModes="false"
+      >
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by Nama" />
+        </template>
+      </Column>
     </DataTable>
   </div>
 </template>
