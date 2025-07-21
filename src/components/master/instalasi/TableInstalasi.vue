@@ -1,9 +1,17 @@
 <script setup>
 import { ref, onMounted, defineExpose } from 'vue'
+import { FilterMatchMode } from '@primevue/core/api'
 import api from '@/services/http.js'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
+import InputText from 'primevue/inputtext'
+import IconField from 'primevue/iconfield'
+import InputIcon from 'primevue/inputicon'
+import Button from 'primevue/button'
 
 const data = ref([])
 const loading = ref(false)
+const filters = ref()
 
 const fetchData = async () => {
   const response = await api.get('/instalasi')
@@ -32,13 +40,43 @@ const setLoading = (val) => {
 
 onMounted(() => {
   loadData()
+  initFilters()
 })
+
+const initFilters = () => {
+  filters.value = {
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    id: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    nama: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  }
+}
+
+const clearFilter = () => {
+  initFilters()
+}
 
 defineExpose({ loadData, setLoading })
 </script>
 
 <template>
   <div class="card">
+    <div class="flex justify-end mb-3">
+      <div class="flex gap-2">
+        <Button
+          type="button"
+          icon="pi pi-filter-slash"
+          label="Clear"
+          outlined
+          @click="clearFilter()"
+        />
+        <IconField>
+          <InputIcon>
+            <i class="pi pi-search" />
+          </InputIcon>
+          <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
+        </IconField>
+      </div>
+    </div>
     <DataTable
       :value="data"
       :loading="loading"
@@ -47,10 +85,21 @@ defineExpose({ loadData, setLoading })
       paginator
       :rows="10"
       :rowsPerPageOptions="[5, 10, 20]"
+      :filters="filters"
+      filterDisplay="menu"
+      :globalFilterFields="['id', 'nama']"
     >
       <Column field="no" header="No" style="width: 10%" />
-      <Column field="id" header="ID" style="width: 40%" />
-      <Column field="nama" header="Nama Instalasi" style="width: 50%" />
+      <Column field="id" header="ID" style="width: 40%" :showFilterMatchModes="false">
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by ID" />
+        </template>
+      </Column>
+      <Column field="nama" header="Nama Instalasi" style="width: 50%" :showFilterMatchModes="false">
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by Nama" />
+        </template>
+      </Column>
     </DataTable>
   </div>
 </template>

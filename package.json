@@ -14,13 +14,15 @@
         "@tailwindcss/vite": "^4.0.6",
         "axios": "^1.8.3",
         "chart.js": "^4.4.7",
+        "lodash": "^4.17.21",
         "pinia": "^3.0.1",
         "primeicons": "^7.0.0",
         "primevue": "^4.3.0",
         "tailwindcss": "^4.0.6",
         "tailwindcss-primeui": "^0.5.0",
         "vue": "^3.4.27",
-        "vue-router": "4"
+        "vue-router": "4",
+        "xlsx": "^0.18.5"
     },
     "devDependencies": {
         "@primevue/auto-import-resolver": "^4.3.1",

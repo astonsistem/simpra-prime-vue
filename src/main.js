@@ -1,4 +1,5 @@
 import './assets/styles/main.css'
+import 'primeicons/primeicons.css'
 
 import Aura from '@primeuix/themes/aura'
 import Button from 'primevue/button'

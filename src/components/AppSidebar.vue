@@ -21,24 +21,41 @@ const menuItems = ref([
     exact: true,
   },
   {
-    label: 'Pendapatan',
+    label: 'Kas',
     icon: 'pi pi-dollar',
+    isOpen: false,
     children: [
-      { label: 'Pendapatan Pelayanan', to: '/pendapatan/pelayanan' },
-      { label: 'Billing Kasir', to: '/pendapatan/billing-kasir' },
-      { label: 'Billing Swa', to: '/pendapatan/billing-swa' },
-      { label: 'Penerimaan Lainnya', to: '/pendapatan/penerimaan-lainnya' },
-      { label: 'Potensi Pelayanan', to: '/pendapatan/potensi-pelayanan' },
-      { label: 'Potensi Lainnya', to: '/pendapatan/potensi-lainnya' },
-      { label: 'Bukti Setor', to: '/pendapatan/bukti-setor' },
-      { label: 'Rekening Koran', to: '/pendapatan/rekening-koran' },
-      { label: 'BKU', to: '/pendapatan/bku' },
-      { label: 'Pelaporan', to: '/pendapatan/pelaporan' },
+      { label: 'Billing Kasir', to: '/Kas/billing-kasir' },
+      { label: 'Billing 118', to: '/Kas/billing-swa' },
+      { label: 'Penerimaan Lainnya', to: '/Kas/penerimaan-lainnya' },
+      { label: 'Rekening Koran', to: '/Kas/rekening-koran' },
+      // { label: 'Pelaporan', to: '/pendapatan/pelaporan' },
     ],
   },
   {
+    label: 'Acrual',
+    icon: 'pi pi-sync',
+    isOpen: false,
+    children: [
+      { label: 'Pendapatan Pelayanan', to: '/acrual/pelayanan' },
+      { label: 'Potensi Pelayanan', to: '/acrual/potensi-pelayanan' },
+      { label: 'Potensi Lainnya', to: '/acrual/potensi-lainnya' },
+    ],
+  },
+  {
+    label: 'Pertanggung Jawaban',
+    icon: 'pi pi-upload',
+    isOpen: false,
+    children: [
+      { label: 'Bukti Setor', to: '/pertanggung-jawaban/bukti-setor' },
+      { label: 'BKU', to: '/pertanggung-jawaban/bku' },
+    ],
+  },
+
+  {
     label: 'Master',
     icon: 'pi pi-database',
+    isOpen: false,
     children: [
       { label: 'Akun Pendapatan', to: '/master/akun-pendapatan' },
       { label: 'Kasir', to: '/master/kasir' },
@@ -51,6 +68,7 @@ const menuItems = ref([
   {
     label: 'Admin',
     icon: 'pi pi-cog',
+    isOpen: false,
     children: [
       { label: 'Anggaran', to: '/admin/anggaran' },
       { label: 'Manajemen User', to: '/admin/user-management' },
@@ -60,6 +78,7 @@ const menuItems = ref([
   {
     label: 'Laporan',
     icon: 'pi pi-file',
+    isOpen: false,
     children: [
       { label: 'Bruto Pendapatan Layanan Harian', to: '/laporan/bruto-pendapatan-layanan-harian' },
       {
@@ -108,6 +127,7 @@ const menuItems = ref([
   {
     label: 'Laporan Rekap',
     icon: 'pi pi-chart-bar',
+    isOpen: false,
     children: [
       { label: 'Pasien Rawat Jalan BPJS', to: '/laporan-rekap/pasien-rawat-jalan-bpjs' },
       { label: 'Pasien Rawat Inap BPJS', to: '/laporan-rekap/pasien-rawat-inap-bpjs' },
@@ -164,7 +184,7 @@ const logout = async () => {
               ]"
               @click="item.isOpen = !item.isOpen"
             >
-              <div class="flex items-center gap-3">
+              <div class="flex items-center gap-3 text-left">
                 <i :class="item.icon" class="text-xl" />
                 <span v-if="!collapsed" class="text-base font-medium">{{ item.label }}</span>
               </div>
