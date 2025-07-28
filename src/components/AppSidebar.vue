@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authService } from '../services/authService.js'
+import api from '@/services/http.js'
 
 const props = defineProps({
   collapsed: Boolean,
@@ -11,6 +12,8 @@ const props = defineProps({
 const emit = defineEmits(['toggle-collapse', 'close-mobile'])
 
 const route = useRoute()
+
+const laporanMenus = ref([])
 
 // Menu Items Definition
 const menuItems = ref([
@@ -60,50 +63,7 @@ const menuItems = ref([
   {
     label: 'Laporan',
     icon: 'pi pi-file',
-    children: [
-      { label: 'Bruto Pendapatan Layanan Harian', to: '/laporan/bruto-pendapatan-layanan-harian' },
-      {
-        label: 'Bruto Pendapatan Layanan Bulanan',
-        to: '/laporan/bruto-pendapatan-layanan-bulanan',
-      },
-      {
-        label: 'Bruto Pendapatan Layanan Harian Per Instalasi',
-        to: '/laporan/bruto-pendapatan-layanan-harian-per-instalasi',
-      },
-      {
-        label: 'Bruto Pendapatan Layanan Bulanan Per Instalasi',
-        to: '/laporan/bruto-pendapatan-layanan-bulanan-per-instalasi',
-      },
-      {
-        label: 'Bruto Pendapatan Layanan Harian Per Cara Bayar',
-        to: '/laporan/bruto-pendapatan-layanan-harian-per-cara-bayar',
-      },
-      {
-        label: 'Bruto Pendapatan Layanan Bulanan Per Cara Bayar',
-        to: '/laporan/bruto-pendapatan-layanan-bulanan-per-cara-bayar',
-      },
-      {
-        label: 'Bruto Penerimaan Harian Layanan Per Bulan',
-        to: '/laporan/bruto-penerimaan-harian-layanan-per-bulan',
-      },
-      {
-        label: 'Bruto Penerimaan Instalasi Layanan Per Bulan',
-        to: '/laporan/bruto-penerimaan-instalasi-layanan-per-bulan',
-      },
-      {
-        label: 'Bruto Rincian Pendapatan Layanan Per Cara Bayar Per Bulan',
-        to: '/laporan/bruto-rincian-pendapatan-layanan-per-cara-bayar-per-bulan',
-      },
-      {
-        label: 'Bruto Penerimaan Instalasi Layanan Per Hari',
-        to: '/laporan/bruto-penerimaan-instalasi-layanan-per-hari',
-      },
-      {
-        label: 'Bruto Rincian Penerimaan Layanan Per Instalasi Per Hari',
-        to: '/laporan/bruto-rincian-penerimaan-layanan-per-instalasi-per-hari',
-      },
-      { label: 'Informasi Status Pasien BPJS', to: '/laporan/status-pasien-bpjs' },
-    ],
+    children: [],
   },
   {
     label: 'Laporan Rekap',
@@ -117,7 +77,7 @@ const menuItems = ref([
 
 const isActive = (item) => {
   if (item.exact) return route.path === item.to
-  return route.path.startsWith(item.to)
+  return route.path === item.to || route.path.startsWith(item.to + '/')
 }
 
 const router = useRouter()
@@ -129,6 +89,22 @@ const logout = async () => {
     console.error('Logout failed:', error)
   }
 }
+
+onMounted(async () => {
+  try {
+    // GET LAPORAN MENUS LIST
+    // get laporan list
+    const res = await api.get('/laporan-list')
+    laporanMenus.value = res.data.data
+    // Inject into menu
+    const laporanItem = menuItems.value.find(item => item.label === 'Laporan')
+    if (laporanItem) {
+      laporanItem.children = laporanMenus.value
+    }
+  } catch (error) {
+    console.error('Failed to load menus:', error)
+  }
+})
 </script>
 
 <template>

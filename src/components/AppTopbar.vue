@@ -31,9 +31,16 @@ const toggle = (event) => {
   menu.value.toggle(event)
 }
 
+function metaBreadcrumb(route) {
+  const bc = route.meta?.breadcrumb
+  if (typeof bc === 'function') return bc(route)
+  if (Array.isArray(bc)) return bc
+  return []
+}
+
 watch(route, (newRoute) => {
-  breadcrumb.value = newRoute.meta.breadcrumb || []
-})
+  breadcrumb.value = metaBreadcrumb(newRoute)
+}, { immediate: true })
 
 const { isDarkMode, toggleDarkMode } = useLayout()
 defineEmits(['toggle-mobile'])
