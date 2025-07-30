@@ -33,7 +33,6 @@
           v-model="selectedRc"
           :options="rcOptions"
           optionLabel="label"
-          optionValue="value"
           placeholder="Pilih RC"
           class="w-full"
           :loading="rcOptions.length === 0 && modelValue"
@@ -125,7 +124,7 @@ async function doValidasi() {
     // with `id` and `rc_id`.
     await api.post(`/billing_kasir/validasi`, {
       id: props.item.id,
-      rc_id: selectedRc.value,
+      rc_id: selectedRc.value.value,
     })
     toast.add({
       severity: 'success',
