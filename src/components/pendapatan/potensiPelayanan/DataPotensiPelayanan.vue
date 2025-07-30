@@ -13,7 +13,7 @@ import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import api from '@/services/http.js'
 import ModalSyncPenerimaan from './modal/TarikDataPotensiPelayanan.vue'
-import ModalEditPenerimaan from './modal/EditPotensiLainya.vue'
+import ModalEditPotensiPelayanan from './modal/EditPotensiPelayanan.vue'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
 
@@ -555,7 +555,7 @@ onMounted(async () => {
       </DataTable>
     </div>
     <ModalSyncPenerimaan v-model="showModalSync" @sync="loadData" />
-    <ModalEditPenerimaan
+    <ModalEditPotensiPelayanan
       :id="selectedItem?.id"
       v-model="showModalEdit"
       :item="selectedItem"

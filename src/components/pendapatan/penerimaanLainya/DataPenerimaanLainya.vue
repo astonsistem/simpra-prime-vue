@@ -344,9 +344,18 @@ onMounted(() => {
   loadData(1, rows.value)
 })
 
-const onFilter = (event) => {
-  filters.value = event.filters
-}
+let debounceTimer = null
+
+watch(
+  filters,
+  () => {
+    clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => {
+      loadData(1, rows.value)
+    }, 500)
+  },
+  { deep: true }
+)
 
 const initFilters = () => {
   filters.value = {
@@ -468,7 +477,6 @@ const clearFilter = () => {
         :rows="rows"
         :rowsPerPageOptions="[5, 10, 20]"
         @page="onPageChange"
-        @filter="onFilter"
         dataKey="id"
         filterDisplay="menu"
         :globalFilterFields="['no_bayar', 'pihak3', 'uraian', 'no_dokumen', 'akun_nama']"
