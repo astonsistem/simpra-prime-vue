@@ -23,6 +23,7 @@ import ModalSetorPenerimaan from './modal/ModalSetorPenerimaan.vue'
 const toast = useToast()
 
 const formFilters = ref({
+  jenis_periode: 'BULANAN',
   tahunPeriode: '',
   tglAwal: null,
   tglAkhir: null,
@@ -33,6 +34,11 @@ const tahunPeriodeOptions = Array.from(
   { length: 10 },
   (_, i) => `${new Date().getFullYear() - 5 + i}`
 )
+
+const jenisPeriodeOptions = ref([
+  { label: 'Bulanan', value: 'BULANAN' },
+  { label: 'Tahunan', value: 'TAHUNAN' },
+])
 const data = ref([])
 const totalRecords = ref(0)
 const rows = ref(10)
@@ -51,6 +57,7 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
     page,
     size: pageSize,
   }
+  if (formFilters.value.jenis_periode) q.jenis_periode = formFilters.value.jenis_periode
   if (formFilters.value.tahunPeriode) q.year = formFilters.value.tahunPeriode
   if (formFilters.value.tglAwal) q.tgl_awal = formFilters.value.tglAwal
   if (formFilters.value.tglAkhir) q.tgl_akhir = formFilters.value.tglAkhir
@@ -94,6 +101,7 @@ const onPageChange = (event) => {
 
 const resetFilter = () => {
   formFilters.value = {
+    jenis_periode: 'BULANAN',
     tahunPeriode: '',
     tglAwal: null,
     tglAkhir: null,
@@ -395,7 +403,18 @@ const clearFilter = () => {
     >
       <h3 class="text-xl font-semibold text-[#17316E] mb-1">Penerimaan Lainnya</h3>
       <div class="text-sm text-gray-500 mb-4">Kelola data Penerimaan Lainnya</div>
-      <div class="grid grid-cols-3 gap-4 mb-2">
+      <div class="grid grid-cols-4 gap-4 mb-2">
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
+          <Select
+            v-model="formFilters.jenis_periode"
+            :options="jenisPeriodeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Jenis Periode"
+            class="w-full"
+          />
+        </div>
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
           <Select
