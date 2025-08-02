@@ -25,6 +25,7 @@ import Calendar from 'primevue/calendar'
 const toast = useToast()
 
 const formFilters = ref({
+  jenis_periode: 'BULANAN',
   tahunPeriode: '',
   tglAwal: null,
   tglAkhir: null,
@@ -36,6 +37,11 @@ const tahunPeriodeOptions = Array.from(
   { length: 10 },
   (_, i) => `${new Date().getFullYear() - 5 + i}`
 )
+
+const jenisPeriodeOptions = ref([
+  { label: 'Bulanan', value: 'BULANAN' },
+  { label: 'Tahunan', value: 'TAHUNAN' },
+])
 
 const data = ref([])
 const totalRecords = ref(0)
@@ -70,6 +76,7 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
     page,
     size: pageSize,
   }
+  if (formFilters.value.jenis_periode) q.jenis_periode = formFilters.value.jenis_periode
   if (formFilters.value.tahunPeriode) q.year = formFilters.value.tahunPeriode
   if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
   if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
@@ -131,6 +138,7 @@ const onPageChange = (event) => {
 
 const resetFilter = () => {
   formFilters.value = {
+    jenis_periode: 'BULANAN',
     tahunPeriode: '',
     tglAwal: null,
     tglAkhir: null,
@@ -535,7 +543,18 @@ const handleSyncSubmit = async () => {
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
     >
       <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-4 gap-4">
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
+          <Select
+            v-model="formFilters.jenis_periode"
+            :options="jenisPeriodeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Jenis Periode"
+            class="w-full"
+          />
+        </div>
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
           <Select
