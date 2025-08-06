@@ -4,8 +4,8 @@ import PotensiLainya from '@/components/pendapatan/PotensiLainya/DataPotensiLain
 
 <template>
   <div class="mb-3 p-4">
-    <h2 class="text-2xl font-bold text-[#17316E]">Potensi Lainya</h2>
-    <p class="text-s">Kelola Data Potensi Lainya</p>
+    <h2 class="text-4xl font-bold text-[#17316E]">Potensi Lainya</h2>
+    <p class="text-s">Kelola Data Biling Potensi Lainnya</p>
   </div>
   <PotensiLainya />
 </template>
