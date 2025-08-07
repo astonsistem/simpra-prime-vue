@@ -70,6 +70,18 @@ const router = createRouter({
             breadcrumb: ['Kas', 'Penerimaan Lainya'],
           },
         },
+
+        
+{
+    path: 'kas/kurang-bayar',
+    name: 'kas-kurang-bayar',
+    component: () => import('../components/pendapatan/kurangbayar/DataKurangBayar.vue'),
+    meta: {
+        breadcrumb: ['Kas', 'Selisih Kurang Bayar/Setor'], // <-- Sudah diubah
+        // ...
+    }
+},
+        
         {
           path: 'kas/rekening-koran',
           name: 'kas-rekening-koran',

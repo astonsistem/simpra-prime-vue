@@ -28,6 +28,7 @@ const menuItems = ref([
       { label: 'Billing Kasir', to: '/Kas/billing-kasir' },
       { label: 'Billing 118', to: '/Kas/billing-swa' },
       { label: 'Penerimaan Lainnya', to: '/Kas/penerimaan-lainnya' },
+     { label: 'Selisih Kurang Bayar/Setor', to: '/kas/kurang-bayar' },
       { label: 'Rekening Koran', to: '/Kas/rekening-koran' },
       // { label: 'Pelaporan', to: '/pendapatan/pelaporan' },
     ],
