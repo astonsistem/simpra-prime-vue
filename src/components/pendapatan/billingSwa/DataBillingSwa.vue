@@ -27,6 +27,8 @@ const toast = useToast()
 const formFilters = ref({
   jenis_periode: 'BULANAN',
   tahunPeriode: '',
+  bulanAwal: null,
+  bulanAkhir: null,
   tglAwal: null,
   tglAkhir: null,
 })
@@ -40,7 +42,22 @@ const tahunPeriodeOptions = Array.from(
 
 const jenisPeriodeOptions = ref([
   { label: 'Bulanan', value: 'BULANAN' },
-  { label: 'Tahunan', value: 'TAHUNAN' },
+  { label: 'Tanggal', value: 'TANGGAL' },
+])
+
+const bulanOptions = ref([
+    { label: 'Januari', value: 1 },
+    { label: 'Februari', value: 2 },
+    { label: 'Maret', value: 3 },
+    { label: 'April', value: 4 },
+    { label: 'Mei', value: 5 },
+    { label: 'Juni', value: 6 },
+    { label: 'Juli', value: 7 },
+    { label: 'Agustus', value: 8 },
+    { label: 'September', value: 9 },
+    { label: 'Oktober', value: 10 },
+    { label: 'November', value: 11 },
+    { label: 'Desember', value: 12 },
 ])
 
 const data = ref([])
@@ -78,9 +95,14 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
     size: pageSize,
   }
   if (formFilters.value.jenis_periode) q.jenis_periode = formFilters.value.jenis_periode
-  if (formFilters.value.tahunPeriode) q.year = formFilters.value.tahunPeriode
-  if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
-  if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
+  if (formFilters.value.jenis_periode === 'BULANAN') {
+    if (formFilters.value.tahunPeriode) q.year = formFilters.value.tahunPeriode
+    if (formFilters.value.bulanAwal) q.month_start = formFilters.value.bulanAwal
+    if (formFilters.value.bulanAkhir) q.month_end = formFilters.value.bulanAkhir
+  } else if (formFilters.value.jenis_periode === 'TANGGAL') {
+    if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
+    if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
+  }
 
   if (filters.value) {
     Object.keys(filters.value).forEach((key) => {
@@ -134,6 +156,8 @@ const resetFilter = () => {
   formFilters.value = {
     jenis_periode: 'BULANAN',
     tahunPeriode: '',
+    bulanAwal: null,
+    bulanAkhir: null,
     tglAwal: null,
     tglAkhir: null,
   }
@@ -573,41 +597,67 @@ onMounted(() => {
             class="w-full"
           />
         </div>
-        <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
-          <Select
-            v-model="formFilters.tahunPeriode"
-            :options="tahunPeriodeOptions"
-            placeholder="Tahun Periode"
-            class="w-full"
-          />
-        </div>
-        <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Awal</label>
-          <DatePicker
-            v-model="formFilters.tglAwal"
-            placeholder="Tanggal Awal"
-            showIcon
-            class="w-full"
-            dateFormat="dd/mm/yy"
-            :showTime="false"
-            :showSeconds="false"
-            :showMilliseconds="false"
-          />
-        </div>
-        <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Akhir</label>
-          <DatePicker
-            v-model="formFilters.tglAkhir"
-            placeholder="Tanggal Akhir"
-            showIcon
-            class="w-full"
-            dateFormat="dd/mm/yy"
-            :showTime="false"
-            :showSeconds="false"
-            :showMilliseconds="false"
-          />
-        </div>
+        <template v-if="formFilters.jenis_periode === 'BULANAN'">
+          <div>
+            <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
+            <Select
+              v-model="formFilters.tahunPeriode"
+              :options="tahunPeriodeOptions"
+              placeholder="Tahun Periode"
+              class="w-full"
+            />
+          </div>
+          <div>
+            <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Awal</label>
+            <Select
+              v-model="formFilters.bulanAwal"
+              :options="bulanOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Bulan Awal"
+              class="w-full"
+            />
+          </div>
+          <div>
+            <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Akhir</label>
+            <Select
+              v-model="formFilters.bulanAkhir"
+              :options="bulanOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Bulan Akhir"
+              class="w-full"
+            />
+          </div>
+        </template>
+        <template v-if="formFilters.jenis_periode === 'TANGGAL'">
+          <div>
+            <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Awal</label>
+            <DatePicker
+              v-model="formFilters.tglAwal"
+              placeholder="Tanggal Awal"
+              showIcon
+              class="w-full"
+              dateFormat="dd/mm/yy"
+              :showTime="false"
+              :showSeconds="false"
+              :showMilliseconds="false"
+            />
+          </div>
+          <div>
+            <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Akhir</label>
+            <DatePicker
+              v-model="formFilters.tglAkhir"
+              placeholder="Tanggal Akhir"
+              showIcon
+              class="w-full"
+              dateFormat="dd/mm/yy"
+              :showTime="false"
+              :showSeconds="false"
+              :showMilliseconds="false"
+            />
+          </div>
+        </template>
       </div>
       <div class="mt-4 flex gap-2">
         <Button label="Cari" icon="pi pi-search" class="p-button-info" @click="searchData" />

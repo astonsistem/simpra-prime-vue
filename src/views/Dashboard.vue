@@ -5,6 +5,7 @@ import { Chart } from 'chart.js/auto'
 const realizationChart = ref(null)
 const targetCompositionChart = ref(null)
 const monthlyComparisonChart = ref(null)
+const lineChart = ref(null)
 
 onMounted(() => {
   // Realisasi Pendapatan Chart
@@ -62,12 +63,12 @@ onMounted(() => {
   new Chart(monthlyComparisonCtx, {
     type: 'bar',
     data: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
       datasets: [
         {
-          label: 'Monthly Comparison',
-          data: [65, 59, 80, 81, 56],
-          backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'],
+          label: 'Pendapatan Bulanan',
+          backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#1F2937', '#9CA3AF', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'],
+          data: [65, 59, 80, 81, 56, 55, 40, 60, 70, 75, 80, 90],
           borderRadius: 5,
           borderWidth: 0,
         },
@@ -96,11 +97,69 @@ onMounted(() => {
             display: false,
           },
           ticks: {
-            display: false,
+            display: true,
           },
         },
       },
     },
+  })
+
+  // Grafik Garis untuk Pendapatan, Dokumen Klaim, dan Penerimaan Pelayanan
+  const lineCtx = lineChart.value.getContext('2d')
+  new Chart(lineCtx, {
+    type: 'line',
+    data: {
+      labels: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'],
+      datasets: [
+        {
+          label: 'Pendapatan', // Perbaikan: Revenue -> Pendapatan
+          data: [50, 60, 55, 70],
+          borderColor: '#3B82F6',
+          backgroundColor: 'rgba(59, 130, 246, 0.2)',
+          fill: true,
+          tension: 0.4
+        },
+        {
+          label: 'Dokumen Klaim', // Perbaikan: Claim Documents -> Dokumen Klaim
+          data: [40, 45, 50, 42],
+          borderColor: '#F59E0B',
+          backgroundColor: 'rgba(245, 158, 11, 0.2)',
+          fill: true,
+          tension: 0.4
+        },
+        {
+          label: 'Penerimaan Pelayanan', // Perbaikan: Service Income -> Penerimaan Pelayanan
+          data: [35, 55, 60, 65],
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16, 185, 129, 0.2)',
+          fill: true,
+          tension: 0.4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: '#E5E7EB',
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
   })
 })
 </script>
@@ -110,31 +169,34 @@ onMounted(() => {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       <div class="bg-white p-4 rounded-lg shadow">
         <h3 class="text-sm text-gray-500">Saldo Kas Per Hari Ini</h3>
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center mt-2">
           <p class="text-2xl font-bold">Rp 2.450.000</p>
           <i class="pi pi-wallet text-xl text-blue-500"></i>
         </div>
-        <p class="text-xs text-gray-400">Updated 5 min ago</p>
+        <p class="text-xs text-gray-400 mt-2">Updated 5 min ago</p>
       </div>
+
       <div class="bg-white p-4 rounded-lg shadow">
         <h3 class="text-sm text-gray-500">Penerimaan Hari Ini</h3>
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center mt-2">
           <p class="text-2xl font-bold">Rp 1.850.000</p>
           <i class="pi pi-arrow-up text-xl text-green-500 bg-green-100 rounded-full p-1"></i>
         </div>
-        <p class="text-xs text-green-500">+12% Dari Kemarin</p>
+        <p class="text-xs text-green-500 mt-2">+12% Dari Kemarin</p>
       </div>
+
       <div class="bg-white p-4 rounded-lg shadow">
         <h3 class="text-sm text-gray-500">Potensi Penerimaan Hari Ini</h3>
-        <div class="flex justify-between items-center">
+        <div class="flex justify-between items-center mt-2">
           <p class="text-2xl font-bold">Rp 3.850.000</p>
           <i class="pi pi-chart-line text-xl text-yellow-500 bg-yellow-100 rounded-full p-1"></i>
         </div>
-        <p class="text-xs text-gray-400">Proyeksi Untuk Hari Ini</p>
+        <p class="text-xs text-gray-400 mt-2">Proyeksi Untuk Hari Ini</p>
       </div>
+
       <div class="bg-white p-4 rounded-lg shadow flex flex-col items-center justify-center">
         <h3 class="text-sm text-gray-500 mb-2">Realisasi Pendapatan</h3>
-        <div class="relative w-24 h-24">
+        <div class="relative w-28 h-28">
           <canvas ref="realizationChart"></canvas>
           <div class="absolute inset-0 flex items-center justify-center text-xl font-bold">75%</div>
         </div>
@@ -181,25 +243,27 @@ onMounted(() => {
             </div>
           </div>
         </div>
+
         <div class="bg-white p-4 rounded-lg shadow flex flex-col items-center justify-center">
           <h3 class="font-bold mb-2">Komposisi Target Pendapatan</h3>
-          <div class="relative w-32 h-32 mb-4">
+          <div class="relative w-36 h-36 mb-4">
             <canvas ref="targetCompositionChart"></canvas>
             <div class="absolute inset-0 flex items-center justify-center text-2xl font-bold">
               75%
             </div>
           </div>
           <div class="text-sm text-center">
-            <p><i class="pi pi-circle-fill text-blue-500 mr-2"></i>Service Retribution (60%)</p>
-            <p><i class="pi pi-circle-fill text-gray-300 mr-2"></i>Other than Service (40%)</p>
+            <p><i class="pi pi-circle-fill text-blue-500 mr-2"></i>Restribusi Layanan (60%)</p>
+            <p><i class="pi pi-circle-fill text-gray-300 mr-2"></i>Selain Layanan (40%)</p>
           </div>
         </div>
+
         <div class="bg-white p-4 rounded-lg shadow md:col-span-2">
           <h3 class="font-bold mb-4">Pendapatan Selain Restribusi Layanan</h3>
           <div class="h-48">
             <canvas ref="monthlyComparisonChart"></canvas>
           </div>
-          <p class="text-center text-sm text-gray-500 mt-2">Monthly comparison</p>
+          <p class="text-center text-sm text-gray-500 mt-2">Perbandingan Bulanan</p>
         </div>
       </div>
 
@@ -235,15 +299,22 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="mt-6">
-      <h2 class="text-lg font-semibold text-gray-800">
+    <div class="mt-6 p-4 bg-white rounded-lg shadow">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">
         Pendapatan,Dokumen Klaim dan Penerimaan Pelayanan
       </h2>
-      <!-- Bottom table/component will go here -->
+      <div class="h-96">
+        <canvas ref="lineChart"></canvas>
+      </div>
+      <div class="mt-4 flex gap-4 text-sm">
+        <p><i class="pi pi-circle-fill text-blue-500 mr-2"></i>Pendapatan</p>
+        <p><i class="pi pi-circle-fill text-orange-500 mr-2"></i>Dokumen Klaim</p>
+        <p><i class="pi pi-circle-fill text-green-500 mr-2"></i>Penerimaan Pelayanan</p>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Add any additional styles if needed */
+/* Anda bisa menambahkan gaya CSS tambahan di sini jika diperlukan */
 </style>
