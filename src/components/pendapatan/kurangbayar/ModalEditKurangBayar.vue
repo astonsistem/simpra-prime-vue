@@ -10,66 +10,56 @@
     <div class="p-4">
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">No Bayar</label>
-          <InputText v-model="formData.no_bayar" placeholder="No Bayar" class="w-full" />
+          <label class="block mb-2 text-sm font-medium text-gray-700">ID</label>
+          <InputText v-model="formData.id" placeholder="ID" class="w-full" disabled />
         </div>
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Bayar</label>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Setor</label>
           <DatePicker
-            v-model="formData.tgl_bayar"
-            placeholder="Tanggal Bayar"
+            v-model="formData.tgl_setor"
+            placeholder="Tanggal Setor"
             showIcon
             class="w-full"
           />
         </div>
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Pasien</label>
-          <InputText v-model="formData.pasien" placeholder="Pasien" class="w-full" />
-        </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">No Dokumen</label>
-          <InputText v-model="formData.no_dokumen" placeholder="No Dokumen" class="w-full" />
-        </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Dokumen</label>
-          <DatePicker
-            v-model="formData.tgl_dokumen"
-            placeholder="Tanggal Dokumen"
-            showIcon
-            class="w-full"
-          />
-        </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Cara Bayar</label>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Jenis</label>
           <Dropdown
-            v-model="formData.cara_bayar_id"
+            v-model="formData.jenis"
+            :options="jenisOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Pilih Jenis"
+            class="w-full"
+          />
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Cara Pembayaran</label>
+          <Dropdown
+            v-model="formData.cara_pembayaran"
             :options="caraBayarOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="Pilih Cara Bayar"
+            placeholder="Pilih Cara Pembayaran"
             class="w-full"
           />
         </div>
-        <div class="col-span-2">
-          <label class="block mb-2 text-sm font-medium text-gray-700">Uraian</label>
-          <Textarea v-model="formData.uraian" placeholder="Uraian" rows="3" class="w-full" />
-        </div>
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah Bruto</label>
-          <InputNumber
-            v-model="formData.jumlah_bruto"
-            placeholder="Jumlah Bruto"
+          <label class="block mb-2 text-sm font-medium text-gray-700">Rekening Bank</label>
+          <Dropdown
+            v-model="formData.rekening_bank"
+            :options="rekeningBankOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Pilih Rekening Bank"
             class="w-full"
-            mode="currency"
-            currency="IDR"
-            locale="id-ID"
           />
         </div>
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Biaya Admin EDC</label>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah Setor</label>
           <InputNumber
-            v-model="formData.biaya_admin_edc"
-            placeholder="Biaya Admin EDC"
+            v-model="formData.jumlah_setor"
+            placeholder="Jumlah Setor"
             class="w-full"
             mode="currency"
             currency="IDR"
@@ -77,10 +67,21 @@
           />
         </div>
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Biaya Admin QRIS</label>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Admin EDC</label>
           <InputNumber
-            v-model="formData.biaya_admin_qris"
-            placeholder="Biaya Admin QRIS"
+            v-model="formData.admin_edc"
+            placeholder="Admin EDC"
+            class="w-full"
+            mode="currency"
+            currency="IDR"
+            locale="id-ID"
+          />
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Admin QRIS</label>
+          <InputNumber
+            v-model="formData.admin_qris"
+            placeholder="Admin QRIS"
             class="w-full"
             mode="currency"
             currency="IDR"
@@ -90,13 +91,50 @@
         <div>
           <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah Netto</label>
           <InputNumber
-            v-model="formData.jumlah_netto"
+            v-model="jumlahNetto"
             placeholder="Jumlah Netto"
             class="w-full"
             mode="currency"
             currency="IDR"
             locale="id-ID"
             disabled
+          />
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Penyetor</label>
+          <InputText v-model="formData.penyetor" placeholder="Penyetor" class="w-full" />
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Rekening DPA</label>
+          <Dropdown
+            v-model="formData.rekening_dpa"
+            :options="rekeningDpaOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Pilih Rekening DPA"
+            class="w-full"
+          />
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Sumber Transaksi</label>
+          <Dropdown
+            v-model="formData.sumber_transaksi"
+            :options="sumberTransaksiOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Pilih Sumber Transaksi"
+            class="w-full"
+          />
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Klasifikasi</label>
+          <Dropdown
+            v-model="formData.klasifikasi"
+            :options="klasifikasiOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Pilih Klasifikasi"
+            class="w-full"
           />
         </div>
       </div>
@@ -144,19 +182,42 @@ const loading = ref(false)
 const isEdit = ref(false)
 
 const formData = ref({
-  no_bayar: '',
-  tgl_bayar: null,
-  pasien: '',
-  no_dokumen: '',
-  tgl_dokumen: null,
-  uraian: '',
-  cara_bayar_id: null,
-  jumlah_bruto: 0,
-  biaya_admin_edc: 0,
-  biaya_admin_qris: 0,
+  id: null,
+  tgl_setor: null,
+  jenis: null,
+  cara_pembayaran: null,
+  rekening_bank: null,
+  jumlah_setor: 0,
+  admin_edc: 0,
+  admin_qris: 0,
+  penyetor: '',
+  rekening_dpa: null,
+  sumber_transaksi: null,
+  klasifikasi: null,
 })
 
+const jenisOptions = ref([
+    {label: 'Jenis 1', value: 'jenis1'},
+    {label: 'Jenis 2', value: 'jenis2'}
+]);
 const caraBayarOptions = ref([])
+const rekeningBankOptions = ref([
+    {label: 'Bank A', value: 'bank_a'},
+    {label: 'Bank B', value: 'bank_b'}
+]);
+const rekeningDpaOptions = ref([
+    {label: 'DPA 1', value: 'dpa1'},
+    {label: 'DPA 2', value: 'dpa2'}
+]);
+const sumberTransaksiOptions = ref([
+    {label: 'Sumber 1', value: 'sumber1'},
+    {label: 'Sumber 2', value: 'sumber2'}
+]);
+const klasifikasiOptions = ref([
+    {label: 'Klasifikasi 1', value: 'klasifikasi1'},
+    {label: 'Klasifikasi 2', value: 'klasifikasi2'}
+]);
+
 
 const visible = ref(props.modelValue)
 
@@ -166,6 +227,7 @@ watch(
     visible.value = newValue
     if (newValue) {
       fetchCaraBayar()
+      // Fetch other dropdown options if needed
     }
   }
 )
@@ -176,16 +238,18 @@ watch(visible, (newValue) => {
 
 const resetForm = () => {
   formData.value = {
-    no_bayar: '',
-    tgl_bayar: null,
-    pasien: '',
-    no_dokumen: '',
-    tgl_dokumen: null,
-    uraian: '',
-    cara_bayar_id: null,
-    jumlah_bruto: 0,
-    biaya_admin_edc: 0,
-    biaya_admin_qris: 0,
+    id: null,
+    tgl_setor: null,
+    jenis: null,
+    cara_pembayaran: null,
+    rekening_bank: null,
+    jumlah_setor: 0,
+    admin_edc: 0,
+    admin_qris: 0,
+    penyetor: '',
+    rekening_dpa: null,
+    sumber_transaksi: null,
+    klasifikasi: null,
   }
 }
 
@@ -196,16 +260,17 @@ watch(
     if (isEdit.value) {
       formData.value = {
         id: newItem.id,
-        no_bayar: newItem.noBayar,
-        tgl_bayar: new Date(newItem.tglBayar),
-        pasien: newItem.pasien,
-        no_dokumen: newItem.noDokumen,
-        tgl_dokumen: new Date(newItem.tglDokumen),
-        uraian: newItem.uraian,
-        cara_bayar_id: newItem.caraBayarId,
-        jumlah_bruto: newItem.jumlahBruto,
-        biaya_admin_edc: newItem.biayaAdminEdc,
-        biaya_admin_qris: newItem.biayaAdminQris,
+        tgl_setor: newItem.tglSetor ? new Date(newItem.tglSetor) : null,
+        jenis: newItem.jenis,
+        cara_pembayaran: newItem.caraPembayaran,
+        rekening_bank: newItem.rekeningBank,
+        jumlah_setor: newItem.jumlahSetor,
+        admin_edc: newItem.adminEdc,
+        admin_qris: newItem.adminQris,
+        penyetor: newItem.penyetor,
+        rekening_dpa: newItem.rekeningDpa,
+        sumber_transaksi: newItem.sumberTransaksi,
+        klasifikasi: newItem.klasifikasi,
       }
     } else {
       resetForm()
@@ -216,14 +281,10 @@ watch(
 
 const jumlahNetto = computed(() => {
   return (
-    (formData.value.jumlah_bruto || 0) -
-    (formData.value.biaya_admin_edc || 0) -
-    (formData.value.biaya_admin_qris || 0)
+    (formData.value.jumlah_setor || 0) -
+    (formData.value.admin_edc || 0) -
+    (formData.value.admin_qris || 0)
   )
-})
-
-watch(jumlahNetto, (newVal) => {
-  formData.value.jumlah_netto = newVal
 })
 
 const fetchCaraBayar = async () => {
@@ -248,11 +309,11 @@ const fetchCaraBayar = async () => {
 const saveData = async () => {
   loading.value = true
   try {
-    const payload = { ...formData.value }
+    const payload = { ...formData.value, jumlah_netto: jumlahNetto.value }
     if (isEdit.value) {
-      await api.put(`/billing_kasir/${formData.value.id}`, payload)
+      await api.put(`/kurang_bayar/${formData.value.id}`, payload)
     } else {
-      await api.post('/billing_kasir', payload)
+      await api.post('/kurang_bayar', payload)
     }
 
     toast.add({
