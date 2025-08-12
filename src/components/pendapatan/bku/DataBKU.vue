@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { FilterMatchMode } from '@primevue/core/api'
 import Calendar from 'primevue/calendar'
+import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
 import Button from 'primevue/button'
 import DataTable from 'primevue/datatable'
@@ -12,18 +13,24 @@ import Menu from 'primevue/menu'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import api from '@/services/http.js'
+import * as XLSX from 'xlsx'
 import { useToast } from 'primevue/usetoast'
 import ModalEditPenerimaan from '@/components/ModalEditPenerimaan.vue'
+import modalBKU from './modal/modalBKU.vue'
+const formatDateToYYYYMMDD = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 // Filter state
 const tahunPeriodeOptions = Array.from(
   { length: 10 },
   (_, i) => `${new Date().getFullYear() - 5 + i}`
 )
-const jenisPeriodeOptions = [
-  { label: 'Tanggal', value: 'tanggal' },
-  { label: 'Bulan', value: 'bulan' },
-]
 const bulanOptions = [
   { label: 'Januari', value: '01' },
   { label: 'Februari', value: '02' },
@@ -41,7 +48,6 @@ const bulanOptions = [
 
 const formFilters = ref({
   tahunPeriode: '',
-  jenisPeriode: '',
   tglAwal: null,
   tglAkhir: null,
   bulanAwal: '',
@@ -63,17 +69,12 @@ const showModalEdit = ref(false)
 const buildQuery = () => {
   const q = {}
   if (formFilters.value.tahunPeriode) q.year = formFilters.value.tahunPeriode
-  if (formFilters.value.jenisPeriode) q.periode = formFilters.value.jenisPeriode
   if (formFilters.value.akun) q.akun = formFilters.value.akun
   if (formFilters.value.uraian) q.uraian = formFilters.value.uraian
-  if (formFilters.value.jenisPeriode === 'tanggal') {
-    if (formFilters.value.tglAwal) q.tgl_awal = formFilters.value.tglAwal
-    if (formFilters.value.tglAkhir) q.tgl_akhir = formFilters.value.tglAkhir
-  }
-  if (formFilters.value.jenisPeriode === 'bulan') {
-    if (formFilters.value.bulanAwal) q.bulan_awal = formFilters.value.bulanAwal
-    if (formFilters.value.bulanAkhir) q.bulan_akhir = formFilters.value.bulanAkhir
-  }
+
+  // Selalu kirim tanggal ke query
+  if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
+  if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
 
   if (filters.value) {
     Object.keys(filters.value).forEach((key) => {
@@ -117,7 +118,6 @@ const onPageChange = (event) => {
 const resetFilter = () => {
   formFilters.value = {
     tahunPeriode: '',
-    jenisPeriode: '',
     tglAwal: null,
     tglAkhir: null,
     bulanAwal: '',
@@ -134,39 +134,14 @@ const searchData = () => {
   loadData(1, rows.value)
 }
 
-const handleView = (item) => {
-  console.log('View item:', item)
-  // TODO: Implement view functionality
-}
-
-const handleAdd = () => {
-  selectedItem.value = null
-  showModalEdit.value = true
-}
+// const handleAdd = () => {
+//   selectedItem.value = null
+//   showModalEdit.value = true
+// }
 
 const handleEdit = (item) => {
   selectedItem.value = { ...item }
   showModalEdit.value = true
-}
-
-const handleRincian = (item) => {
-  console.log('Rincian item:', item)
-  // TODO: Implement rincian functionality
-}
-
-const handleValidasi = (item) => {
-  console.log('Validasi item:', item)
-  // TODO: Implement validasi functionality
-}
-
-const handleBatalValidasi = (item) => {
-  console.log('Batal Validasi item:', item)
-  // TODO: Implement batal validasi functionality
-}
-
-const handleKirimPad = (item) => {
-  console.log('Kirim Pad item:', item)
-  // TODO: Implement kirim pad functionality
 }
 
 const handleDelete = async (item) => {
@@ -212,6 +187,82 @@ const onFilter = (event) => {
   loadData(1, rows.value)
 }
 
+const exportExcel = () => {
+  try {
+    const headers = [
+      'No',
+      'No BKU',
+      'Tanggal BKU',
+      'Tanggal Valid',
+      'Jenis',
+      'Tanggal PAD',
+      'Uraian',
+      'Total',
+      'Pendapatan',
+      'PDD',
+      'Piutang',
+      'Status',
+    ]
+    const excelData = data.value.map((item, index) => [
+      item.no || index + 1,
+      item.noBKU || '',
+      item.tglBKU || '',
+      item.tglValid || '',
+      item.jenis || '',
+      item.tglPAD || '',
+      item.uraian || 0,
+      item.total || 0,
+      item.pendapatan || 0,
+      item.PDD || 0,
+      item.piutang || 0,
+      item.status || 0,
+    ])
+    const workbook = XLSX.utils.book_new()
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...excelData])
+    worksheet['!cols'] = [
+      { wch: 5 },
+      { wch: 20 },
+      { wch: 12 },
+      { wch: 20 },
+      { wch: 30 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 15 },
+      { wch: 20 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+    ]
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Billing Swa')
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `billing_swa_${new Date().toISOString().split('T')[0]}.xlsx`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    toast.add({
+      severity: 'success',
+      summary: 'Export Berhasil',
+      detail: 'Data berhasil diekspor ke Excel',
+      life: 3000,
+    })
+  } catch (error) {
+    console.error('Gagal export Excel:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Export Gagal',
+      detail: 'Gagal mengekspor data ke Excel',
+      life: 3000,
+    })
+  }
+}
+
 const initFilters = () => {
   filters.value = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -232,14 +283,26 @@ const clearFilter = () => {
   initFilters()
   loadData(1, rows.value)
 }
+
+
+
+const handleAdd = () => {
+  showModalEdit.value = true
+}
+
+// const handleSaved = (payload) => {
+//   showModalEdit.value = false
+//   console.log('Data dari modal:', payload)
+//   // Tambahkan proses penyimpanan atau logika lain sesuai kebutuhan
+// }
 </script>
 
 <template>
   <div class="p-4">
-    <div
+    <div        
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
     >
-      <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
+      <!-- <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3> -->
       <div class="grid grid-cols-3 gap-4">
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
@@ -250,14 +313,14 @@ const clearFilter = () => {
             class="w-full"
           />
         </div>
-        <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
+        <!-- <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Awal</label>
           <Select
             v-model="formFilters.jenisPeriode"
             :options="jenisPeriodeOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="Jenis Periode"
+            placeholder="Tanggal Per"
             class="w-full"
           />
         </div>
@@ -292,35 +355,47 @@ const clearFilter = () => {
               placeholder="Bulan Awal"
               class="w-full"
             />
-          </div>
+          </div> -->
           <div>
-            <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Akhir</label>
-            <Select
-              v-model="formFilters.bulanAkhir"
-              :options="bulanOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Bulan Akhir"
-              class="w-full"
-            />
-          </div>
-        </template>
-        <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Akun</label>
-          <InputText v-model="formFilters.akun" placeholder="Akun" class="w-full" />
+          <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Awal</label>
+          <DatePicker
+            v-model="formFilters.tglAwal"
+            placeholder="Tanggal Awal"
+            showIcon
+            class="w-full"
+            dateFormat="dd/mm/yy"
+            :showTime="false"
+            :showSeconds="false"
+            :showMilliseconds="false"
+          />
         </div>
         <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Uraian</label>
-          <InputText v-model="formFilters.uraian" placeholder="Uraian" class="w-full" />
+          <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Akhir</label>
+          <DatePicker
+            v-model="formFilters.tglAkhir"
+            placeholder="Tanggal Akhir"
+            showIcon
+            class="w-full"
+            dateFormat="dd/mm/yy"
+            :showTime="false"
+            :showSeconds="false"
+            :showMilliseconds="false"
+          />
         </div>
+ 
       </div>
       <div class="mt-4 flex gap-2">
-        <Button label="Cari" icon="pi pi-search" class="p-button-info" @click="searchData" />
+        <Button label="Cari"  class="p-button-info" @click="searchData" />
         <Button
           label="Reset Filter"
-          icon="pi pi-refresh"
           class="p-button-secondary"
           @click="resetFilter"
+        />
+         <Button
+          label="Tarik Data Billing"
+          class="p-button-warning"
+          style="background-color: #ffa500; border: none; color: #fff"
+          @click="openSyncDialog"
         />
       </div>
     </div>
@@ -330,13 +405,25 @@ const clearFilter = () => {
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-xl font-semibold text-[#17316E]">Data BKU</h3>
         <div class="flex gap-2">
-          <Button
+
+            <Button
             label="Tambah Data"
             icon="pi pi-plus"
             class="p-button-primary"
             @click="handleAdd"
           />
-          <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" />
+            <modalBKU
+    :visible="showModalEdit"
+    @close="showModalEdit = false"
+    @submit="handleSaved"
+  />
+          
+          <Button
+            label="Export Excel"
+            icon="pi pi-file-excel"
+            class="p-button-success"
+            @click="exportExcel"
+          />
         </div>
       </div>
       <DataTable
@@ -359,59 +446,21 @@ const clearFilter = () => {
       >
         <template #header>
           <div class="flex justify-between">
-            <Button
-              type="button"
-              icon="pi pi-filter-slash"
-              label="Clear"
-              outlined
-              @click="clearFilter()"
-            />
+        
+            <!-- 
             <IconField>
               <InputIcon>
                 <i class="pi pi-search" />
               </InputIcon>
               <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
             </IconField>
+            -->
           </div>
         </template>
         <Column field="no" header="No" style="width: 5%" />
         <Column header="Action" style="width: 15%">
           <template #body="slotProps">
-            <SplitButton
-              label="Aksi"
-              icon="pi pi-ellipsis-v"
-              size="small"
-              severity="secondary"
-              :model="[
-                { label: 'Lihat', icon: 'pi pi-eye', command: () => handleView(slotProps.data) },
-                { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
-                {
-                  label: 'Rincian',
-                  icon: 'pi pi-list',
-                  command: () => handleRincian(slotProps.data),
-                },
-                {
-                  label: 'Validasi',
-                  icon: 'pi pi-check',
-                  command: () => handleValidasi(slotProps.data),
-                },
-                {
-                  label: 'Batal Validasi',
-                  icon: 'pi pi-times',
-                  command: () => handleBatalValidasi(slotProps.data),
-                },
-                {
-                  label: 'Kirim Pad',
-                  icon: 'pi pi-send',
-                  command: () => handleKirimPad(slotProps.data),
-                },
-                {
-                  label: 'Hapus',
-                  icon: 'pi pi-trash',
-                  command: () => handleDelete(slotProps.data),
-                },
-              ]"
-            />
+           
           </template>
         </Column>
         <Column
@@ -429,7 +478,7 @@ const clearFilter = () => {
         </Column>
         <Column
           field="tgl_bku"
-          header="Tgl BKU"
+          header="Tanggal BKU"
           :showFilterMatchModes="false"
           style="min-width: 12rem"
         >
@@ -445,6 +494,36 @@ const clearFilter = () => {
           </template>
         </Column>
         <Column
+          field="tgl_bku"
+          header="Tanggal Valid"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.tgl_bku }}
+          </template>
+          <template #filter="{ filterModel }">
+            <DatePicker
+              v-model="filterModel.value"
+              dateFormat="dd/mm/yy"
+              placeholder="dd/mm/yyyy"
+            />
+          </template>
+        </Column>
+         <Column
+          field="uraian"
+          header="Jenis"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+        <template #body="{ data }">
+            {{ data.uraian }}
+          </template>
+          <!-- <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
+          </template> -->
+        </Column>
+        <!-- <Column
           field="akun_kode"
           header="Kode Akun"
           :showFilterMatchModes="false"
@@ -456,8 +535,25 @@ const clearFilter = () => {
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search by Kode Akun" />
           </template>
-        </Column>
+        </Column> -->
         <Column
+          field="tgl_bku"
+          header="Tanggal PAD"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.tgl_bku }}
+          </template>
+          <template #filter="{ filterModel }">
+            <DatePicker
+              v-model="filterModel.value"
+              dateFormat="dd/mm/yy"
+              placeholder="dd/mm/yyyy"
+            />
+          </template>
+        </Column>
+        <!-- <Column
           field="akun_nama"
           header="Nama Akun"
           :showFilterMatchModes="false"
@@ -469,8 +565,21 @@ const clearFilter = () => {
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search by Nama Akun" />
           </template>
-        </Column>
+        </Column> -->
         <Column
+          field="uraian"
+          header="Uraian"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.uraian }}
+          </template>
+          <!-- <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
+          </template> -->
+        </Column>
+        <!-- <Column
           field="uraian"
           header="Uraian"
           :showFilterMatchModes="false"
@@ -482,15 +591,61 @@ const clearFilter = () => {
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
           </template>
+        </Column> -->
+         <Column
+          field="uraian"
+          header="Total"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.uraian }}
+          </template>
+          <!-- <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
+          </template> -->
         </Column>
-        <Column field="debit" header="Debit" style="text-align: right">
+        <!-- <Column field="debit" header="Debit" style="text-align: right">
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.debit || 0) }}
           </template>
+        </Column> -->
+        <Column
+          field="uraian"
+          header="Pendapatan"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.uraian }}
+          </template>
+          <!-- <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
+          </template> -->
         </Column>
-        <Column field="kredit" header="Kredit" style="text-align: right">
+        <!-- <Column field="kredit" header="Kredit" style="text-align: right">
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.kredit || 0) }}
+          </template>
+        </Column> -->
+        <Column
+          field="uraian"
+          header="PDD"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.uraian }}
+          </template>
+        </Column>
+        <Column
+          field="uraian"
+          header="Piutang"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.uraian }}
           </template>
         </Column>
         <Column field="status" header="Status" />
