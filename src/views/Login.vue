@@ -18,6 +18,7 @@ const loginData = ref({
   password: '',
 })
 
+const showPassword = ref(false) // untuk toggle
 const browserId = ref('')
 const rememberMe = ref(false)
 const loading = ref(false)
@@ -169,14 +170,24 @@ const login = async () => {
 
         <label for="password" class="text-surface-900 dark:text-surface-0 font-medium mb-2 block">Password</label>
 <div class="input-with-icon-wrapper">
-    <InputText
-      id="password"
-      ref="passwordInput"
-      type="password"
-      v-model="loginData.password"
-      placeholder="Kata Sandi"
-      class="w-full"
-    />
+    <div class="input-with-icon-wrapper">
+  <InputText
+    id="password"
+    ref="passwordInput"
+    :type="showPassword ? 'text' : 'password'"
+    v-model="loginData.password"
+    placeholder="Kata Sandi"
+    class="w-full"
+  />
+  <span
+    class="input-icon password-icon"
+    @click="showPassword = !showPassword"
+    style="cursor:pointer"
+  >
+    <i :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+  </span>
+</div>
+
 
 </div>
        
