@@ -420,6 +420,17 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
  >
  <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
        <div class="grid grid-cols-4 gap-4">
+          <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
+          <Select
+            v-model="formFilters.jenis_periode"
+            :options="jenisPeriodeOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="jenis Periode"
+            class="w-full"
+          />
+        </div>
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
           <Select
@@ -457,17 +468,6 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
             :showTime="false"
             :showSeconds="false"
             :showMilliseconds="false"
-          />
-        </div>
-          <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
-          <Select
-            v-model="formFilters.jenis_periode"
-            :options="jenisPeriodeOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="jenis Periode"
-            class="w-full"
           />
         </div>
       </div>
