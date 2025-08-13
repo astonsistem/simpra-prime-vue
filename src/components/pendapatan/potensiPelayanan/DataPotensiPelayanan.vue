@@ -16,6 +16,8 @@ import ModalSyncPenerimaan from './modal/TarikDataPotensiPelayanan.vue'
 import ModalEditPotensiPelayanan from './modal/EditPotensiPelayanan.vue'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
+import * as XLSX from 'xlsx'
+import TambahPotensiPelayanan from './modal/TambahPotensiPelayanan.vue'
 
 // Filter state
 const tahunPeriodeOptions = Array.from(
@@ -152,10 +154,10 @@ const searchData = () => {
 }
 
 
-const handleAdd = () => {
-  selectedItem.value = null
-  showModalEdit.value = true
-}
+// const handleAdd = () => {
+//   selectedItem.value = null
+//   showModalEdit.value = true
+// }
 
 const handleEdit = (item) => {
   selectedItem.value = { ...item }
@@ -275,6 +277,109 @@ onMounted(async () => {
   await fetchInstalasi()
   loadData(1, rows.value)
 })
+
+const exportExcel = () => {
+  try {
+    // Prepare headers for Excel (excluding Action column)
+    const headers = [
+      'No',
+      'No Dokumen',
+      'Tanggal Dokumen',
+      'Cara Bayar',
+      'Penjamin',
+      'Uraian',
+      'Tgl Pendaftaran',
+      'No Pendaftaran',
+      'Nama Pasien',
+      'Jumlah',
+      'Terbayar',
+      'Sisa Potensi',
+
+    ]
+
+    // Prepare data for Excel
+    const excelData = data.value.map((item, index) => [
+      item.no || index + 1,
+      item.no_dokumen || '',
+      item.tgl_dokumen || '',
+      item.cara_pembayaran || '',
+      item.penjamin_nama || '',
+      item.uraian || '',
+      item.tgl_pendaftaran || '',
+      item.no_pendaftaran || '',
+      item.nama_pasien || '',
+      item.jumlah || 0,
+      item.terbayar || 0,
+      item.sisa_potensi || 0
+    ])
+
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new()
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...excelData])
+
+    // Set column widths
+    const columnWidths = [
+      { wch: 5 }, // 
+      { wch: 20 }, // 
+      { wch: 12 }, // 
+      { wch: 20 }, // 
+      { wch: 30 }, // 
+      { wch: 30 }, // 
+      { wch: 15 }, // 
+      { wch: 15 }, // 
+      { wch: 15 }, 
+      { wch: 15 }, // 
+      { wch: 15 }, // 
+      { wch: 15 }, 
+
+    ]
+    worksheet['!cols'] = columnWidths
+
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Potensi Lainya')
+
+    // Generate Excel file
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+
+    // Download file
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `potensi_pelayanan_${new Date().toISOString().split('T')[0]}.xlsx`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    toast.add({
+      severity: 'success',
+      summary: 'Export Berhasil',
+      detail: 'Data berhasil diekspor ke Excel',
+      life: 3000,
+    })
+  } catch (error) {
+    console.error('Gagal export Excel:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Export Gagal',
+      detail: 'Gagal mengekspor data ke Excel',
+      life: 3000,
+    })
+  }
+}
+
+const showModal = ref(false)
+
+function handleAdd() {
+  showModal.value = true
+}
+
+function handleSave(data) {
+  console.log("Data disimpan:", data)
+}
 </script>
 
 <template>
@@ -378,21 +483,46 @@ onMounted(async () => {
         </div>
       </div>
       <div class="mt-4 flex gap-2">
-        <Button label="Cari" icon="pi pi-search" class="p-button-info" @click="searchData" />
+        <Button label="Cari" class="p-button-info" @click="searchData" />
         <Button
           label="Reset Filter"
-          icon="pi pi-refresh"
           class="p-button-secondary"
           @click="resetFilter"
         />
+        <Button
+          label="Tarik Data Biling"
+          class="p-button-warn"
+          @click="showModalSync"
+          />
       </div>
     </div>
+    <div class="flex justify-end gap-2">
+          <Button
+            label="Tambah Data"
+            icon="pi pi-plus"
+            class="p-button-primary"
+            @click="handleAdd"
+          />
+          <template>
+            <div>
+
+              <TambahDataPotensiLainya :visible="showModal" @update:visible="showModal = $event" @save="handleSave" />
+            </div>
+          </template>
+          <!-- <Button
+            label="Tarik Data"
+            icon="pi pi-refresh"
+            class="p-button-success"
+            @click="showModalSync = true"
+          /> -->
+          <Button label="Export Excel" icon="pi pi-download" class="p-button-success" @click="exportExcel"/>
+        </div>
     <div
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
     >
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-xl font-semibold text-[#17316E]">Data Potensi Pelayanan</h3>
-        <div class="flex gap-2">
+        <!-- <div class="flex gap-2">
           <Button
             label="Tambah Data"
             icon="pi pi-plus"
@@ -406,7 +536,7 @@ onMounted(async () => {
             @click="showModalSync = true"
           />
           <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" />
-        </div>
+        </div> -->
       </div>
       <DataTable
         :value="data"
@@ -426,19 +556,19 @@ onMounted(async () => {
       >
         <template #header>
           <div class="flex justify-between">
-            <Button
+            <!-- <Button
               type="button"
               icon="pi pi-filter-slash"
               label="Clear"
               outlined
               @click="clearTableFilter()"
-            />
-            <IconField>
+            /> -->
+            <!-- <IconField>
               <InputIcon>
                 <i class="pi pi-search" />
               </InputIcon>
               <InputText v-model="tableFilters['global'].value" placeholder="Keyword Search" />
-            </IconField>
+            </IconField> -->
           </div>
         </template>
         <Column field="no" header="No" style="width: 5%" />
@@ -446,7 +576,7 @@ onMounted(async () => {
           <template #body="slotProps">
             <SplitButton
               label="Aksi"
-              icon="pi pi-ellipsis-v"
+              icon="pi pi-pen-to-square"
               size="small"
               severity="secondary"
               :model="[
@@ -470,20 +600,62 @@ onMounted(async () => {
             />
           </template>
         </Column>
-        <Column field="no_dokumen" header="No Dokumen" :showFilterMatchModes="true" :filter="true" />
-        <Column field="tgl_dokumen" header="Tgl Dokumen" :showFilterMatchModes="true" :filter="true" />
-        <Column field="cara_pembayaran" header="Cara Bayar" :showFilterMatchModes="true" :filter="true" />
-        <Column field="penjamin_nama" header="Penjamin" :showFilterMatchModes="true" :filter="true" />
-        <Column field="uraian" header="Uraian" :showFilterMatchModes="true" :filter="true" />
-        <Column field="tgl_pendaftaran" header="Tgl Pendaftaran" :showFilterMatchModes="true" :filter="true" />
-        <Column field="no_pendaftaran" header="No Pendaftaran" :showFilterMatchModes="true" :filter="true" />
-        <Column field="nama_pasien" header="Nama Pasien" :showFilterMatchModes="true" :filter="true" />
+        <Column field="no_dokumen" header="No Dokumen" :showFilterMatchModes="false" style="min-width: 12rem">
+          <template #body="{ data }">
+            {{ data.no_dokumen }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by No Dokumen" />
+          </template>
+        </Column>
+        <Column field="tgl_dokumen" header="Tgl Dokumen" :showFilterMatchModes="false">
+        <template #body="{ data }">
+            {{ data.tgl_dokumen }}
+          </template>
+          <template #filter="{ filterModel }">
+            <DatePicker v-model="filterModel.value" dateFormat="dd/mm/yy" placeholder="dd/mm/yyyy" />
+          </template>
+        </Column>
+        <Column field="cara_pembayaran" header="Cara Bayar" :showFilterMatchModes="false" >
+          <template #body="{ data }">
+            {{ data.cara_pembayaran }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Cara Bayar" />
+          </template>
+        </Column>
+        <Column field="penjamin_nama" header="Penjamin" :showFilterMatchModes="false" >
+        <template #body="{ data }">
+            {{ data.penjamin_nama }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Penjamin" />
+          </template>
+        </Column>
+        <Column field="uraian" header="Uraian" :showFilterMatchModes="false"  />
+        <Column field="tgl_pendaftaran" header="Tgl Pendaftaran" :showFilterMatchModes="false" >
+        <template #body="{ data }">
+            {{ data.tgl_pendaftaran }}
+          </template>
+          <template #filter="{ filterModel }">
+            <DatePicker v-model="filterModel.value" dateFormat="dd/mm/yy" placeholder="dd/mm/yyyy" />
+          </template>
+        </Column>
+        <Column field="no_pendaftaran" header="No Pendaftaran" :showFilterMatchModes="false" />
+        <Column field="nama_pasien" header="Nama Pasien" :showFilterMatchModes="false" >
+        <template #body="{ data }">
+            {{ data.nama_pasien }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Pasien" />
+          </template>
+        </Column>
         <Column
           field="jumlah"
           header="Jumlah"
           style="text-align: right"
-          :showFilterMatchModes="true"
-          :filter="true"
+          :showFilterMatchModes="false"
+          
         >
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlah || 0) }}
@@ -493,8 +665,8 @@ onMounted(async () => {
           field="terbayar"
           header="Terbayar"
           style="text-align: right"
-          :showFilterMatchModes="true"
-           :filter="true"
+          :showFilterMatchModes="false"
+           
         >
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.terbayar || 0) }}
@@ -504,8 +676,8 @@ onMounted(async () => {
           field="sisa_potensi"
           header="Sisa Potensi"
           style="text-align: right"
-          :showFilterMatchModes="true"
-           :filter="true"
+          :showFilterMatchModes="false"
+          
         >
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.sisa_potensi || 0) }}
@@ -530,4 +702,5 @@ onMounted(async () => {
   text-align: center;
   padding: 0.5rem 0.75rem;
 }
+
 </style>
