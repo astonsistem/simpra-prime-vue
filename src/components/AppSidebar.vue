@@ -77,7 +77,7 @@ const menuItems = ref([
     ],
   },
   {
-    label: 'Laporan',
+    label: 'Pelaporan',
     icon: 'pi pi-file',
     isOpen: false,
     children: [
