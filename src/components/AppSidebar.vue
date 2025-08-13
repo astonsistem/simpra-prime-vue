@@ -77,7 +77,7 @@ const menuItems = ref([
     ],
   },
   {
-    label: 'Laporan',
+    label: 'Pelaporan',
     icon: 'pi pi-file',
     isOpen: false,
     children: [
@@ -125,15 +125,7 @@ const menuItems = ref([
       { label: 'Informasi Status Pasien BPJS', to: '/laporan/status-pasien-bpjs' },
     ],
   },
-  {
-    label: 'Laporan Rekap',
-    icon: 'pi pi-chart-bar',
-    isOpen: false,
-    children: [
-      { label: 'Pasien Rawat Jalan BPJS', to: '/laporan-rekap/pasien-rawat-jalan-bpjs' },
-      { label: 'Pasien Rawat Inap BPJS', to: '/laporan-rekap/pasien-rawat-inap-bpjs' },
-    ],
-  },
+
 ])
 
 const isActive = (item) => {
