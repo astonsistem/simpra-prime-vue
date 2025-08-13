@@ -20,17 +20,16 @@ import ModalEditPenerimaan from '@/components/ModalEditPenerimaan.vue'
 const toast = useToast()
 
 const formFilters = ref({
+  jenis_periode: 'BULANAN',
+  tahunPeriode: '',
+  bulanAwal: null,
+  bulanAkhir: null,
   tglAwal: null,
   tglAkhir: null,
   jenisPelayanan: '',
   penjamin: '',
   instalasi: '',
   status: '',
-  tahunPeriode: '',
-  jenisPeriode: '',
-  bulanAwal: '',
-  bulanAkhir: '',
-  caraBayar: '',
 })
 
 
@@ -43,7 +42,7 @@ const tahunPeriodeOptions = Array.from(
 
 const jenisPeriodeOptions = ref([
   { label: 'Bulanan', value: 'BULANAN' },
-  { label: 'Tahunan', value: 'TAHUNAN' },
+  { label: 'Tanggal', value: 'TANGGAL' },
 ])
 
 const jenisPelayananOptions = [
@@ -64,18 +63,18 @@ const statusOptions = [
 ]
 
 const bulanOptions = [
-  { label: 'Januari', value: '01' },
-  { label: 'Februari', value: '02' },
-  { label: 'Maret', value: '03' },
-  { label: 'April', value: '04' },
-  { label: 'Mei', value: '05' },
-  { label: 'Juni', value: '06' },
-  { label: 'Juli', value: '07' },
-  { label: 'Agustus', value: '08' },
-  { label: 'September', value: '09' },
-  { label: 'Oktober', value: '10' },
-  { label: 'November', value: '11' },
-  { label: 'Desember', value: '12' },
+  { label: 'Januari', value: 1 },
+  { label: 'Februari', value: 2 },
+  { label: 'Maret', value: 3 },
+  { label: 'April', value: 4 },
+  { label: 'Mei', value: 5 },
+  { label: 'Juni', value: 6 },
+  { label: 'Juli', value: 7 },
+  { label: 'Agustus', value: 8 },
+  { label: 'September', value: 9 },
+  { label: 'Oktober', value: 10 },
+  { label: 'November', value: 11 },
+  { label: 'Desember', value: 12 },
 ]
 
 const caraBayarOptions = ref([])
@@ -94,25 +93,35 @@ const selectedItem = ref(null)
 const showModalEdit = ref(false)
 const showModalSync = ref(false)
 
-const formatDate = (date) => {
+const formatDateToYYYYMMDD = (date) => {
   if (!date) return null
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
-
 
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
-    size: pageSize,
+    size: 50,
+  }
+  if (formFilters.value.jenis_periode === 'BULANAN') {
+    if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
+      const startDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAwal - 1, 1)
+      q.tgl_awal = formatDateToYYYYMMDD(startDate)
+    }
+    if (formFilters.value.tahunPeriode && formFilters.value.bulanAkhir) {
+      const endDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAkhir, 0)
+      q.tgl_akhir = formatDateToYYYYMMDD(endDate)
+    }
+  } else if (formFilters.value.jenis_periode === 'TANGGAL') {
+    if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
+    if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
   }
 
-  if (formFilters.value.tglAwal) q.tgl_awal = formatDate(formFilters.value.tglAwal)
-  if (formFilters.value.tglAkhir) q.tgl_akhir = formatDate(formFilters.value.tglAkhir)
- if (formFilters.value.jenis_periode) q.jenis_periode = formFilters.value.jenis_periode
-  if (formFilters.value.tahunPeriode) q.tahun_periode = formFilters.value.tahunPeriode
+  if (formFilters.value.jenisPelayanan) q.jenis_pelayanan = formFilters.value.jenisPelayanan
   if (formFilters.value.penjamin) q.penjamin = formFilters.value.penjamin
   if (formFilters.value.instalasi) q.instalasi = formFilters.value.instalasi
   if (formFilters.value.status) q.status = formFilters.value.status
@@ -124,7 +133,6 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
       }
     })
   }
-
   return q
 }
 
@@ -132,7 +140,6 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   loading.value = true
   try {
     const query = buildQuery(page, pageSize)
-    // Replace with real API endpoint
     const response = await api.get('/pendapatan_pelayanan', { params: query })
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
@@ -140,6 +147,9 @@ const loadData = async (page = 1, pageSize = rows.value) => {
         no: (page - 1) * pageSize + index + 1,
       }))
       totalRecords.value = response.data.total ?? 0
+      if (pageSize === totalRecords.value && pageSize > 100) {
+        rows.value = 1000
+      }
     }
   } catch (error) {
     console.error('Gagal memuat data:', error)
@@ -147,30 +157,32 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   } finally {
     loading.value = false
   }
-  
 }
 
 
 const onPageChange = (event) => {
   first.value = event.first
   rows.value = event.rows
-  const page = event.page + 1
-  loadData(page, event.rows)
+  if (event.rows === 1000) {
+    loadData(1, totalRecords.value)
+  } else {
+    const page = event.page + 1
+    loadData(page, event.rows)
+  }
 }
 
 const resetFilter = () => {
   formFilters.value = {
+    jenis_periode: 'BULANAN',
+    tahunPeriode: '',
+    bulanAwal: null,
+    bulanAkhir: null,
     tglAwal: null,
     tglAkhir: null,
     jenisPelayanan: '',
     penjamin: '',
     instalasi: '',
     status: '',
-    tahunPeriode: '',
-    jenisPeriode: 'null',
-    bulanAwal: '',
-    bulanAkhir: '',
-    caraBayar: '',
   }
   first.value = 0
   loadData(1, rows.value)
@@ -304,52 +316,33 @@ const exportExcel = () => {
     ]
 
     // Prepare data for Excel
-    const excelData = data.value.map((item, index) => [
-      item.no || index + 1,
-      item.noPendaftaran|| '',
-      item.noRM || '',
-      item.Nama|| '',
-      item.tglSelesai || '',
-      item.jenisPelayanan|| '',
-      item.carabayar || '',
-      item.instalasi || '',
-      item.penjamin || '',
-      item.petugas || '',
-      item.jumlahTagihan || '',
-      item.status || '',
-    ])
+    const excelData = data.value.map((item, index) => ({
+      No: item.no || index + 1,
+      'No Pendaftaran': item.no_pendaftaran || '',
+      'No RM': item.no_RM || '',
+      Nama: item.nama || '',
+      'Tanggal Selesai': item.tgl_selesai || '',
+      'Jenis Pelayanan': item.jenis_pelayanan || '',
+      'Cara Bayar': item.cara_bayar || '',
+      Instalasi: item.instalasi || '',
+      Penjamin: item.penjamin || '',
+      Petugas: item.petugas || '',
+      'Jumlah Tagihan': item.jumlah || 0,
+      Status: item.status || '',
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(excelData)
 
     // Create workbook and worksheet
     const workbook = XLSX.utils.book_new()
-    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...excelData])
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pendapatan Pelayanan')
 
-    // Set column widths
-    const columnWidths = [
-      { wch: 5 }, // No
-      { wch: 20 }, // No Bayar
-      { wch: 12 }, // Tanggal Bayar
-      { wch: 20 }, // Pasien
-      { wch: 30 }, // Uraian
-      { wch: 15 }, // No Dokumen
-      { wch: 12 }, // Tanggal Dokumen
-      { wch: 15 }, // Sumber Transaksi
-      { wch: 20 }, // Instalasi
-      { wch: 15 }, // Metode Bayar
-      { wch: 15 }, // Cara Pembayaran
-      { wch: 15 }, // Rekening DPA
-      { wch: 10 }, // Bank
-      { wch: 15 }, // Jumlah Bruto
-      { wch: 15 }, // Biaya Admin EDC
-      { wch: 15 }, // Biaya Admin QRIS
-      { wch: 15 }, // Selisih
-      { wch: 15 }, // Jumlah Netto
-    ]
+    // Auto-fit columns
+    const columnWidths = Object.keys(excelData[0] || {}).map((key) => ({
+      wch: Math.max(key.length, ...excelData.map((row) => (row[key] ? row[key].toString().length : 0))) + 2,
+    }))
     worksheet['!cols'] = columnWidths
 
-    // Add worksheet to workbook
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Billing Kasir')
-
-    // Generate Excel file
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
     const blob = new Blob([excelBuffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -359,7 +352,7 @@ const exportExcel = () => {
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     link.setAttribute('href', url)
-    link.setAttribute('download', `billing_kasir_${new Date().toISOString().split('T')[0]}.xlsx`)
+    link.setAttribute('download', `pendapatan_pelayanan_${new Date().toISOString().split('T')[0]}.xlsx`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
@@ -419,57 +412,79 @@ const clearFilter = () => {
 class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"   
  >
  <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
-       <div class="grid grid-cols-4 gap-4">
-          <div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
           <Select
             v-model="formFilters.jenis_periode"
             :options="jenisPeriodeOptions"
             optionLabel="label"
             optionValue="value"
-            placeholder="jenis Periode"
+            placeholder="Jenis Periode"
             class="w-full"
           />
         </div>
-        <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
-          <Select
-            v-model="formFilters.tahunPeriode"
-            :options="tahunPeriodeOptions"
-            placeholder="Tahun Periode"
-            class="w-full"
-          />
-        </div>
-         <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Awal</label>
-          <DatePicker
-            v-model="formFilters.tglAwal"
-            placeholder="Tanggal Awal"
-            showIcon
-            class="w-full"
-            dateFormat="dd/mm/yy"
-            :showTime="false"
-            :showSeconds="false"
-            :showMilliseconds="false"
-          />
-        </div>
-        <template v-if="formFilters.jenisPeriode === 'tanggal'">
+        <template v-if="formFilters.jenis_periode === 'BULANAN'">
+          <div>
+            <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
+            <Select
+              v-model="formFilters.tahunPeriode"
+              :options="tahunPeriodeOptions"
+              placeholder="Tahun Periode"
+              class="w-full"
+            />
+          </div>
+          <div>
+            <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Awal</label>
+            <Select
+              v-model="formFilters.bulanAwal"
+              :options="bulanOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Bulan Awal"
+              class="w-full"
+            />
+          </div>
+          <div>
+            <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Akhir</label>
+            <Select
+              v-model="formFilters.bulanAkhir"
+              :options="bulanOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Bulan Akhir"
+              class="w-full"
+            />
+          </div>
         </template>
-        <template v-else-if="formFilters.jenisPeriode === 'bulan'">
+        <template v-if="formFilters.jenis_periode === 'TANGGAL'">
+          <div>
+            <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Awal</label>
+            <DatePicker
+              v-model="formFilters.tglAwal"
+              placeholder="Tanggal Awal"
+              showIcon
+              class="w-full"
+              dateFormat="dd/mm/yy"
+              :showTime="false"
+              :showSeconds="false"
+              :showMilliseconds="false"
+            />
+          </div>
+          <div>
+            <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Akhir</label>
+            <DatePicker
+              v-model="formFilters.tglAkhir"
+              placeholder="Tanggal Akhir"
+              showIcon
+              class="w-full"
+              dateFormat="dd/mm/yy"
+              :showTime="false"
+              :showSeconds="false"
+              :showMilliseconds="false"
+            />
+          </div>
         </template>
-      <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Akhir</label>
-          <DatePicker
-            v-model="formFilters.tglAkhir"
-            placeholder="Tanggal Akhir"
-            showIcon
-            class="w-full"
-            dateFormat="dd/mm/yy"
-            :showTime="false"
-            :showSeconds="false"
-            :showMilliseconds="false"
-          />
-        </div>
       </div>
       <div class="mt-4 flex gap-2">
         <Button label="Cari"  class="p-button-info" @click="searchData" />
@@ -512,7 +527,7 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
         :totalRecords="totalRecords"
         :rows="rows"
         :first="first"
-        :rowsPerPageOptions="[5, 10, 20]"
+        :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
         @page="onPageChange"
         @filter="onFilter"
         dataKey="id"
@@ -525,7 +540,7 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
         <Column field="no" header="No" style="width: 5%" />
         <Column header="No Pendaftaran" style="width: 15%">
           <template #body="slotProps">
-
+            {{ slotProps.data.no_pendaftaran }}
           </template>
         </Column>
         <Column
@@ -535,7 +550,7 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.no_dokumen }}
+            {{ data.no_RM }}
           </template>
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search RM" />
@@ -548,7 +563,7 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.no_dokumen }}
+            {{ data.nama }}
           </template>
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search Nama" />
@@ -561,7 +576,7 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.tglBayar }}
+            {{ data.tgl_selesai }}
           </template>
           <template #filter="{ filterModel }">
             <DatePicker
@@ -581,7 +596,7 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.no_dokumen }}
+            {{ data.jenis_pelayanan }}
           </template>
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search Jenis Pelayanan" />
@@ -595,7 +610,7 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.uraian }}
+            {{ data.cara_bayar }}
           </template>
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search by Cara Bayar" />
@@ -609,7 +624,7 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.uraian }}
+            {{ data.instalasi }}
           </template>
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search Instalasi" />
@@ -622,7 +637,7 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.no_pendaftaran }}
+            {{ data.penjamin }}
           </template>
           <template #filter="{ filterModel }">
             <InputText
@@ -639,7 +654,7 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.nama_pasien }}
+            {{ data.petugas }}
           </template>
           <template #filter="{ filterModel }">
             <InputText
@@ -654,9 +669,9 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlah || 0) }}
           </template>
         </Column>         
-        <Column field="terbayar" header="Status" style="text-align: right">
+        <Column field="status" header="Status">
           <template #body="slotProps">
-            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.terbayar || 0) }}
+            {{ slotProps.data.status }}
           </template>
         </Column>
       </DataTable>
