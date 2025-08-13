@@ -1,17 +1,16 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { FilterMatchMode } from '@primevue/core/api'
 import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
 import Button from 'primevue/button'
-import SplitButton from 'primevue/splitbutton'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import Toast from 'primevue/toast'
 import InputText from 'primevue/inputtext'
+import SplitButton from 'primevue/splitbutton'
+import Menu from 'primevue/menu'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
-import * as XLSX from 'xlsx'
 import api from '@/services/http.js'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
@@ -672,6 +671,11 @@ import api from '@/services/http.js'
 import { useToast } from 'primevue/usetoast'
 import ModalSyncPenerimaan from '@/components/ModalSyncPenerimaan.vue'
 import ModalEditPenerimaan from '@/components/ModalEditPenerimaan.vue'
+import Toast from 'primevue/toast'
+import * as XLSX from 'xlsx'
+import Dialog from 'primevue/dialog'
+import Dropdown from 'primevue/dropdown'
+import Calendar from 'primevue/calendar'
 
 const toast = useToast()
 
@@ -686,8 +690,8 @@ const formFilters = ref({
   penjamin: '',
   instalasi: '',
   status: '',
+  cara_bayar: '',
 })
-
 
 const filters = ref()
 
@@ -701,45 +705,27 @@ const jenisPeriodeOptions = ref([
   { label: 'Tanggal', value: 'TANGGAL' },
 ])
 
-const jenisPelayananOptions = [
-  { label: 'Semua', value: '' },
-  { label: 'Rawat Jalan', value: 'Rawat Jalan' },
-  { label: 'Rawat Inap', value: 'Rawat Inap' },
-  { label: 'Farmasi', value: 'Farmasi' },
-  { label: '118', value: '118' },
-  { label: 'SWAB', value: 'SWAB' },
-  { label: 'LAB', value: 'LAB' },
-]
-
-const statusOptions = [
-  { label: 'Semua', value: '' },
-  { label: 'Selesai', value: 'selesai' },
-  { label: 'Proses', value: 'proses' },
-  { label: 'Batal', value: 'batal' },
-]
-
-const bulanOptions = [
-  { label: 'Januari', value: 1 },
-  { label: 'Februari', value: 2 },
-  { label: 'Maret', value: 3 },
-  { label: 'April', value: 4 },
-  { label: 'Mei', value: 5 },
-  { label: 'Juni', value: 6 },
-  { label: 'Juli', value: 7 },
-  { label: 'Agustus', value: 8 },
-  { label: 'September', value: 9 },
-  { label: 'Oktober', value: 10 },
-  { label: 'November', value: 11 },
-  { label: 'Desember', value: 12 },
-]
-
-const caraBayarOptions = ref([])
+const jenisPelayananOptions = ref([])
 const penjaminOptions = ref([])
-const instalasiOptions = ref([
-  { label: 'IGD', value: 'IGD' },
-  { label: 'Poli Umum', value: 'Poli Umum' },
-  { label: 'Poli Gigi', value: 'Poli Gigi' },
+const instalasiOptions = ref([])
+const statusOptions = ref([])
+const caraBayarOptions = ref([])
+
+const bulanOptions = ref([
+    { label: 'Januari', value: 1 },
+    { label: 'Februari', value: 2 },
+    { label: 'Maret', value: 3 },
+    { label: 'April', value: 4 },
+    { label: 'Mei', value: 5 },
+    { label: 'Juni', value: 6 },
+    { label: 'Juli', value: 7 },
+    { label: 'Agustus', value: 8 },
+    { label: 'September', value: 9 },
+    { label: 'Oktober', value: 10 },
+    { label: 'November', value: 11 },
+    { label: 'Desember', value: 12 },
 ])
+
 const data = ref([])
 const totalRecords = ref(0)
 const rows = ref(10)
@@ -749,6 +735,7 @@ const selectedItem = ref(null)
 const showModalEdit = ref(false)
 const showModalSync = ref(false)
 
+// Helper function to format date to YYYY-MM-DD
 const formatDateToYYYYMMDD = (date) => {
   if (!date) return null
   const d = new Date(date)
@@ -761,9 +748,13 @@ const formatDateToYYYYMMDD = (date) => {
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
-    size: 50,
+    size: 100,
   }
+  if (formFilters.value.jenis_periode) q.periode = formFilters.value.jenis_periode
   if (formFilters.value.jenis_periode === 'BULANAN') {
+    if (formFilters.value.tahunPeriode) {
+      q.tahunPeriode = formFilters.value.tahunPeriode
+    }
     if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
       const startDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAwal - 1, 1)
       q.tgl_awal = formatDateToYYYYMMDD(startDate)
@@ -776,19 +767,25 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
     if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
     if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
   }
-
+  
   if (formFilters.value.jenisPelayanan) q.jenis_pelayanan = formFilters.value.jenisPelayanan
   if (formFilters.value.penjamin) q.penjamin = formFilters.value.penjamin
   if (formFilters.value.instalasi) q.instalasi = formFilters.value.instalasi
   if (formFilters.value.status) q.status = formFilters.value.status
+  if (formFilters.value.cara_bayar) q.cara_bayar = formFilters.value.cara_bayar
 
   if (filters.value) {
     Object.keys(filters.value).forEach((key) => {
       if (filters.value[key].value) {
-        q[key] = filters.value[key].value
+        if (key === 'tgl_selesai') {
+          q[key] = formatDateToYYYYMMDD(filters.value[key].value)
+        } else {
+          q[key] = filters.value[key].value
+        }
       }
     })
   }
+
   return q
 }
 
@@ -796,13 +793,14 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   loading.value = true
   try {
     const query = buildQuery(page, pageSize)
-    const response = await api.get('/pendapatan_pelayanan', { params: query })
+    const response = await api.get('/potensi_pelayanan', { params: query })
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
         ...item,
         no: (page - 1) * pageSize + index + 1,
       }))
       totalRecords.value = response.data.total ?? 0
+
       if (pageSize === totalRecords.value && pageSize > 100) {
         rows.value = 1000
       }
@@ -839,6 +837,7 @@ const resetFilter = () => {
     penjamin: '',
     instalasi: '',
     status: '',
+    cara_bayar: '',
   }
   first.value = 0
   loadData(1, rows.value)
@@ -872,7 +871,7 @@ const handleBuktiBayar = (item) => {
 const handleDelete = async (item) => {
   if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return
   try {
-    await api.delete(`/pendapatan_pelayanan/${item.id}`)
+    await api.delete(`/potensi_pelayanan/${item.id}`)
     toast.add({
       severity: 'success',
       summary: 'Berhasil',
@@ -1008,7 +1007,7 @@ const exportExcel = () => {
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     link.setAttribute('href', url)
-    link.setAttribute('download', `pendapatan_pelayanan_${new Date().toISOString().split('T')[0]}.xlsx`)
+    link.setAttribute('download', `potensi_pelayanan_${new Date().toISOString().split('T')[0]}.xlsx`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
@@ -1065,9 +1064,9 @@ const clearFilter = () => {
 <template>
   <div class="p-4">
     <div
-class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"   
- >
- <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
+      class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
+    >
+      <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
@@ -1141,20 +1140,69 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
             />
           </div>
         </template>
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Pelayanan</label>
+          <Select
+            v-model="formFilters.jenisPelayanan"
+            :options="jenisPelayananOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Semua"
+            class="w-full"
+          />
+        </div>
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Penjamin</label>
+          <Select
+            v-model="formFilters.penjamin"
+            :options="penjaminOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Semua"
+            class="w-full"
+          />
+        </div>
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Instalasi</label>
+          <Select
+            v-model="formFilters.instalasi"
+            :options="instalasiOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Semua"
+            class="w-full"
+          />
+        </div>
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Status</label>
+          <Select
+            v-model="formFilters.status"
+            :options="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Semua"
+            class="w-full"
+          />
+        </div>
+        <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Cara Bayar</label>
+          <Select
+            v-model="formFilters.cara_bayar"
+            :options="caraBayarOptions"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Semua"
+            class="w-full"
+          />
+        </div>
       </div>
       <div class="mt-4 flex gap-2">
-        <Button label="Cari"  class="p-button-info" @click="searchData" />
+        <Button label="Cari" icon="pi pi-search" class="p-button-info" @click="searchData" />
         <Button
           label="Reset Filter"
+          icon="pi pi-refresh"
           class="p-button-secondary"
           @click="resetFilter"
-        />
-       
-        <Button
-          label="Tarik Data Billing"
-          class="p-button-warning" 
-          style="background-color: #ffa500; border: none; color: #fff"
-          @click="openSyncDialog"
         />
       </div>
     </div>
@@ -1162,7 +1210,7 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
     >
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xl font-semibold text-[#17316E]">Data Pendapatan Pelayanan</h3>
+        <h3 class="text-xl font-semibold text-[#17316E]">Data Potensi Pelayanan</h3>
         <div class="flex gap-2">
           <Button
             label="Tarik Data"
