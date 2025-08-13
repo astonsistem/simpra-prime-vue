@@ -384,7 +384,7 @@ initFilters()
 const clearFilter = () => {
   initFilters()
   loadData(1, rows.value)
-})
+}
 </script>
 
 <template>

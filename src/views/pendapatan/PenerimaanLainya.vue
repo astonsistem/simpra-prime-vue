@@ -3,6 +3,6 @@ import PenerimaanLainya from '@/components/pendapatan/PenerimaanLainya/DataPener
 </script>
 
 <template>
-  
+  <
   <PenerimaanLainya />
 </template>
