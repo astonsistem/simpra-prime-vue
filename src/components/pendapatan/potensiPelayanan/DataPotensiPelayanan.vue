@@ -53,7 +53,21 @@ const filters = ref({
   instalasi: '',
 })
 
-const tableFilters = ref()
+const tableFilters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  no_dokumen: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  tgl_dokumen: { value: null, matchMode: FilterMatchMode.DATE_IS },
+  cara_pembayaran: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  penjamin_nama: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  uraian: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  tgl_pendaftaran: { value: null, matchMode: FilterMatchMode.DATE_IS },
+  no_pendaftaran: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  nama_pasien: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  jumlah: { value: null, matchMode: FilterMatchMode.EQUALS },
+  terbayar: { value: null, matchMode: FilterMatchMode.EQUALS },
+  sisa_potensi: { value: null, matchMode: FilterMatchMode.EQUALS },
+})
+
 
 const caraBayarOptions = ref([])
 const penjaminOptions = ref([])
@@ -87,6 +101,7 @@ const buildQuery = () => {
 }
 
 const loadData = async (page = 1, pageSize = rows.value) => {
+  if (loading.value) return
   loading.value = true
   try {
     const query = buildQuery()
@@ -102,6 +117,7 @@ const loadData = async (page = 1, pageSize = rows.value) => {
     }
   } catch (error) {
     console.error('Gagal memuat data:', error)
+    toast.add({ severity: 'error', summary: 'Error', detail: 'Gagal memuat data', life: 3000 })
   } finally {
     loading.value = false
   }
@@ -134,6 +150,7 @@ const searchData = () => {
   first.value = 0
   loadData(1, rows.value)
 }
+
 
 const handleAdd = () => {
   selectedItem.value = null
@@ -231,6 +248,7 @@ const fetchInstalasi = async () => {
 }
 
 const initTableFilters = () => {
+  // This function is now only used for clearing the filters
   tableFilters.value = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     no_dokumen: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -256,7 +274,6 @@ onMounted(async () => {
   await fetchPenjamin()
   await fetchInstalasi()
   loadData(1, rows.value)
-  initTableFilters()
 })
 </script>
 
@@ -453,103 +470,45 @@ onMounted(async () => {
             />
           </template>
         </Column>
-        <Column field="no_dokumen" header="No Dokumen" :showFilterMatchModes="false">
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by No Dokumen" />
-          </template>
-        </Column>
-        <Column field="tgl_dokumen" header="Tgl Dokumen" :showFilterMatchModes="false">
-          <template #filter="{ filterModel }">
-            <DatePicker
-              v-model="filterModel.value"
-              dateFormat="dd/mm/yy"
-              placeholder="dd/mm/yyyy"
-            />
-          </template>
-        </Column>
-        <Column field="cara_pembayaran" header="Cara Bayar" :showFilterMatchModes="false">
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Cara Bayar" />
-          </template>
-        </Column>
-        <Column field="penjamin_nama" header="Penjamin" :showFilterMatchModes="false">
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Penjamin" />
-          </template>
-        </Column>
-        <Column field="uraian" header="Uraian" :showFilterMatchModes="false">
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
-          </template>
-        </Column>
-        <Column field="tgl_pendaftaran" header="Tgl Pendaftaran" :showFilterMatchModes="false">
-          <template #filter="{ filterModel }">
-            <DatePicker
-              v-model="filterModel.value"
-              dateFormat="dd/mm/yy"
-              placeholder="dd/mm/yyyy"
-            />
-          </template>
-        </Column>
-        <Column field="no_pendaftaran" header="No Pendaftaran" :showFilterMatchModes="false">
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by No Pendaftaran"
-            />
-          </template>
-        </Column>
-        <Column field="nama_pasien" header="Nama Pasien" :showFilterMatchModes="false">
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by Nama Pasien"
-            />
-          </template>
-        </Column>
+        <Column field="no_dokumen" header="No Dokumen" :showFilterMatchModes="true" :filter="true" />
+        <Column field="tgl_dokumen" header="Tgl Dokumen" :showFilterMatchModes="true" :filter="true" />
+        <Column field="cara_pembayaran" header="Cara Bayar" :showFilterMatchModes="true" :filter="true" />
+        <Column field="penjamin_nama" header="Penjamin" :showFilterMatchModes="true" :filter="true" />
+        <Column field="uraian" header="Uraian" :showFilterMatchModes="true" :filter="true" />
+        <Column field="tgl_pendaftaran" header="Tgl Pendaftaran" :showFilterMatchModes="true" :filter="true" />
+        <Column field="no_pendaftaran" header="No Pendaftaran" :showFilterMatchModes="true" :filter="true" />
+        <Column field="nama_pasien" header="Nama Pasien" :showFilterMatchModes="true" :filter="true" />
         <Column
           field="jumlah"
           header="Jumlah"
           style="text-align: right"
-          :showFilterMatchModes="false"
+          :showFilterMatchModes="true"
+          :filter="true"
         >
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlah || 0) }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Jumlah" />
           </template>
         </Column>
         <Column
           field="terbayar"
           header="Terbayar"
           style="text-align: right"
-          :showFilterMatchModes="false"
+          :showFilterMatchModes="true"
+           :filter="true"
         >
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.terbayar || 0) }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Terbayar" />
           </template>
         </Column>
         <Column
           field="sisa_potensi"
           header="Sisa Potensi"
           style="text-align: right"
-          :showFilterMatchModes="false"
+          :showFilterMatchModes="true"
+           :filter="true"
         >
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.sisa_potensi || 0) }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by Sisa Potensi"
-            />
           </template>
         </Column>
       </DataTable>

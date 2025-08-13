@@ -69,13 +69,21 @@ const formatDateToYYYYMMDD = (date) => {
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
-    size: pageSize,
+    size: 100,
   }
-  if (formFilters.value.jenis_periode) q.jenis_periode = formFilters.value.jenis_periode
+  if (formFilters.value.jenis_periode) q.periode = formFilters.value.jenis_periode
   if (formFilters.value.jenis_periode === 'BULANAN') {
-    if (formFilters.value.tahunPeriode) q.year = formFilters.value.tahunPeriode
-    if (formFilters.value.bulanAwal) q.month_start = formFilters.value.bulanAwal
-    if (formFilters.value.bulanAkhir) q.month_end = formFilters.value.bulanAkhir
+    if (formFilters.value.tahunPeriode) {
+      q.tahunPeriode = formFilters.value.tahunPeriode
+    }
+    if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
+      const startDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAwal - 1, 1)
+      q.tglAwal = formatDateToYYYYMMDD(startDate)
+    }
+    if (formFilters.value.tahunPeriode && formFilters.value.bulanAkhir) {
+      const endDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAkhir, 0)
+      q.tglAkhir = formatDateToYYYYMMDD(endDate)
+    }
   } else if (formFilters.value.jenis_periode === 'TANGGAL') {
     if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
     if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
@@ -84,13 +92,9 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
   if (filters.value) {
     Object.keys(filters.value).forEach((key) => {
       if (filters.value[key].value) {
+        // Handle date filters specially
         if (key === 'tgl_rc') {
           q[key] = formatDateToYYYYMMDD(filters.value[key].value)
-        } else if (key === 'debit' || key === 'kredit') {
-          const value = parseInt(filters.value[key].value, 10)
-          if (!isNaN(value)) {
-            q[key] = value
-          }
         } else {
           q[key] = filters.value[key].value
         }
@@ -112,6 +116,11 @@ const loadData = async (page = 1, pageSize = rows.value) => {
         no: (page - 1) * pageSize + index + 1,
       }))
       totalRecords.value = response.data.total ?? 0
+
+      // If "All" is selected, update rows to show total records
+      if (pageSize === totalRecords.value && pageSize > 100) {
+        rows.value = 1000
+      }
     }
   } catch (error) {
     console.error('Gagal memuat data:', error)
@@ -124,8 +133,15 @@ const loadData = async (page = 1, pageSize = rows.value) => {
 const onPageChange = (event) => {
   first.value = event.first
   rows.value = event.rows
-  const page = event.page + 1
-  loadData(page, event.rows)
+
+  // Handle "All" option (1000) - load all data in one page
+  if (event.rows === 1000) {
+    // This is the "All" option, load all data
+    loadData(1, totalRecords.value)
+  } else {
+    const page = event.page + 1
+    loadData(page, event.rows)
+  }
 }
 
 const resetFilter = () => {
@@ -409,7 +425,7 @@ onMounted(async () => {
         :totalRecords="totalRecords"
         :rows="rows"
         :first="first"
-        :rowsPerPageOptions="[5, 10, 20, 50, 100]"
+        :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
         @page="onPageChange"
         @filter="onFilter"
         dataKey="rc_id"
