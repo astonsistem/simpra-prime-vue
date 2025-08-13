@@ -338,6 +338,11 @@ const formatDateToYYYYMMDD = (date) => {
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
       <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
       <div class="grid grid-cols-4 gap-4">
+      <div>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
+          <Select v-model="formFilters.jenisPeriode" :options="jenisPeriodeOptions" optionLabel="label"
+            optionValue="value" placeholder="Jenis Periode" class="w-full" />
+        </div>
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
           <Select v-model="formFilters.tahunPeriode" :options="tahunPeriodeOptions" placeholder="Tahun Periode"
@@ -359,11 +364,7 @@ const formatDateToYYYYMMDD = (date) => {
             :showSeconds="false"
             :showMilliseconds="false" />
         </div>
-        <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
-          <Select v-model="formFilters.jenisPeriode" :options="jenisPeriodeOptions" optionLabel="label"
-            optionValue="value" placeholder="Jenis Periode" class="w-full" />
-        </div>
+        
         <template v-if="formFilters.jenisPeriode === 'tanggal'">
           <!-- <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Tgl Awal</label>
