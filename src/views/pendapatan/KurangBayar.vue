@@ -1,5 +1,8 @@
 <template>
-  
+  <div>
+    <h1>Data Kurang Bayar</h1>
+    <DataKurangBayar />
+  </div>
 </template>
 
 <script setup>

@@ -270,7 +270,6 @@ const onFilter = (event) => {
 const initFilters = () => {
   filters.value = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    action: { value: null, matchMode: FilterMatchMode.CONTAINS },
     no_rc: { value: null, matchMode: FilterMatchMode.CONTAINS },
     tgl_rc: { value: null, matchMode: FilterMatchMode.DATE_IS },
     uraian: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -293,6 +292,36 @@ const clearFilter = () => {
 onMounted(async () => {
   loadData(1, rows.value)
 })
+
+const handleView = (data) => {
+  console.log('View:', data)
+  toast.add({
+    severity: 'info',
+    summary: 'Info',
+    detail: 'Fungsi Lihat belum diimplementasikan',
+    life: 3000,
+  })
+}
+
+const handleEdit = (data) => {
+  console.log('Edit:', data)
+  toast.add({
+    severity: 'info',
+    summary: 'Info',
+    detail: 'Fungsi Ubah belum diimplementasikan',
+    life: 3000,
+  })
+}
+
+const handleDelete = (data) => {
+  console.log('Delete:', data)
+  toast.add({
+    severity: 'info',
+    summary: 'Info',
+    detail: 'Fungsi Hapus belum diimplementasikan',
+    life: 3000,
+  })
+}
 </script>
 
 <template>
@@ -504,7 +533,7 @@ onMounted(async () => {
         </Column>
         <Column field="rekening_dpa" header="Rekening DPA" :showFilterMatchModes="false">
           <template #body="{ data }">
-            {{ data.akun_data.akun_nama || '-' }}
+            {{ data.akun_data ? data.akun_data.akun_nama : '-' }}
           </template>
           <template #filter="{ filterModel }">
             <InputText

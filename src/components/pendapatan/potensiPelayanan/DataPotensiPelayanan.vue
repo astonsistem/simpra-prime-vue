@@ -1,3 +1,4 @@
+<!-- Perubahan uji push ke branch akrual -->
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { FilterMatchMode } from '@primevue/core/api'
@@ -8,12 +9,10 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import SplitButton from 'primevue/splitbutton'
-import Menu from 'primevue/menu'
-import IconField from 'primevue/iconfield'
-import InputIcon from 'primevue/inputicon'
 import api from '@/services/http.js'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
+
 
 // Filter state
 const tahunPeriodeOptions = Array.from(
@@ -26,44 +25,7 @@ const jenisPeriodeOptions = ref([
   { label: 'Tanggal', value: 'TANGGAL' },
 ])
 
-const jenisPelayananOptions = [
-  { label: 'Semua', value: '' },
-  { label: 'Rawat Jalan', value: 'Rawat Jalan' },
-  { label: 'Rawat Inap', value: 'Rawat Inap' },
-  { label: 'Farmasi', value: 'Farmasi' },
-  { label: '118', value: '118' },
-  { label: 'SWAB', value: 'SWAB' },
-  { label: 'LAB', value: 'LAB' },
-]
 
-const statusOptions = [
-  { label: 'Semua', value: '' },
-  { label: 'Selesai', value: 'selesai' },
-  { label: 'Proses', value: 'proses' },
-  { label: 'Batal', value: 'batal' },
-]
-
-const bulanOptions = [
-  { label: 'Januari', value: 1 },
-  { label: 'Februari', value: 2 },
-  { label: 'Maret', value: 3 },
-  { label: 'April', value: 4 },
-  { label: 'Mei', value: 5 },
-  { label: 'Juni', value: 6 },
-  { label: 'Juli', value: 7 },
-  { label: 'Agustus', value: 8 },
-  { label: 'September', value: 9 },
-  { label: 'Oktober', value: 10 },
-  { label: 'November', value: 11 },
-  { label: 'Desember', value: 12 },
-]
-
-const caraBayarOptions = ref([])
-const penjaminOptions = ref([])
-const instalasiOptions = ref([
-  { label: 'IGD', value: 'IGD' },
-  { label: 'Poli Umum', value: 'Poli Umum' },
-  { label: 'Poli Gigi', value: 'Poli Gigi' },
 ])
 const data = ref([])
 const totalRecords = ref(0)
@@ -102,10 +64,6 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
     if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
   }
 
-  if (formFilters.value.jenisPelayanan) q.jenis_pelayanan = formFilters.value.jenisPelayanan
-  if (formFilters.value.penjamin) q.penjamin = formFilters.value.penjamin
-  if (formFilters.value.instalasi) q.instalasi = formFilters.value.instalasi
-  if (formFilters.value.status) q.status = formFilters.value.status
 
   if (filters.value) {
     Object.keys(filters.value).forEach((key) => {
@@ -160,10 +118,7 @@ const resetFilter = () => {
     bulanAkhir: null,
     tglAwal: null,
     tglAkhir: null,
-    jenisPelayanan: '',
-    penjamin: '',
-    instalasi: '',
-    status: '',
+
   }
   first.value = 0
   loadData(1, rows.value)
@@ -184,14 +139,9 @@ const handleEdit = (item) => {
   showModalEdit.value = true
 }
 
-const handleValidasi = (item) => {
-  console.log('Validasi item:', item)
-  // TODO: Implement validasi functionality
-}
-
-const handleBuktiBayar = (item) => {
-  console.log('Bukti Bayar item:', item)
-  // TODO: Implement bukti bayar functionality
+const handleTerima = (item) => {
+  console.log('Terima item:', item)
+  // TODO: Implement terima functionality
 }
 
 const handleDelete = async (item) => {
@@ -241,20 +191,6 @@ const fetchCaraBayar = async () => {
   }
 }
 
-const fetchPenjamin = async () => {
-  try {
-    const response = await api.get('/penjamin')
-    if (response.data && response.data.items) {
-      penjaminOptions.value = response.data.items.map((item) => ({
-        label: item.penjamin_nama,
-        value: item.penjamin_id,
-      }))
-    }
-    
-  } catch (error) {
-    console.error('Gagal memuat data penjamin:', error)
-  }
-}
 
 
 const generateTahunPeriodeOptions = () => {
@@ -269,7 +205,6 @@ const generateTahunPeriodeOptions = () => {
 onMounted(async () => {
   generateTahunPeriodeOptions()
   await fetchCaraBayar()
-  await fetchPenjamin()
   loadData(1, rows.value)
 })
 
@@ -283,33 +218,33 @@ const exportExcel = () => {
     // Prepare headers for Excel (excluding Action column)
     const headers = [
       'No',
-      'No Pendaftaran',
-      'No RM',
-      'Nama',
-      'Tanggal Selesai',
-      'Jenis Pelayanan',
+      'No Dokumen',
+      'Tanggal Dokumen',
       'Cara Bayar',
-      'Instalasi',
       'Penjamin',
-      'Petugas',
-      'Jumlah Tagihan',
-      'Status',
+      'Uraian',
+      'Tanggal Pendaftaran',
+      'No Pendaftaran',
+      'Nama Pasien',
+      'Jumlah',
+      'Terbayar',
+      'Sisa Potensi',
     ]
 
     // Prepare data for Excel
     const excelData = data.value.map((item, index) => ({
       No: item.no || index + 1,
-      'No Pendaftaran': item.no_pendaftaran || '',
-      'No RM': item.no_RM || '',
-      Nama: item.nama || '',
-      'Tanggal Selesai': item.tgl_selesai || '',
-      'Jenis Pelayanan': item.jenis_pelayanan || '',
+      'No Dokumen': item.no_dokumen || '',
+      'Tanggal Dokumen': item.tgl_dokumen || '',
       'Cara Bayar': item.cara_bayar || '',
-      Instalasi: item.instalasi || '',
       Penjamin: item.penjamin || '',
-      Petugas: item.petugas || '',
-      'Jumlah Tagihan': item.jumlah || 0,
-      Status: item.status || '',
+      Uraian: item.uraian || '',
+      'Tanggal Pendaftaran': item.tgl_pendaftaran || '',
+      'No Pendaftaran': item.no_pendaftaran || '',
+      'Nama Pasien': item.nama || '',
+      Jumlah: item.jumlah || 0,
+      Terbayar: item.terbayar || 0,
+      'Sisa Potensi': item.sisa_potensi || 0,
     }))
 
     const worksheet = XLSX.utils.json_to_sheet(excelData)
@@ -361,18 +296,12 @@ const initFilters = () => {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     no_dokumen: { value: null, matchMode: FilterMatchMode.CONTAINS },
     tgl_dokumen: { value: null, matchMode: FilterMatchMode.DATE_IS },
-    tglSelesai: { value: null, matchMode: FilterMatchMode.DATE_IS },
-    cara_pembayaran: { value: null, matchMode: FilterMatchMode.EQUALS },
-    penjamin_nama: { value: null, matchMode: FilterMatchMode.EQUALS },
+    cara_bayar: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    penjamin: { value: null, matchMode: FilterMatchMode.CONTAINS },
     uraian: { value: null, matchMode: FilterMatchMode.CONTAINS },
     tgl_pendaftaran: { value: null, matchMode: FilterMatchMode.DATE_IS },
-    no_RM: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    no_pendaftaran: { value: null, matchMode: FilterMatchMode.CONTAINS },
     nama: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    penjamin: { value: null, matchMode: FilterMatchMode.CONTAINS }, 
-    instalasi: { value: null, matchMode: FilterMatchMode.CONTAINS },   
-    jenispelayanan: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    _petugas: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    cara_bayar: { value: null, matchMode: FilterMatchMode.CONTAINS },
     jumlah: { value: null, matchMode: FilterMatchMode.EQUALS },
     terbayar: { value: null, matchMode: FilterMatchMode.EQUALS },
     sisa_potensi: { value: null, matchMode: FilterMatchMode.EQUALS },
@@ -533,7 +462,7 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
         @filter="onFilter"
         dataKey="id"
         filterDisplay="menu"
-        :globalFilterFields="['no_dokumen', 'penjamin_nama', 'nama_pasien', 'uraian']"
+        :globalFilterFields="['no_dokumen', 'tgl_dokumen', 'cara_bayar', 'penjamin', 'uraian', 'tgl_pendaftaran', 'no_pendaftaran', 'nama']"
         class="p-datatable-sm"
       >
         <template #header>
@@ -543,94 +472,63 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
               icon="pi pi-filter-slash"
               label="Clear"
               outlined
-              @click="clearTableFilter()"
-            />
-            <IconField>
-              <InputIcon>
-                <i class="pi pi-search" />
-              </InputIcon>
-              <InputText v-model="tableFilters['global'].value" placeholder="Keyword Search" />
-            </IconField>
+
           </div>
         </template>
         <Column field="no" header="No" style="width: 5%" />
-        <Column header="No Pendaftaran" style="width: 15%">
+        <Column header="Action" style="width: 10%">
           <template #body="slotProps">
             <SplitButton
-              label="Aksi"
+
               icon="pi pi-ellipsis-v"
               size="small"
               severity="secondary"
               :model="[
                 { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
                 {
-                  label: 'Terima',
-                  icon: 'pi pi-check',
-                  command: () => handleTerima(slotProps.data),
-                },
-                {
-                  label: 'Rincian',
-                  icon: 'pi pi-list',
-                  command: () => handleRincian(slotProps.data),
-                },
-                {
+
                   label: 'Hapus',
                   icon: 'pi pi-trash',
                   command: () => handleDelete(slotProps.data),
                 },
               ]"
-            />
-          </template>
-        </Column>
-        <Column field="no_dokumen" header="No Dokumen" :showFilterMatchModes="true" :filter="true" />
-        <Column field="tgl_dokumen" header="Tgl Dokumen" :showFilterMatchModes="true" :filter="true" />
-        <Column field="cara_pembayaran" header="Cara Bayar" :showFilterMatchModes="true" :filter="true" />
-        <Column field="penjamin_nama" header="Penjamin" :showFilterMatchModes="true" :filter="true" />
-        <Column field="uraian" header="Uraian" :showFilterMatchModes="true" :filter="true" />
-        <Column field="tgl_pendaftaran" header="Tgl Pendaftaran" :showFilterMatchModes="true" :filter="true" />
-        <Column field="no_pendaftaran" header="No Pendaftaran" :showFilterMatchModes="true" :filter="true" />
-        <Column field="nama_pasien" header="Nama Pasien" :showFilterMatchModes="true" :filter="true" />
-        <Column
-          field="jumlah"
-          header="Jumlah"
-          style="text-align: right"
-          :showFilterMatchModes="true"
-          :filter="true"
-        >
+
           <template #body="{ data }">
-            {{ data.instalasi }}
+            {{ data.uraian || '-' }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search Instalasi" />
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
           </template>
         </Column>
-        <Column
-          field="terbayar"
-          header="Terbayar"
-          style="text-align: right"
-          :showFilterMatchModes="true"
-           :filter="true"
-        >
+
           <template #body="{ data }">
-            {{ data.penjamin }}
+            {{ data.tgl_pendaftaran || '-' }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText
+            <DatePicker
               v-model="filterModel.value"
-              type="text"
-              placeholder="Search Penjamin"
+              dateFormat="dd/mm/yy"
+              placeholder="dd/mm/yyyy"
+              :showTime="false"
+              :showSeconds="false"
+              :showMilliseconds="false"
             />
           </template>
         </Column>
-        <Column
-          field="sisa_potensi"
-          header="Sisa Potensi"
-          style="text-align: right"
-          :showFilterMatchModes="true"
-           :filter="true"
-        >
+
           <template #body="slotProps">
-            {{ slotProps.data.status }}
+            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.terbayar || 0) }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Terbayar" />
+          </template>
+        </Column>
+        <Column field="sisa_potensi" header="Sisa Potensi" style="text-align: right">
+          <template #body="slotProps">
+            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.sisa_potensi || 0) }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Sisa Potensi" />
           </template>
         </Column>
       </DataTable>

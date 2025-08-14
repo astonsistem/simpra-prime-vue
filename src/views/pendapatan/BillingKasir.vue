@@ -3,5 +3,6 @@ import BillingKasir from '@/components/pendapatan/billingKasir/DataBillingKasir.
 </script>
 
 <template>
+  
   <BillingKasir />
 </template>
