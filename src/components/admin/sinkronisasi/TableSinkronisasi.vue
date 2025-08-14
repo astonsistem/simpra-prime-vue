@@ -1,8 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { FilterMatchMode } from '@primevue/core/api'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import IconField from 'primevue/iconfield'
+import InputIcon from 'primevue/inputicon'
 import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import api from '@/services/http.js'
@@ -13,6 +17,7 @@ const toast = useToast()
 const syncs = ref([])
 const loading = ref(true)
 const totalRecords = ref(0)
+const filters = ref()
 const lazyParams = ref({
   page: 1,
   size: 10,
@@ -43,6 +48,7 @@ const loadSyncs = async () => {
 
 onMounted(() => {
   loadSyncs()
+  initFilters()
 })
 
 const onPage = (event) => {
@@ -77,6 +83,20 @@ const confirmDelete = (sync) => {
     },
   })
 }
+
+const initFilters = () => {
+  filters.value = {
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    sinkronisasi_nama: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    sinkronisasi_menu: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    sinkronisasi_api: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    sinkronisasi_groupuser: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  }
+}
+
+const clearFilter = () => {
+  initFilters()
+}
 </script>
 
 <template>
@@ -90,22 +110,76 @@ const confirmDelete = (sync) => {
       @page="onPage($event)"
       :totalRecords="totalRecords"
       lazy
+      :filters="filters"
+      filterDisplay="menu"
+      :globalFilterFields="[
+        'sinkronisasi_nama',
+        'sinkronisasi_menu',
+        'sinkronisasi_api',
+        'sinkronisasi_groupuser',
+      ]"
     >
       <template #header>
         <div class="flex justify-between items-center">
           <h5 class="m-0">Sinkronisasi</h5>
-          <Button
-            label="Add Sync"
-            icon="pi pi-plus"
-            class="p-button-success"
-            @click="$emit('add')"
-          />
+          <div class="flex gap-2">
+            <Button
+              type="button"
+              icon="pi pi-filter-slash"
+              label="Clear"
+              outlined
+              @click="clearFilter()"
+            />
+            <IconField>
+              <InputIcon>
+                <i class="pi pi-search" />
+              </InputIcon>
+              <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
+            </IconField>
+            <Button
+              label="Add Sync"
+              icon="pi pi-plus"
+              class="p-button-success"
+              @click="$emit('add')"
+            />
+          </div>
         </div>
       </template>
-      <Column field="sinkronisasi_nama" header="Nama" :sortable="true"></Column>
-      <Column field="sinkronisasi_menu" header="Menu" :sortable="true"></Column>
-      <Column field="sinkronisasi_api" header="Api Url"></Column>
-      <Column field="sinkronisasi_groupuser" header="Group User" :sortable="true"></Column>
+      <Column
+        field="sinkronisasi_nama"
+        header="Nama"
+        :sortable="true"
+        :showFilterMatchModes="false"
+      >
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by Nama" />
+        </template>
+      </Column>
+      <Column
+        field="sinkronisasi_menu"
+        header="Menu"
+        :sortable="true"
+        :showFilterMatchModes="false"
+      >
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by Menu" />
+        </template>
+      </Column>
+      <Column field="sinkronisasi_api" header="Api Url" :showFilterMatchModes="false">
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by Api Url" />
+        </template>
+      </Column>
+      <Column
+        field="sinkronisasi_groupuser"
+        header="Group User"
+        :sortable="true"
+        :showFilterMatchModes="false"
+      >
+        <template #filter="{ filterModel }">
+          <InputText v-model="filterModel.value" type="text" placeholder="Search by Group User" />
+        </template>
+      </Column>
       <Column header="Actions">
         <template #body="slotProps">
           <Button

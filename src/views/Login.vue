@@ -18,6 +18,7 @@ const loginData = ref({
   password: '',
 })
 
+const showPassword = ref(false) // untuk toggle
 const browserId = ref('')
 const rememberMe = ref(false)
 const loading = ref(false)
@@ -137,38 +138,60 @@ const login = async () => {
     loading.value = false
   }
 }
-</script>
 
+</script>
 <template>
   <div class="flex items-center justify-center min-h-screen bg-surface-50 dark:bg-surface-950 px-6">
     <div class="bg-surface-0 dark:bg-surface-900 p-6 shadow rounded-border w-full max-w-lg">
       <div class="text-center mb-8">
         <img class="logo mx-auto" width="120" height="120" :src="Logo" alt="SIMPRA" />
         <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mt-4">SIMPRA</div>
+           <p class="system-description">Sistem Manajemen Pendapatan</p> 
+           <p class="hospital-name">RSUD dr. Soetomo Surabaya</p><br></br>
+            <h4 class="font-bold">Silahkan login untuk mengakses dashboard SIMPRA</h4>
+
+
+
       </div>
 
       <div>
-        <label for="username" class="text-surface-900 dark:text-surface-0 font-medium mb-2 block"
-          >Username</label
-        >
-        <InputText
-          id="username"
-          type="text"
-          v-model="loginData.username"
-          placeholder="Username"
-          class="w-full mb-4"
-        />
+       <label for="username" class="text-surface-900 dark:text-surface-0 font-medium mb-2 block">Email</label>
+<div class="input-with-icon-wrapper">
+    <InputText
+      id="username"
+      type="text"
+      v-model="loginData.username"
+      placeholder="Alamat Email"
+      class="w-full"
+    />
+    <span class="input-icon">@</span>
+</div>
+        
 
-        <label for="password" class="text-surface-900 dark:text-surface-0 font-medium mb-2 block"
-          >Password</label
-        >
-        <InputText
-          id="password"
-          type="password"
-          v-model="loginData.password"
-          placeholder="Password"
-          class="w-full mb-4"
-        />
+        <label for="password" class="text-surface-900 dark:text-surface-0 font-medium mb-2 block">Password</label>
+<div class="input-with-icon-wrapper">
+    <div class="input-with-icon-wrapper">
+  <InputText
+    id="password"
+    ref="passwordInput"
+    :type="showPassword ? 'text' : 'password'"
+    v-model="loginData.password"
+    placeholder="Kata Sandi"
+    class="w-full"
+  />
+  <span
+    class="input-icon password-icon"
+    @click="showPassword = !showPassword"
+    style="cursor:pointer"
+  >
+    <i :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+  </span>
+</div>
+
+
+</div>
+       
+          <div class="mb-7"></div>
 
         <div class="mb-6">
           <label class="text-surface-900 dark:text-surface-0 font-medium mb-2 block">Captcha</label>
@@ -187,19 +210,78 @@ const login = async () => {
             </div>
           </div>
         </div>
+      <div class="mb-15">
+        
+</div>
 
-        <div class="text-xs text-gray-400 mb-4" v-if="browserId">Browser ID: {{ browserId }}</div>
+
+       
+
+        <!-- <div class="text-xs text-gray-400 mb-" v-if="browserId">Browser ID: {{ browserId }}</div> -->
 
         <Button
-          label="Sign In"
-          icon="pi pi-user !text-xl !leading-none"
-          class="w-full"
+          label="Masuk"
+          icon=" !text-xl !leading-none"
+          class="w-full !bg-blue-600 !py-4 !text-xl "
           @click="login"
           :loading="loading"
+      
         />
+        
+       
+
+        <div class="footer py-4 text-center text-sm text-gray-500 mt-auto border-t border-gray-200">
+      &copy; 2024 RSUD dr. Soetomo Surabaya. All rights reserved.
+    </div>
       </div>
     </div>
+    
 
     <Toast />
   </div>
 </template>
+<style scoped>
+.input-with-icon-wrapper {
+  position: relative;
+  margin-bottom: 1rem;
+}
+
+.input-with-icon-wrapper .input-icon {
+  position: absolute;
+  right: 45px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #333;
+  font-weight: bold;
+  display: inline-block;
+  line-height: 1;
+}
+
+.input-with-icon-wrapper .email-icon {
+  cursor: default;
+}
+
+.input-with-icon-wrapper .password-icon {
+  cursor: pointer;
+}
+
+.input-with-icon-wrapper input {
+  padding-right: 40px;
+}
+.footer {
+  margin-top: 20px;
+  padding: 10px; 
+  border-top: 1px solid #bbb6b6;
+  border-right: 1px solid #bbb6b6;
+  border-bottom: 1px solid #bbb6b6;
+  border-left: 1px solid #bbb6b6;
+  font-size: 12px;
+  color: #0a0a0a;
+  text-align: center;
+}
+
+</style>
+
+
+
+ 
