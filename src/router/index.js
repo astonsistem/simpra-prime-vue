@@ -179,16 +179,18 @@ const router = createRouter({
         },
         // Laporan Routes
         {
-          path: 'laporan',
+          path: '/laporan/:slug',
           name: 'laporan',
-          // component: () => import('../views/Laporan.vue'),
-          meta: { roles: ['admin', 'accountant'] },
-        },
-        {
-          path: 'laporan-rekap',
-          name: 'laporan-rekap',
-          // component: () => import('../views/LaporanRekap.vue'),
-          meta: { roles: ['admin', 'accountant'] },
+          component: () => import('../views/Laporan.vue'),
+          props: true,
+          meta: { 
+            roles: ['admin'], 
+            breadcrumb: (route) => {
+              const slug = route.params.slug
+              const label = slug.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+              return ['Laporan', label]
+            }
+          },
         },
         // ADMIN ROUTES
         {
