@@ -100,11 +100,12 @@ const router = createRouter({
           },
         },
         {
-          path: 'acrual/potensi-pelayanan',
-          name: 'acrual-potensi-pelayanan',
-          component: () => import('../views/pendapatan/PotensiPelayanan.vue'),
-          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Acrual', 'Potensi Pelayanan'] },
-        },
+  path: 'acrual/potensi-pelayanan',
+  name: 'acrual-potensi-pelayanan',
+  // Ubah baris di bawah ini
+component: () => import('../components/pendapatan/potensiPelayanan/DataPotensiPelayanan.vue'),
+  meta: { roles: ['admin', 'accountant'], breadcrumb: ['Acrual', 'Potensi Pelayanan'] },
+},
         {
           path: 'acrual/potensi-lainnya',
           name: 'acrual-potensi-lainnya',

@@ -1,6 +1,6 @@
 <!-- Perubahan uji push ke branch akrual -->
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { FilterMatchMode } from '@primevue/core/api'
 import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
@@ -12,21 +12,46 @@ import SplitButton from 'primevue/splitbutton'
 import api from '@/services/http.js'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
+import * as XLSX from 'xlsx'
+import ModalSyncPenerimaan from '@/components/ModalSyncPenerimaan.vue'
+import EditPotensiPelayanan from './modal/EditPotensiPelayanan.vue'
+import TambahPotensiPelayanan from './modal/TambahPotensiPelayanan.vue'
 
+
+const toast = useToast()
 
 // Filter state
-const tahunPeriodeOptions = Array.from(
-  { length: 10 },
-  (_, i) => `${new Date().getFullYear() - 5 + i}`
-)
-
+const tahunPeriodeOptions = ref([])
 const jenisPeriodeOptions = ref([
   { label: 'Bulanan', value: 'BULANAN' },
   { label: 'Tanggal', value: 'TANGGAL' },
 ])
-
-
+const bulanOptions = ref([
+    { label: 'Januari', value: 1 },
+    { label: 'Februari', value: 2 },
+    { label: 'Maret', value: 3 },
+    { label: 'April', value: 4 },
+    { label: 'Mei', value: 5 },
+    { label: 'Juni', value: 6 },
+    { label: 'Juli', value: 7 },
+    { label: 'Agustus', value: 8 },
+    { label: 'September', value: 9 },
+    { label: 'Oktober', value: 10 },
+    { label: 'November', value: 11 },
+    { label: 'Desember', value: 12 },
 ])
+const caraBayarOptions = ref([])
+
+
+const formFilters = ref({
+  jenis_periode: 'BULANAN',
+  tahunPeriode: new Date().getFullYear().toString(),
+  bulanAwal: null,
+  bulanAkhir: null,
+  tglAwal: null,
+  tglAkhir: null,
+})
+
 const data = ref([])
 const totalRecords = ref(0)
 const rows = ref(10)
@@ -34,7 +59,9 @@ const first = ref(0)
 const loading = ref(false)
 const selectedItem = ref(null)
 const showModalEdit = ref(false)
+const showModalAdd = ref(false)
 const showModalSync = ref(false)
+const filters = ref(null)
 
 const formatDateToYYYYMMDD = (date) => {
   if (!date) return null
@@ -48,7 +75,7 @@ const formatDateToYYYYMMDD = (date) => {
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
-    size: 50,
+    size: pageSize,
   }
   if (formFilters.value.jenis_periode === 'BULANAN') {
     if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
@@ -113,7 +140,7 @@ const onPageChange = (event) => {
 const resetFilter = () => {
   formFilters.value = {
     jenis_periode: 'BULANAN',
-    tahunPeriode: '',
+    tahunPeriode: new Date().getFullYear().toString(),
     bulanAwal: null,
     bulanAkhir: null,
     tglAwal: null,
@@ -129,19 +156,13 @@ const searchData = () => {
   loadData(1, rows.value)
 }
 
-// const handleAdd = () => {
-//   selectedItem.value = null
-//   showModalEdit.value = true
-// }
+const handleAdd = () => {
+  showModalAdd.value = true
+}
 
 const handleEdit = (item) => {
   selectedItem.value = { ...item }
   showModalEdit.value = true
-}
-
-const handleTerima = (item) => {
-  console.log('Terima item:', item)
-  // TODO: Implement terima functionality
 }
 
 const handleDelete = async (item) => {
@@ -168,6 +189,7 @@ const handleDelete = async (item) => {
 
 const handleSaved = () => {
   showModalEdit.value = false
+  showModalAdd.value = false
   toast.add({
     severity: 'success',
     summary: 'Berhasil',
@@ -206,6 +228,7 @@ onMounted(async () => {
   generateTahunPeriodeOptions()
   await fetchCaraBayar()
   loadData(1, rows.value)
+  initFilters()
 })
 
 const onFilter = (event) => {
@@ -308,8 +331,6 @@ const initFilters = () => {
   }
 }
 
-initFilters()
-
 const clearFilter = () => {
   initFilters()
   loadData(1, rows.value)
@@ -319,9 +340,9 @@ const clearFilter = () => {
 <template>
   <div class="p-4">
     <div
-class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"   
- >
- <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
+      class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
+    >
+      <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
@@ -340,6 +361,8 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
             <Select
               v-model="formFilters.tahunPeriode"
               :options="tahunPeriodeOptions"
+              optionLabel="label"
+              optionValue="value"
               placeholder="Tahun Periode"
               class="w-full"
             />
@@ -378,7 +401,6 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
               dateFormat="dd/mm/yy"
               :showTime="false"
               :showSeconds="false"
-              :showMilliseconds="false"
             />
           </div>
           <div>
@@ -391,7 +413,6 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
               dateFormat="dd/mm/yy"
               :showTime="false"
               :showSeconds="false"
-              :showMilliseconds="false"
             />
           </div>
         </template>
@@ -405,29 +426,8 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
         />
       </div>
     </div>
-    <div class="flex justify-end gap-2">
-          <Button
-            label="Tambah Data"
-            icon="pi pi-plus"
-            class="p-button-primary"
-            @click="handleAdd"
-          />
-          <template>
-            <div>
-
-              <TambahDataPotensiLainya :visible="showModal" @update:visible="showModal = $event" @save="handleSave" />
-            </div>
-          </template>
-          <!-- <Button
-            label="Tarik Data"
-            icon="pi pi-refresh"
-            class="p-button-success"
-            @click="showModalSync = true"
-          /> -->
-          <Button label="Export Excel" icon="pi pi-download" class="p-button-success" @click="exportExcel"/>
-        </div>
     <div
-      class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
+      class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full"
     >
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-xl font-semibold text-[#17316E]">Data Potensi Pelayanan</h3>
@@ -444,10 +444,11 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
             class="p-button-success"
             @click="showModalSync = true"
           />
-          <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" />
+          <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel"/>
         </div>
       </div>
       <DataTable
+        v-if="filters"
         :filters="filters"
         :value="data"
         :loading="loading"
@@ -472,73 +473,120 @@ class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py
               icon="pi pi-filter-slash"
               label="Clear"
               outlined
-
+              @click="clearFilter"
+              />
+            <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
           </div>
         </template>
         <Column field="no" header="No" style="width: 5%" />
         <Column header="Action" style="width: 10%">
           <template #body="slotProps">
             <SplitButton
-
               icon="pi pi-ellipsis-v"
               size="small"
               severity="secondary"
               :model="[
                 { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
                 {
-
                   label: 'Hapus',
                   icon: 'pi pi-trash',
                   command: () => handleDelete(slotProps.data),
                 },
               ]"
-
-          <template #body="{ data }">
-            {{ data.uraian || '-' }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
-          </template>
-        </Column>
-
-          <template #body="{ data }">
-            {{ data.tgl_pendaftaran || '-' }}
-          </template>
-          <template #filter="{ filterModel }">
-            <DatePicker
-              v-model="filterModel.value"
-              dateFormat="dd/mm/yy"
-              placeholder="dd/mm/yyyy"
-              :showTime="false"
-              :showSeconds="false"
-              :showMilliseconds="false"
             />
           </template>
         </Column>
-
-          <template #body="slotProps">
-            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.terbayar || 0) }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Terbayar" />
-          </template>
+        <Column field="no_dokumen" header="No Dokumen" filterField="no_dokumen" :showFilterMatchModes="false">
+            <template #body="{ data }">
+                {{ data.no_dokumen }}
+            </template>
+            <template #filter="{ filterModel }">
+                <InputText v-model="filterModel.value" type="text" placeholder="Search by No Dokumen" />
+            </template>
+        </Column>
+        <Column field="tgl_dokumen" header="Tanggal Dokumen" filterField="tgl_dokumen" dataType="date">
+            <template #body="{ data }">
+                {{ data.tgl_dokumen }}
+            </template>
+            <template #filter="{ filterModel }">
+                <DatePicker v-model="filterModel.value" dateFormat="dd/mm/yy" placeholder="dd/mm/yyyy" />
+            </template>
+        </Column>
+        <Column field="cara_bayar" header="Cara Bayar" filterField="cara_bayar" :showFilterMatchModes="false">
+            <template #body="{ data }">
+                {{ data.cara_bayar }}
+            </template>
+            <template #filter="{ filterModel }">
+                <Select v-model="filterModel.value" :options="caraBayarOptions" optionLabel="label" optionValue="value" placeholder="Any" />
+            </template>
+        </Column>
+        <Column field="penjamin" header="Penjamin" filterField="penjamin" :showFilterMatchModes="false">
+            <template #body="{ data }">
+                {{ data.penjamin }}
+            </template>
+            <template #filter="{ filterModel }">
+                <InputText v-model="filterModel.value" type="text" placeholder="Search by Penjamin" />
+            </template>
+        </Column>
+        <Column field="uraian" header="Uraian" filterField="uraian" :showFilterMatchModes="false">
+            <template #body="{ data }">
+                {{ data.uraian }}
+            </template>
+            <template #filter="{ filterModel }">
+                <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
+            </template>
+        </Column>
+        <Column field="tgl_pendaftaran" header="Tgl Pendaftaran" filterField="tgl_pendaftaran" dataType="date">
+            <template #body="{ data }">
+                {{ data.tgl_pendaftaran }}
+            </template>
+            <template #filter="{ filterModel }">
+                <DatePicker v-model="filterModel.value" dateFormat="dd/mm/yy" placeholder="dd/mm/yyyy" />
+            </template>
+        </Column>
+        <Column field="no_pendaftaran" header="No Pendaftaran" filterField="no_pendaftaran" :showFilterMatchModes="false">
+            <template #body="{ data }">
+                {{ data.no_pendaftaran }}
+            </template>
+            <template #filter="{ filterModel }">
+                <InputText v-model="filterModel.value" type="text" placeholder="Search by No Pendaftaran" />
+            </template>
+        </Column>
+        <Column field="nama" header="Nama Pasien" filterField="nama" :showFilterMatchModes="false">
+            <template #body="{ data }">
+                {{ data.nama }}
+            </template>
+            <template #filter="{ filterModel }">
+                <InputText v-model="filterModel.value" type="text" placeholder="Search by Nama" />
+            </template>
+        </Column>
+        <Column field="jumlah" header="Jumlah" style="text-align: right">
+            <template #body="slotProps">
+                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlah || 0) }}
+            </template>
+        </Column>
+        <Column field="terbayar" header="Terbayar" style="text-align: right">
+            <template #body="slotProps">
+                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.terbayar || 0) }}
+            </template>
         </Column>
         <Column field="sisa_potensi" header="Sisa Potensi" style="text-align: right">
-          <template #body="slotProps">
-            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.sisa_potensi || 0) }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Sisa Potensi" />
-          </template>
+            <template #body="slotProps">
+                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.sisa_potensi || 0) }}
+            </template>
         </Column>
       </DataTable>
     </div>
-    <ModalSyncPenerimaan v-model="showModalSync" @sync="loadData" />
-    <ModalEditPenerimaan
+    <ModalSyncPenerimaan v-model:visible="showModalSync" @sync="loadData" />
+    <EditPotensiPelayanan
       :id="selectedItem?.id"
-      v-model="showModalEdit"
+      v-model:visible="showModalEdit"
       :item="selectedItem"
       @saved="handleSaved"
+    />
+    <TambahPotensiPelayanan
+        v-model:visible="showModalAdd"
+        @saved="handleSaved"
     />
     <Toast />
   </div>

@@ -1,5 +1,5 @@
 <script setup>
-import PotensiPelayanan from '@/components/pendapatan/PotensiPelayanan/DataPotensiPelayanan.vue'
+import PotensiPelayanan from '@/components/pendapatan/potensiPelayanan/DataPotensiPelayanan.vue'
 </script>
 
 <template>
