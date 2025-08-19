@@ -72,15 +72,26 @@ const router = createRouter({
         },
 
         
-{
-    path: 'kas/kurang-bayar',
-    name: 'kas-kurang-bayar',
-    component: () => import('../components/pendapatan/kurangbayar/DataKurangBayar.vue'),
-    meta: {
-        breadcrumb: ['Kas', 'Selisih Kurang Bayar/Setor'], // <-- Sudah diubah
-        // ...
-    }
-},
+        {
+          path: 'kas/kurang-bayar',
+          component: () => import('../views/pendapatan/KurangBayar.vue'),
+          meta: {
+            breadcrumb: ['Kas', 'Selisih Kurang Bayar/Setor'],
+          },
+          redirect: '/kas/kurang-bayar/data-transaksi',
+          children: [
+            {
+              path: 'data-transaksi',
+              name: 'kas-kurang-bayar-transaksi',
+              component: () => import('../components/pendapatan/kurangbayar/DataKurangBayar.vue'),
+            },
+            {
+              path: 'data-selisih',
+              name: 'kas-kurang-bayar-selisih',
+              component: () => import('../components/pendapatan/kurangbayar/DataKurangBayar.vue'),
+            },
+          ],
+        },
         
         {
           path: 'kas/rekening-koran',
