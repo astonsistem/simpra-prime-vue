@@ -232,8 +232,8 @@ const fetchCaraBayar = async () => {
     const response = await api.get('/carabayar')
     if (response.data.items) {
       caraBayarOptions.value = response.data.items.map((item) => ({
-        label: item.caraBayar,
-        value: item.id,
+        label: item.carabayar_nama,
+        value: item.carabayar_id,
       }))
     }
   } catch (error) {

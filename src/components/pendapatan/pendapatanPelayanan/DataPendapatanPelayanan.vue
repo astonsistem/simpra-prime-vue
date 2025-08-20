@@ -16,6 +16,10 @@ import api from '@/services/http.js'
 import { useToast } from 'primevue/usetoast'
 import ModalSyncPenerimaan from '@/components/ModalSyncPenerimaan.vue'
 import ModalEditPenerimaan from '@/components/ModalEditPenerimaan.vue'
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
+
+const activeIndex = ref(0) 
 
 const toast = useToast()
 
@@ -407,284 +411,292 @@ const clearFilter = () => {
 </script>
 
 <template>
-  <div class="p-4">
-    <div
-class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"   
- >
- <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
-          <Select
-            v-model="formFilters.jenis_periode"
-            :options="jenisPeriodeOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Jenis Periode"
-            class="w-full"
-          />
-        </div>
-        <template v-if="formFilters.jenis_periode === 'BULANAN'">
-          <div>
-            <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
-            <Select
-              v-model="formFilters.tahunPeriode"
-              :options="tahunPeriodeOptions"
-              placeholder="Tahun Periode"
-              class="w-full"
-            />
-          </div>
-          <div>
-            <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Awal</label>
-            <Select
-              v-model="formFilters.bulanAwal"
-              :options="bulanOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Bulan Awal"
-              class="w-full"
-            />
-          </div>
-          <div>
-            <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Akhir</label>
-            <Select
-              v-model="formFilters.bulanAkhir"
-              :options="bulanOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Bulan Akhir"
-              class="w-full"
-            />
-          </div>
-        </template>
-        <template v-if="formFilters.jenis_periode === 'TANGGAL'">
-          <div>
-            <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Awal</label>
-            <DatePicker
-              v-model="formFilters.tglAwal"
-              placeholder="Tanggal Awal"
-              showIcon
-              class="w-full"
-              dateFormat="dd/mm/yy"
-              :showTime="false"
-              :showSeconds="false"
-              :showMilliseconds="false"
-            />
-          </div>
-          <div>
-            <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Akhir</label>
-            <DatePicker
-              v-model="formFilters.tglAkhir"
-              placeholder="Tanggal Akhir"
-              showIcon
-              class="w-full"
-              dateFormat="dd/mm/yy"
-              :showTime="false"
-              :showSeconds="false"
-              :showMilliseconds="false"
-            />
-          </div>
-        </template>
-      </div>
-      <div class="mt-4 flex gap-2">
-        <Button label="Cari"  class="p-button-info" @click="searchData" />
-        <Button
-          label="Reset Filter"
-          class="p-button-secondary"
-          @click="resetFilter"
-        />
-       
-        <Button
-          label="Tarik Data Billing"
-          class="p-button-warning" 
-          style="background-color: #ffa500; border: none; color: #fff"
-          @click="openSyncDialog"
-        />
-      </div>
-    </div>
-    <div
-      class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
-    >
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xl font-semibold text-[#17316E]">Data Pendapatan Pelayanan</h3>
-        <div class="flex gap-2">
-          <Button
-            label="Tarik Data"
-            icon="pi pi-download"
-            class="p-button-success"
-            @click="showModalSync = true"
-          />
-          <Button label="Export Excel" icon="pi pi-download" class="p-button-success" @click="exportExcel" />
-        </div>
-      </div>
-      <DataTable
-        :filters="filters"
-        :value="data"
-        :loading="loading"
-        responsiveLayout="scroll"
-        paginator
-        lazy
-        :totalRecords="totalRecords"
-        :rows="rows"
-        :first="first"
-        :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
-        @page="onPageChange"
-        @filter="onFilter"
-        dataKey="id"
-        filterDisplay="menu"
-        :globalFilterFields="['no_dokumen', 'penjamin_nama', 'nama_pasien', 'uraian']"
-        class="p-datatable-sm"
-      >
-        <template #header>
-        </template>
-        <Column field="no" header="No" style="width: 5%" />
-        <Column header="No Pendaftaran" style="width: 15%">
-          <template #body="slotProps">
-            {{ slotProps.data.no_pendaftaran }}
-          </template>
-        </Column>
-        <Column
-          field="no_RM"
-          header="No RM"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.no_RM }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search RM" />
-          </template>
-        </Column>
-         <Column
-          field="nama"
-          header="Nama"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.nama }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search Nama" />
-          </template>
-        </Column>
-         <Column
-          field="tglSelesai"
-          header="Tanggal Selesai"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.tgl_selesai }}
-          </template>
-          <template #filter="{ filterModel }">
-            <DatePicker
-              v-model="filterModel.value"
-              dateFormat="dd/mm/yy"
-              placeholder="dd/mm/yyyy"
-              :showTime="false"
-              :showSeconds="false"
-              :showMilliseconds="false"
-            />
-          </template>
-        </Column>
-        <Column
-          field="jenispelayanan"
-          header="Jenis Pelayanan"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.jenis_pelayanan }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search Jenis Pelayanan" />
-          </template>
-        </Column>
+    <div class="card">
+      <TabView v-model:activeIndex="activeIndex">
+        <TabPanel header="Data Transaksi">
+          <div class="p-4">
+            <div class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
+              <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
+                  <Select
+                    v-model="formFilters.jenis_periode"
+                    :options="jenisPeriodeOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Jenis Periode"
+                    class="w-full"
+                  />
+                </div>
+                <template v-if="formFilters.jenis_periode === 'BULANAN'">
+                  <div>
+                    <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
+                    <Select
+                      v-model="formFilters.tahunPeriode"
+                      :options="tahunPeriodeOptions"
+                      placeholder="Tahun Periode"
+                      class="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Awal</label>
+                    <Select
+                      v-model="formFilters.bulanAwal"
+                      :options="bulanOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Bulan Awal"
+                      class="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Akhir</label>
+                    <Select
+                      v-model="formFilters.bulanAkhir"
+                      :options="bulanOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Bulan Akhir"
+                      class="w-full"
+                    />
+                  </div>
+                </template>
+                <template v-if="formFilters.jenis_periode === 'TANGGAL'">
+                  <div>
+                    <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Awal</label>
+                    <DatePicker
+                      v-model="formFilters.tglAwal"
+                      placeholder="Tanggal Awal"
+                      showIcon
+                      class="w-full"
+                      dateFormat="dd/mm/yy"
+                      :showTime="false"
+                      :showSeconds="false"
+                      :showMilliseconds="false"
+                    />
+                  </div>
+                  <div>
+                    <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Akhir</label>
+                    <DatePicker
+                      v-model="formFilters.tglAkhir"
+                      placeholder="Tanggal Akhir"
+                      showIcon
+                      class="w-full"
+                      dateFormat="dd/mm/yy"
+                      :showTime="false"
+                      :showSeconds="false"
+                      :showMilliseconds="false"
+                    />
+                  </div>
+                </template>
+              </div>
+              <div class="mt-4 flex gap-2">
+                <Button label="Cari"  class="p-button-info" @click="searchData" />
+                <Button
+                  label="Reset Filter"
+                  class="p-button-secondary"
+                  @click="resetFilter"
+                />
+              
+                <Button
+                  label="Tarik Data Billing"
+                  class="p-button-warning" 
+                  style="background-color: #ffa500; border: none; color: #fff"
+                  @click="openSyncDialog"
+                />
+              </div>
+            </div>
+            <div class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
+              <div class="flex justify-between items-center mb-2">
+                <h3 class="text-xl font-semibold text-[#17316E]">Data Pendapatan Pelayanan</h3>
+                <div class="flex gap-2">
+                  <Button
+                    label="Tarik Data"
+                    icon="pi pi-download"
+                    class="p-button-success"
+                    @click="showModalSync = true"
+                  />
+                  <Button label="Export Excel" icon="pi pi-download" class="p-button-success" @click="exportExcel" />
+                </div>
+              </div>
+              <DataTable
+                :filters="filters"
+                :value="data"
+                :loading="loading"
+                responsiveLayout="scroll"
+                paginator
+                lazy
+                :totalRecords="totalRecords"
+                :rows="rows"
+                :first="first"
+                :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
+                @page="onPageChange"
+                @filter="onFilter"
+                dataKey="id"
+                filterDisplay="menu"
+                :globalFilterFields="['no_dokumen', 'penjamin_nama', 'nama_pasien', 'uraian']"
+                class="p-datatable-sm"
+              >
+                <template #header>
+                </template>
+                <Column field="no" header="No" style="width: 5%" />
+                <Column header="No Pendaftaran" style="width: 15%">
+                  <template #body="slotProps">
+                    {{ slotProps.data.no_pendaftaran }}
+                  </template>
+                </Column>
+                <Column
+                  field="no_RM"
+                  header="No RM"
+                  :showFilterMatchModes="false"
+                  style="min-width: 12rem"
+                >
+                  <template #body="{ data }">
+                    {{ data.no_RM }}
+                  </template>
+                  <template #filter="{ filterModel }">
+                    <InputText v-model="filterModel.value" type="text" placeholder="Search RM" />
+                  </template>
+                </Column>
+                <Column
+                  field="nama"
+                  header="Nama"
+                  :showFilterMatchModes="false"
+                  style="min-width: 12rem"
+                >
+                  <template #body="{ data }">
+                    {{ data.nama }}
+                  </template>
+                  <template #filter="{ filterModel }">
+                    <InputText v-model="filterModel.value" type="text" placeholder="Search Nama" />
+                  </template>
+                </Column>
+                <Column
+                  field="tglSelesai"
+                  header="Tanggal Selesai"
+                  :showFilterMatchModes="false"
+                  style="min-width: 12rem"
+                >
+                  <template #body="{ data }">
+                    {{ data.tgl_selesai }}
+                  </template>
+                  <template #filter="{ filterModel }">
+                    <DatePicker
+                      v-model="filterModel.value"
+                      dateFormat="dd/mm/yy"
+                      placeholder="dd/mm/yyyy"
+                      :showTime="false"
+                      :showSeconds="false"
+                      :showMilliseconds="false"
+                    />
+                  </template>
+                </Column>
+                <Column
+                  field="jenispelayanan"
+                  header="Jenis Pelayanan"
+                  :showFilterMatchModes="false"
+                  style="min-width: 12rem"
+                >
+                  <template #body="{ data }">
+                    {{ data.jenis_pelayanan }}
+                  </template>
+                  <template #filter="{ filterModel }">
+                    <InputText v-model="filterModel.value" type="text" placeholder="Search Jenis Pelayanan" />
+                  </template>
+                </Column>
 
-        <Column
-          field="cara_bayar"
-          header="Cara Bayar"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.cara_bayar }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Cara Bayar" />
-          </template>
-        </Column>
+                <Column
+                  field="cara_bayar"
+                  header="Cara Bayar"
+                  :showFilterMatchModes="false"
+                  style="min-width: 12rem"
+                >
+                  <template #body="{ data }">
+                    {{ data.cara_bayar }}
+                  </template>
+                  <template #filter="{ filterModel }">
+                    <InputText v-model="filterModel.value" type="text" placeholder="Search by Cara Bayar" />
+                  </template>
+                </Column>
 
-        <Column
-          field="instalasi"
-          header="Instalasi"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.instalasi }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search Instalasi" />
-          </template>
-        </Column>
-        <Column
-          field="penjamin"
-          header="Penjamin"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.penjamin }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search Penjamin"
-            />
-          </template>
-        </Column>
-        <Column
-          field="_petugas"
-          header="Petugas"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.petugas }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search Petugas"
-            />
-          </template>
-        </Column>
-        <Column field="Jumlah" header="Jumlah Tagihan" style="text-align: right">
-          <template #body="slotProps">
-            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlah || 0) }}
-          </template>
-        </Column>         
-        <Column field="status" header="Status">
-          <template #body="slotProps">
-            {{ slotProps.data.status }}
-          </template>
-        </Column>
-      </DataTable>
+                <Column
+                  field="instalasi"
+                  header="Instalasi"
+                  :showFilterMatchModes="false"
+                  style="min-width: 12rem"
+                >
+                  <template #body="{ data }">
+                    {{ data.instalasi }}
+                  </template>
+                  <template #filter="{ filterModel }">
+                    <InputText v-model="filterModel.value" type="text" placeholder="Search Instalasi" />
+                  </template>
+                </Column>
+                <Column
+                  field="penjamin"
+                  header="Penjamin"
+                  :showFilterMatchModes="false"
+                  style="min-width: 12rem"
+                >
+                  <template #body="{ data }">
+                    {{ data.penjamin }}
+                  </template>
+                  <template #filter="{ filterModel }">
+                    <InputText
+                      v-model="filterModel.value"
+                      type="text"
+                      placeholder="Search Penjamin"
+                    />
+                  </template>
+                </Column>
+                <Column
+                  field="_petugas"
+                  header="Petugas"
+                  :showFilterMatchModes="false"
+                  style="min-width: 12rem"
+                >
+                  <template #body="{ data }">
+                    {{ data.petugas }}
+                  </template>
+                  <template #filter="{ filterModel }">
+                    <InputText
+                      v-model="filterModel.value"
+                      type="text"
+                      placeholder="Search Petugas"
+                    />
+                  </template>
+                </Column>
+                <Column field="Jumlah" header="Jumlah Tagihan" style="text-align: right">
+                  <template #body="slotProps">
+                    {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlah || 0) }}
+                  </template>
+                </Column>         
+                <Column field="status" header="Status">
+                  <template #body="slotProps">
+                    {{ slotProps.data.status }}
+                  </template>
+                </Column>
+              </DataTable>
+            </div>
+          </div>
+        </TabPanel>
+        <TabPanel header="Data Penjamin > 1">
+          <div class="p-4">
+            <h3 class="mb-2">Content of Tab 2</h3>
+            <p>This is the second tab.</p>
+          </div>
+        </TabPanel>
+      </TabView>
     </div>
-    <ModalSyncPenerimaan v-model="showModalSync" @sync="loadData" />
-    <ModalEditPenerimaan
-      :id="selectedItem?.id"
-      v-model="showModalEdit"
-      :item="selectedItem"
-      @saved="handleSaved"
-    />
-    <Toast />
-  </div>
+  <ModalSyncPenerimaan v-model="showModalSync" @sync="loadData" />
+  <ModalEditPenerimaan
+    :id="selectedItem?.id"
+    v-model="showModalEdit"
+    :item="selectedItem"
+    @saved="handleSaved"
+  />
+  <Toast />
 </template>
 
 <style scoped></style>

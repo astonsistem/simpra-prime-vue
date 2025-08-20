@@ -1,5 +1,5 @@
 <script setup>
-import Laporan from '@/components/Laporan.vue'
+import Pelaporan from '@/components/Pelaporan.vue'
 import { useRoute } from 'vue-router'
 import { ref, watch } from 'vue'
 
@@ -23,5 +23,5 @@ watch(route, (newRoute) => {
     <h2 class="text-2xl font-bold text-[#17316E]">{{ breadcrumb.join(' - ') }}</h2>
     <p class="text-s">Kelola Data {{ breadcrumb.join(' - ') }}</p>
   </div>
-  <Laporan />
+  <Pelaporan />
 </template>
