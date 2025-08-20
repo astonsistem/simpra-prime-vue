@@ -122,9 +122,9 @@ async function doValidasi() {
     // TODO: Backend needs to be updated to handle this POST request.
     // The endpoint should be `/billing_kasir/validasi` and it should accept a JSON payload
     // with `id` and `rc_id`.
-    await api.post(`/billing_kasir/validasi`, {
+    await api.put(`/billing_kasir/validasi/penerimaan_layanan`, {
       id: props.item.id,
-      rc_id: selectedRc.value.value,
+      rc_id: selectedRc.value.raw.rc_id,
     })
     toast.add({
       severity: 'success',
