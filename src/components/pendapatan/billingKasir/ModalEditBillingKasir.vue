@@ -231,8 +231,8 @@ const fetchCaraBayar = async () => {
     const response = await api.get('/carabayar')
     if (response.data.items) {
       caraBayarOptions.value = response.data.items.map((item) => ({
-        label: item.caraBayar,
-        value: item.id,
+        label: item.carabayar_nama,
+        value: item.carabayar_id,
       }))
     }
   } catch (error) {
@@ -248,7 +248,11 @@ const fetchCaraBayar = async () => {
 const saveData = async () => {
   loading.value = true
   try {
-    const payload = { ...formData.value }
+    const payload = { 
+      ...formData.value,
+      tgl_bayar: `${formData.value.tgl_bayar.getFullYear()}-${String(formData.value.tgl_bayar.getMonth()+1).padStart(2,'0')}-${String(formData.value.tgl_bayar.getDate()).padStart(2,'0')}`,
+      tgl_dokumen: `${formData.value.tgl_dokumen.getFullYear()}-${String(formData.value.tgl_dokumen.getMonth()+1).padStart(2,'0')}-${String(formData.value.tgl_dokumen.getDate()).padStart(2,'0')}`,
+     }
     if (isEdit.value) {
       await api.put(`/billing_kasir/${formData.value.id}`, payload)
     } else {

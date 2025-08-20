@@ -83,7 +83,6 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
     page,
     size: 100,
   }
-  if (formFilters.value.jenis_periode) q.periode = formFilters.value.jenis_periode
   if (formFilters.value.jenis_periode === 'BULANAN') {
     if (formFilters.value.tahunPeriode) {
       q.tahunPeriode = formFilters.value.tahunPeriode
@@ -104,16 +103,10 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
   if (filters.value) {
     Object.keys(filters.value).forEach((key) => {
       if (filters.value[key].value) {
-        // Handle date filters specially
-        if (key === 'tglBayar' || key === 'tglDokumen') {
-          q[key] = formatDateToYYYYMMDD(filters.value[key].value)
-        } else {
-          q[key] = filters.value[key].value
-        }
+        q[key] = filters.value[key].value
       }
     })
   }
-
   return q
 }
 
@@ -408,7 +401,7 @@ const handleSaved = () => {
   loadData(1, rows.value)
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadData(1, rows.value)
 })
 
@@ -579,7 +572,10 @@ const clearFilter = () => {
         :loading="loading"
         responsiveLayout="scroll"
         paginator
+        lazy
+        :totalRecords="totalRecords"
         :rows="rows"
+        :first="first"
         :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
         @page="onPageChange"
         @filter="onFilter"
