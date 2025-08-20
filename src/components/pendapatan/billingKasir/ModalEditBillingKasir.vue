@@ -195,6 +195,7 @@ watch(
     isEdit.value = !!(newItem && newItem.id)
     if (isEdit.value) {
       formData.value = {
+        ...newItem,
         id: newItem.id,
         no_bayar: newItem.noBayar,
         tgl_bayar: new Date(newItem.tglBayar),
@@ -248,15 +249,76 @@ const fetchCaraBayar = async () => {
 const saveData = async () => {
   loading.value = true
   try {
-    const payload = { 
-      ...formData.value,
-      tgl_bayar: `${formData.value.tgl_bayar.getFullYear()}-${String(formData.value.tgl_bayar.getMonth()+1).padStart(2,'0')}-${String(formData.value.tgl_bayar.getDate()).padStart(2,'0')}`,
-      tgl_dokumen: `${formData.value.tgl_dokumen.getFullYear()}-${String(formData.value.tgl_dokumen.getMonth()+1).padStart(2,'0')}-${String(formData.value.tgl_dokumen.getDate()).padStart(2,'0')}`,
-     }
+    const payload = {
+      id: formData.value.id,
+      pendaftaran_id: formData.value.pendaftaran_id,
+      no_pendaftaran: formData.value.no_pendaftaran,
+      tgl_pendaftaran: formData.value.tgl_pendaftaran,
+      pasien_id: formData.value.pasien_id,
+      no_rekam_medik: formData.value.no_rekam_medik,
+      pasien_nama: formData.value.pasien,
+      pasien_alamat: formData.value.pasien_alamat,
+      jenis_tagihan: formData.value.jenis_tagihan,
+      tgl_krs: formData.value.tgl_krs,
+      tgl_pelayanan: formData.value.tgl_pelayanan,
+      carabayar_id: formData.value.cara_bayar_id,
+      carabayar_nama: formData.value.carabayar_nama,
+      penjamin_id: formData.value.penjamin_id,
+      penjamin_nama: formData.value.penjamin_nama,
+      instalasi_id: formData.value.instalasi_id,
+      instalasi_nama: formData.value.instalasi_nama,
+      metode_bayar: formData.value.metode_bayar,
+      tandabuktibayar_id: formData.value.tandabuktibayar_id,
+      no_buktibayar: formData.value.no_bayar,
+      tgl_buktibayar: formData.value.tgl_bayar,
+      sep_id: formData.value.sep_id,
+      no_sep: formData.value.no_sep,
+      tgl_sep: formData.value.tgl_sep,
+      cara_pembayaran: formData.value.cara_pembayaran,
+      bank_tujuan: formData.value.bank_tujuan,
+      admin_kredit: formData.value.admin_kredit,
+      admin_debit: formData.value.admin_debit,
+      kartubank_pasien: formData.value.kartubank_pasien,
+      no_kartubank_pasien: formData.value.no_kartubank_pasien,
+      closingkasir_id: formData.value.closingkasir_id,
+      tgl_closingkasir: formData.value.tgl_closingkasir,
+      no_closingkasir: formData.value.no_closingkasir,
+      kasir_id: formData.value.kasir_id,
+      kasir_nama: formData.value.kasir_nama,
+      loket_id: formData.value.loket_id,
+      loket_nama: formData.value.loket_nama,
+      guna_bayar: formData.value.uraian,
+      total: formData.value.jumlah_bruto,
+      klasifikasi: formData.value.klasifikasi,
+      status_id: formData.value.status_id,
+      bulan_mrs: formData.value.bulan_mrs,
+      bulan_krs: formData.value.bulan_krs,
+      bulan_pelayanan: formData.value.bulan_pelayanan,
+      akun_id: formData.value.akun_id,
+      selisih: formData.value.selisih,
+      jumlah_netto: formData.value.jumlah_netto,
+      rc_id: formData.value.rc_id,
+      is_web_change: true,
+    }
+
+    // Membersihkan payload dari nilai null atau undefined
+    const cleanedPayload = Object.entries(payload).reduce((acc, [key, value]) => {
+      if (value !== null && value !== undefined) {
+        acc[key] = value
+      }
+      return acc
+    }, {})
+
+    const config = {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+
     if (isEdit.value) {
-      await api.put(`/billing_kasir/${formData.value.id}`, payload)
+      await api.put(`/billing_kasir/${formData.value.id}`, cleanedPayload, config)
     } else {
-      await api.post('/billing_kasir', payload)
+      await api.post('/billing_kasir', cleanedPayload, config)
     }
 
     toast.add({
