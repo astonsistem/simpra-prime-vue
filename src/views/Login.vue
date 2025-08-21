@@ -9,6 +9,7 @@ import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
 import FingerprintJS from '@fingerprintjs/fingerprintjs'
 import Logo from '/logo.png'
+import { isCaptchaEnabled } from '../utils/utils'
 
 const toast = useToast()
 const router = useRouter()
@@ -94,7 +95,7 @@ onMounted(async () => {
 const login = async () => {
   loading.value = true
 
-  if (captchaInput.value.trim().toUpperCase() !== captchaCode.value) {
+  if (isCaptchaEnabled() && captchaInput.value.trim().toUpperCase() !== captchaCode.value) {
     toast.add({
       severity: 'error',
       summary: 'Captcha Salah',
@@ -149,11 +150,7 @@ const login = async () => {
            <p class="system-description">Sistem Manajemen Pendapatan</p> 
            <p class="hospital-name">RSUD dr. Soetomo Surabaya</p><br></br>
             <h4 class="font-bold">Silahkan login untuk mengakses dashboard SIMPRA</h4>
-
-
-
       </div>
-
       <div>
        <label for="username" class="text-surface-900 dark:text-surface-0 font-medium mb-2 block">Email</label>
 <div class="input-with-icon-wrapper">
@@ -166,8 +163,6 @@ const login = async () => {
     />
     <span class="input-icon">@</span>
 </div>
-        
-
         <label for="password" class="text-surface-900 dark:text-surface-0 font-medium mb-2 block">Password</label>
 <div class="input-with-icon-wrapper">
     <div class="input-with-icon-wrapper">
@@ -187,13 +182,9 @@ const login = async () => {
     <i :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
   </span>
 </div>
-
-
 </div>
-       
           <div class="mb-7"></div>
-
-        <div class="mb-6">
+        <div v-if="isCaptchaEnabled()" class="mb-6">
           <label class="text-surface-900 dark:text-surface-0 font-medium mb-2 block">Captcha</label>
           <div class="flex items-center gap-2">
             <InputText placeholder="Masukkan kode captcha" v-model="captchaInput" class="flex-1" />
@@ -213,30 +204,19 @@ const login = async () => {
       <div class="mb-15">
         
 </div>
-
-
-       
-
         <!-- <div class="text-xs text-gray-400 mb-" v-if="browserId">Browser ID: {{ browserId }}</div> -->
-
         <Button
           label="Masuk"
           icon=" !text-xl !leading-none"
           class="w-full !bg-blue-600 !py-4 !text-xl "
           @click="login"
           :loading="loading"
-      
         />
-        
-       
-
         <div class="footer py-4 text-center text-sm text-gray-500 mt-auto border-t border-gray-200">
       &copy; 2024 RSUD dr. Soetomo Surabaya. All rights reserved.
     </div>
       </div>
     </div>
-    
-
     <Toast />
   </div>
 </template>
@@ -284,4 +264,3 @@ const login = async () => {
 
 
 
- 
