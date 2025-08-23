@@ -20,6 +20,7 @@ apiClient.interceptors.request.use(config => {
     return config;
 });
 
+import router from '../router';
 // Response interceptor
 apiClient.interceptors.response.use(
     response => {
@@ -33,8 +34,7 @@ apiClient.interceptors.response.use(
             // Optionally redirect to login page here if you have access to router
             // (You might need to import router or use window.location.href for redirect)
             // Example redirect (if you can access router here -  be careful of circular dependencies):
-            // import router from '../router';
-            // router.push('/login');
+            router.push('/login');
             // For a simpler approach without router in interceptor, you can just reload the page:
             // window.location.reload(); // Reload to effectively redirect to login page due to route guard
         }

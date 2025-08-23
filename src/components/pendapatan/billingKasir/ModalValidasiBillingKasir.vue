@@ -9,7 +9,7 @@
     <div class="p-4 space-y-4">
       <div>
         <h4 class="font-semibold mb-2">Data Billing</h4>
-        <div class="grid grid-cols-2 gap-2 text-sm">
+        <div class="grid grid-cols-2 gap-2 text-sm mb-2 ml-4">
           <div>
             No Bayar: <span class="font-bold">{{ item?.noBayar || '-' }}</span>
           </div>
@@ -27,24 +27,57 @@
           </div>
         </div>
       </div>
-      <div>
-        <h4 class="font-semibold mb-2">Pilih Rekening Koran (RC)</h4>
-        <Dropdown
-          v-model="selectedRc"
-          :options="rcOptions"
-          optionLabel="label"
-          placeholder="Pilih RC"
+      <!-- Search -->
+      <div class="grid grid-cols-2 gap-2 mb-4">
+        <h4 class="font-semibold mb-2 self-center">Pilih Rekening Koran (RC)</h4>
+        <div>
+          <input
+            id="rc-search"
+            type="text"
+            v-model="rc.search"
+            @input="searchRc"
+            class="w-full border border-gray-300 rounded p-2"
+            placeholder="Masukkan kata kunci..."
+          />
+        </div>
+      </div>
+
+      <!-- Make result of selectedRc -->
+      <div v-if="selectedRc" class="grid grid-cols-2 gap-2 text-sm mb-2 ml-4">
+        <div>ID: <span class="font-bold">{{ selectedRc.rc_id || '-' }}</span></div>
+        <div>Nomor: <span class="font-bold">{{ selectedRc.no_rc || '-' }}</span></div>
+      </div>
+      <div class="flex flex-col md:flex-row md:flex-nowrap md:overflow-y-auto md:max-h-[calc(100vh-22rem)] border border-gray-300 rounded">
+        <DataTable
+          v-model:selection="selectedRc"
+          :value="rcOptions"
+          selectionMode="single"
+          dataKey="rc_id"
           class="w-full"
           :loading="rcOptions.length === 0 && modelValue"
-        />
+        >
+          <Column header="ID" field="rc_id" :sortable="true" />
+          <Column header="Nomor" field="no_rc" :sortable="true" />
+        </DataTable>
       </div>
+      <!-- result total of -->
+      <div class="text-sm text-end text-gray-500">
+        Total Rekening Koran: <span class="font-bold">{{ rc.total }}</span>
+      </div>
+      <Paginator
+        v-if="rcOptions.length > 0"
+        v-model:first="rc.first"
+        :rows="rc.rows"
+        :totalRecords="rc.total"
+        @page="onPageChangeRc($event)"
+      />
     </div>
     <template #footer>
       <Button label="Batal" class="p-button-secondary" @click="closeModal" />
       <Button
         label="Validasi"
         class="p-button-success"
-        :disabled="!selectedRc"
+        :disabled="!selectedRc || loading"
         @click="doValidasi"
         :loading="loading"
       />
@@ -52,12 +85,12 @@
   </Dialog>
 </template>
 <script setup>
-import { ref, watch } from 'vue'
+import { reactive, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -68,27 +101,54 @@ const toast = useToast()
 const selectedRc = ref(null)
 const loading = ref(false)
 const rcOptions = ref([])
+const rc = reactive({
+  total: 0,
+  first: 1,
+  rows: 20,
+  search: '',
+})
 
 watch(
   () => props.modelValue,
   async (val) => {
+    selectedRc.value = null
+    rc.search = ''
     if (val && props.item?.id) {
       await fetchRcOptions()
     }
   }
 )
 
+// Debounce search input
+let searchTimeout = null
+function searchRc() {
+  if (searchTimeout) clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    rc.first = 1 // Reset to first page on new search
+    fetchRcOptions()
+  }, 800)
+}
+
+function onPageChangeRc(event) {
+  rc.first = event.first
+  rc.rows = event.rows
+  fetchRcOptions()
+}
+
 async function fetchRcOptions() {
   rcOptions.value = []
-  selectedRc.value = null
   try {
-    const res = await api.get(`/rekening_koran?billing_id=${props.item.id}`)
+    const res = await api.get(`/rekening_koran`, {
+      params: {
+        billing_id: props.item.id,
+        page: Math.floor(rc.first / rc.rows) + 1,
+        size: rc.rows,
+        search: rc.search || undefined,
+      },
+    })
     if (res.data && Array.isArray(res.data.items)) {
-      rcOptions.value = res.data.items.map((rc) => ({
-        label: `${rc.no_rc} - ${rc.tgl_rc} - Rp ${formatNumber(rc.kredit)}`,
-        value: rc.id,
-        raw: rc,
-      }))
+      rcOptions.value = res.data.items
+      rc.total = res.data.total || res.data.items.length
     } else {
       toast.add({
         severity: 'warn',
@@ -122,9 +182,15 @@ async function doValidasi() {
     // TODO: Backend needs to be updated to handle this POST request.
     // The endpoint should be `/billing_kasir/validasi` and it should accept a JSON payload
     // with `id` and `rc_id`.
+    if(!selectedRc.value || !selectedRc.value.rc_id) {
+      toast.add({ severity: 'error', summary: 'Gagal', detail: 'Pilih Rekening Koran terlebih dahulu', life: 3000 })
+      loading.value = false
+      return
+    }
+
     await api.put(`/billing_kasir/validasi/penerimaan_layanan`, {
       id: props.item.id,
-      rc_id: selectedRc.value.raw.rc_id,
+      rc_id: selectedRc.value.rc_id,
     })
     toast.add({
       severity: 'success',
