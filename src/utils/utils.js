@@ -17,3 +17,9 @@ export const formatCurrency = (value, type = 'id-ID', currency = 'IDR') => {
     maximumFractionDigits: 0,
   }).format(value)
 }
+
+export function isCaptchaEnabled() {
+  const val = import.meta.env.VITE_ENABLED_CAPTCHA;
+  if (typeof val === 'undefined') return true;
+  return val !== 'false';
+}

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { FilterMatchMode } from '@primevue/core/api'
 import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
@@ -8,10 +8,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import SplitButton from 'primevue/splitbutton'
-import Menu from 'primevue/menu'
-import IconField from 'primevue/iconfield'
-import InputIcon from 'primevue/inputicon'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 import { useToast } from 'primevue/usetoast'
 import ModalSyncPenerimaan from '@/components/ModalSyncPenerimaan.vue'
 import ModalEditBillingKasir from '@/components/pendapatan/billingKasir/ModalEditBillingKasir.vue'
@@ -21,6 +18,7 @@ import * as XLSX from 'xlsx'
 import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import Calendar from 'primevue/calendar'
+import { isHidden } from '@primevue/core'
 
 const toast = useToast()
 
@@ -77,6 +75,8 @@ const loadingSyncOptions = ref(false)
 const loadingSync = ref(false)
 const showModalValidasi = ref(false)
 const validasiItem = ref(null)
+const showModalCancelValidasi = ref(false)
+const cancelValidasiItem = ref(null)
 
 // Helper function to format date to YYYY-MM-DD
 const formatDateToYYYYMMDD = (date) => {
@@ -132,6 +132,7 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   try {
     const query = buildQuery(page, pageSize)
     const response = await api.get('/billing_kasir', { params: query })
+    console.log('Response:', response)
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
         ...item,
@@ -379,10 +380,51 @@ const handleValidasi = async (item) => {
   }
 }
 
-const handleBuktiBayar = (item) => {
-  console.log('Bukti Bayar item:', item)
-  // TODO: Implement bukti bayar functionality
+const confirmCancelValidasi = (item) => {
+  showModalCancelValidasi.value = true
+  cancelValidasiItem.value = item
 }
+
+const handleCancelValidasi = async () => {
+  const item = cancelValidasiItem.value
+  if (!item.rcId) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Peringatan',
+      detail: 'Data belum divalidasi.',
+      life: 3000,
+    })
+    return
+  }
+  try {
+    loading.value = true
+    await api.put(`billing_kasir/cancel_validasi/penerimaan_layanan`, {
+      id: item.id,
+      rc_id: item.rcId,
+    })
+    
+    toast.add({
+      severity: 'success',
+      summary: 'Berhasil',
+      detail: 'Validasi berhasil dibatalkan',
+      life: 3000,
+    })
+    cancelValidasiItem.value = null
+    showModalCancelValidasi.value = false
+    loadData(1, rows.value)
+  } catch (error) {
+    console.error('Gagal membatalkan validasi:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal',
+      detail: 'Gagal membatalkan validasi. Silakan coba lagi.',
+      life: 3000,
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
 
 const handleDelete = (item) => {
   toast.add({
@@ -499,6 +541,10 @@ const openSyncDialog = async () => {
     syncParams.value = []
     syncForm.value = {}
   }
+}
+
+const isValidated = (rowData) => {
+  return rowData.rcId && rowData.rcId > 0
 }
 
 onMounted(async () => {
@@ -731,23 +777,50 @@ const handleSyncSubmit = async () => {
 
         <Column field="no" header="No" style="width: 5%" />
 
+        <Column
+          field="rcId"
+          header="#"
+          style="width: 10%; text-align: center"
+        >
+          <template #body="{ data }">
+            <i
+              class="pi pi-check-circle"
+              :class="[isValidated(data) ? 'text-green-500' : 'text-gray-300', 'cursor-pointer']"
+              v-if="isValidated(data)"
+            ></i>
+          </template>
+        </Column>
+
         <Column header="Action" style="width: 10%">
           <template #body="slotProps">
             <SplitButton
-              label="Action"
-              icon="pi pi-ellipsis-v"
+              label="Aksi"
               size="small"
               severity="secondary"
               :model="[
-                { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
+                { 
+                  label: 'Ubah', 
+                  icon: 'pi pi-pencil', 
+                  visible: () => !isValidated(slotProps.data), 
+                  command: () => handleEdit(slotProps.data) 
+                },
                 {
                   label: 'Validasi',
                   icon: 'pi pi-check',
+                  visible: () => !isValidated(slotProps.data),
                   command: () => handleValidasi(slotProps.data),
+                },
+                {
+                  label: 'Batal Validasi',
+                  icon: 'pi pi-times-circle',
+                  style: 'color: red;',
+                  visible: () => !!isValidated(slotProps.data),
+                  command: () => confirmCancelValidasi(slotProps.data),
                 },
                 {
                   label: 'Hapus',
                   icon: 'pi pi-trash',
+                  visible: () => !isValidated(slotProps.data),
                   command: () => handleDelete(slotProps.data),
                 },
               ]"
@@ -1055,6 +1128,30 @@ const handleSyncSubmit = async () => {
         </div>
       </template>
     </Toast>
+    <Dialog
+      :visible="showModalCancelValidasi"
+      @update:visible="showModalCancelValidasi = $event"
+      modal
+      header="Konfirmasi Batal Validasi"
+      :closable="true"
+      :style="{ width: '400px' }"
+    >
+      <div class="p-4">
+        <p>Apakah Anda yakin ingin membatalkan validasi data ini?</p>
+        <div class="flex justify-end gap-2 pt-4">
+          <Button
+            label="Ya, Batalkan Validasi"
+            class="p-button-warning"
+            @click="handleCancelValidasi"
+          />
+          <Button
+            label="Tidak"
+            class="p-button-secondary"
+            @click="() => (showModalCancelValidasi = false)"
+          />
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
 
