@@ -1,6 +1,6 @@
 <template>
   <Dialog :visible="visible" @update:visible="visible = $event" modal :header="isEdit ? 'Edit Data' : 'Tambah Data'"
-    :style="{ width: '80rem' }" :breakpoints="{ '1199px': '95vw', '575px': '95vw' }">
+    :style="{ width: '60rem' }" :breakpoints="{ '1199px': '75vw', '575px': '90vw' }">
     <template #header>
       <div class="flex items-center justify-between w-full">
         <div>
@@ -14,221 +14,199 @@
       </div>
     </template>
     <div class="p-4">
-      <Fieldset class="mb-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">No Closing Kasir</label>
+          <InputText v-model="formData.no_closingkasir" placeholder="No Closing Kasir" class="w-full" />
+        <!-- Error -->
+          <div v-if="errors.no_closingkasir" class="text-red-500 text-sm mt-1">{{ errors?.no_closingkasir[0] }}</div>
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Closing Kasir</label>
+          <DatePicker v-model="formData.tgl_closingkasir" date-format="dd/mm/yy" placeholder="Tanggal Closing Kasir" showIcon class="w-full" />
+          <div v-if="errors.tgl_closingkasir" class="text-red-500 text-sm mt-1">{{ errors?.tgl_closingkasir[0] }}</div>
+        </div>
+        
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">No Dokumen</label>
+          <InputText v-model="formData.no_pendaftaran" placeholder="No Dokumen" class="w-full" />
+          <div v-if="errors.no_pendaftaran" class="text-red-500 text-sm mt-1">{{ errors?.no_pendaftaran[0] }}</div>
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Dokumen</label>
+          <DatePicker v-model="formData.tgl_pelayanan" date-format="dd/mm/yy" placeholder="Tanggal Dokumn" showIcon class="w-full" />
+          <div v-if="errors.tgl_pelayanan" class="text-red-500 text-sm mt-1">{{ errors?.tgl_pelayanan[0] }}</div>
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Status</label>
+          <Dropdown v-model="formData.status_id" :options="optionsStatus" optionLabel="label" optionValue="value" placeholder="status"
+            class="w-full" />
+          <div v-if="errors.status_id" class="text-red-500 text-sm mt-1">{{ errors?.status_id[0] }}</div>
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Klasifikasi</label>
+          <Dropdown v-model="formData.klasifikasi" :options="[
+            { label: 'Pendapatan', value: 'Pendapatan' },
+            { label: 'Piutang', value: 'Piutang' },
+            { label: 'PDD', value: 'PDD' },
+          ]" optionLabel="label" optionValue="value"
+            placeholder="Klasifikasi" class="w-full" />
+          <div v-if="errors.klasifikasi" class="text-red-500 text-sm mt-1">{{ errors?.klasifikasi[0] }}</div>
+        </div>
+      </div>
+
+      <Divider />
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4">
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Cara Pembayaran</label>
+          <Dropdown v-model="formData.cara_pembayaran" :options="[
+            { label: 'Tunai', value: 'TUNAI' },
+            { label: 'Transfer', value: 'TRANSFER' },
+            { label: 'EDC', value: 'EDC' },
+            { label: 'QRIS', value: 'QRIS' },
+            { label: 'S-TAPAY', value: 'STPAY' },
+            { label: 'UE Reader', value: 'READER' },
+          ]" optionLabel="label" optionValue="value"
+            placeholder="Pilih Cara Pembayaran" class="w-full" />
+          <div v-if="errors.cara_pembayaran" class="text-red-500 text-sm mt-1">{{ errors?.cara_pembayaran[0] }}</div>
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Instalasi</label>
+          <Dropdown v-model="formData.instalasi_id" :options="optionsInstalasi" optionLabel="label" optionValue="value"
+            placeholder="Pilih Instalasi" class="w-full" />
+          <div v-if="errors.instalasi_id" class="text-red-500 text-sm mt-1">{{ errors?.instalasi_id[0] }}</div>
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Bank Tujuan</label>
+          <Dropdown v-model="formData.bank_tujuan" :options="optionsBankTujuan" optionLabel="label" optionValue="value"
+            placeholder="Pilih Bank Tujuan" class="w-full" />
+          <div v-if="errors.bank_tujuan" class="text-red-500 text-sm mt-1">{{ errors?.bank_tujuan[0] }}</div>
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Sumber Transaksi</label>
+          <Dropdown v-model="formData.jenis_tagihan" :options="optionsSumberTransaksi" optionLabel="label" optionValue="value"
+            placeholder="Pilih Sumber Transaksi" class="w-full" />
+          <div v-if="errors.jenis_tagihan" class="text-red-500 text-sm mt-1">{{ errors?.jenis_tagihan[0] }}</div>
+        </div>
+      </div>
+
+      <Fieldset class="mb-4">
         <template #legend>
-          <span class="font-semibold text-gray-700">Data Billing Kasir</span>
+          <span class="font-semibold text-gray-400">Data Pasien</span>
         </template>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <!-- Loket (dropdown) -->
+        <div class="grid grid-cols-2 gap-4 sm:gap-6">
           <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Loket</label>
-            <Dropdown v-model="formData.loket_id" :options="optionsLoket" optionLabel="label" optionValue="value"
-              placeholder="Pilih Loket" class="w-full" />
-            <div v-if="errors.loket_id" class="text-red-500 text-sm mt-1">{{ errors?.loket_id[0] }}</div>
-          </div>
-          
-          <!-- Kasir (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Kasir</label>
-            <Dropdown v-model="formData.kasir_id" :options="optionsKasir" optionLabel="label" optionValue="value"
-              placeholder="Pilih Kasir" class="w-full" />
-            <div v-if="errors.kasir_id" class="text-red-500 text-sm mt-1">{{ errors?.kasir_id[0] }}</div>
-          </div>
-          
-          <!-- Tgl. Kwitansi (Dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Tgl. Kwitansi</label>
-            <Dropdown v-model="formData.tgl_buktibayar" :options="optionsTanggal" optionLabel="label" optionValue="value"
-              placeholder="Pilih Tanggal Kwitansi" class="w-full" />
-            <div v-if="errors.tgl_buktibayar" class="text-red-500 text-sm mt-1">{{ errors?.tgl_buktibayar[0] }}</div>
-          </div>
-          
-          <!-- No Kwitansi -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">No Kwitansi</label>
-            <InputText v-model="formData.no_buktibayar" placeholder="Nomor Kwitansi" class="w-full" />
-            <div v-if="errors.no_buktibayar" class="text-red-500 text-sm mt-1">{{ errors?.no_buktibayar[0] }}</div>
-          </div>
-          
-          <!-- Jumlah Bayar -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah Bayar</label>
-            <InputNumber v-model="formData.total" placeholder="Jumlah Bayar" class="w-full" mode="currency"
-              currency="IDR" locale="id-ID" />
-            <div v-if="errors.total" class="text-red-500 text-sm mt-1">{{ errors?.total[0] }}</div>
-          </div>
-          
-          <!-- Biaya Admin EDC -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Biaya Admin EDC</label>
-            <InputNumber v-model="formData.admin_kredit" placeholder="Biaya Admin EDC" class="w-full" mode="currency"
-              currency="IDR" locale="id-ID" />
-            <div v-if="errors.admin_kredit" class="text-red-500 text-sm mt-1">{{ errors?.admin_kredit[0] }}</div>
-          </div>
-          
-          <!-- Biaya Admin QRIS -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Biaya Admin QRIS</label>
-            <InputNumber v-model="formData.admin_debit" placeholder="Biaya Admin QRIS" class="w-full"
-              mode="currency" currency="IDR" locale="id-ID" />
-            <div v-if="errors.admin_debit" class="text-red-500 text-sm mt-1">{{ errors?.admin_debit[0] }}</div>
-          </div>
-          
-          <!-- Selisih -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Selisih</label>
-            <InputNumber v-model="formData.selisih" placeholder="Selisih" class="w-full" mode="currency"
-              currency="IDR" locale="id-ID" />
-            <div v-if="errors.selisih" class="text-red-500 text-sm mt-1">{{ errors?.selisih[0] }}</div>
-          </div>
-          
-          <!-- Jumlah Netto -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah Netto</label>
-            <InputNumber v-model="formData.jumlah_netto" placeholder="Jumlah Netto" class="w-full" mode="currency"
-              currency="IDR" locale="id-ID" readonly disabled />
-            <div v-if="errors.jumlah_netto" class="text-red-500 text-sm mt-1">{{ errors?.jumlah_netto[0] }}</div>
-          </div>
-          
-          <!-- Cara Pembayaran (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Cara Pembayaran</label>
-            <Dropdown v-model="formData.cara_pembayaran" :options="optionsCaraPembayaran" optionLabel="label" optionValue="value"
-              placeholder="Pilih Cara Pembayaran" class="w-full" />
-            <div v-if="errors.cara_pembayaran" class="text-red-500 text-sm mt-1">{{ errors?.cara_pembayaran[0] }}</div>
-          </div>
-          
-          <!-- Bank Tujuan (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Bank Tujuan</label>
-            <Dropdown v-model="formData.bank_tujuan" :options="optionsBankTujuan" optionLabel="label" optionValue="value"
-              placeholder="Pilih Bank Tujuan" class="w-full" />
-            <div v-if="errors.bank_tujuan" class="text-red-500 text-sm mt-1">{{ errors?.bank_tujuan[0] }}</div>
-          </div>
-          
-          <!-- No Closing Kasir (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">No Closing Kasir</label>
-            <Dropdown v-model="formData.no_closingkasir" :options="optionsClosingKasir" optionLabel="label" optionValue="value"
-              placeholder="Pilih No Closing Kasir" class="w-full" />
-            <div v-if="errors.no_closingkasir" class="text-red-500 text-sm mt-1">{{ errors?.no_closingkasir[0] }}</div>
-          </div>
-          
-          <!-- No Kartu Bank Pasien -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">No Kartu Bank Pasien</label>
-            <InputText v-model="formData.no_kartu_bank" placeholder="Nomor Kartu Bank Pasien" class="w-full" />
-            <div v-if="errors.no_kartu_bank" class="text-red-500 text-sm mt-1">{{ errors?.no_kartu_bank[0] }}</div>
-          </div>
-          
-          <!-- Nama Bank Pasien -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Nama Bank Pasien</label>
-            <InputText v-model="formData.nama_bank_pasien" placeholder="Nama Bank Pasien" class="w-full" />
-            <div v-if="errors.nama_bank_pasien" class="text-red-500 text-sm mt-1">{{ errors?.nama_bank_pasien[0] }}</div>
-          </div>
-          
-          <!-- Instalasi (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Instalasi</label>
-            <Dropdown v-model="formData.instalasi_id" :options="optionsInstalasi" optionLabel="label" optionValue="value"
-              placeholder="Pilih Instalasi" class="w-full" />
-            <div v-if="errors.instalasi_id" class="text-red-500 text-sm mt-1">{{ errors?.instalasi_id[0] }}</div>
-          </div>
-          
-          <!-- Jenis Tagihan (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Jenis Tagihan</label>
-            <Dropdown v-model="formData.jenis_tagihan" :options="optionsSumberTransaksi" optionLabel="label" optionValue="value"
-              placeholder="Pilih Jenis Tagihan" class="w-full" />
-            <div v-if="errors.jenis_tagihan" class="text-red-500 text-sm mt-1">{{ errors?.jenis_tagihan[0] }}</div>
-          </div>
-          
-          <!-- Tgl. Pendaftaran (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Tgl. Pendaftaran</label>
-            <Dropdown v-model="formData.tgl_pendaftaran" :options="optionsTanggal" optionLabel="label" optionValue="value"
-              placeholder="Pilih Tanggal Pendaftaran" class="w-full" />
-            <div v-if="errors.tgl_pendaftaran" class="text-red-500 text-sm mt-1">{{ errors?.tgl_pendaftaran[0] }}</div>
-          </div>
-          
-          <!-- No Pendaftaran -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">No Pendaftaran</label>
-            <InputText v-model="formData.no_pendaftaran" placeholder="Nomor Pendaftaran" class="w-full" />
-            <div v-if="errors.no_pendaftaran" class="text-red-500 text-sm mt-1">{{ errors?.no_pendaftaran[0] }}</div>
-          </div>
-          
-          <!-- Tgl Krs (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Tgl Krs</label>
-            <Dropdown v-model="formData.tgl_krs" :options="optionsTanggal" optionLabel="label" optionValue="value"
-              placeholder="Pilih Tanggal KRS" class="w-full" />
-            <div v-if="errors.tgl_krs" class="text-red-500 text-sm mt-1">{{ errors?.tgl_krs[0] }}</div>
-          </div>
-          
-          <!-- Tgl Pelayanan (Dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Tgl Pelayanan</label>
-            <Dropdown v-model="formData.tgl_pelayanan" :options="optionsTanggal" optionLabel="label" optionValue="value"
-              placeholder="Pilih Tanggal Pelayanan" class="w-full" />
-            <div v-if="errors.tgl_pelayanan" class="text-red-500 text-sm mt-1">{{ errors?.tgl_pelayanan[0] }}</div>
-          </div>
-          
-          <!-- Nama Pasien -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Nama Pasien</label>
+            <label class="block mb-2 text-sm font-medium text-gray-700">Penyetor</label>
             <InputText v-model="formData.pasien_nama" placeholder="Nama Pasien" class="w-full" />
             <div v-if="errors.pasien_nama" class="text-red-500 text-sm mt-1">{{ errors?.pasien_nama[0] }}</div>
           </div>
-          
-          <!-- No Rekam Medik -->
+          <div>&nbsp;</div>
           <div>
             <label class="block mb-2 text-sm font-medium text-gray-700">No Rekam Medik</label>
-            <InputText v-model="formData.no_rekam_medik" placeholder="Nomor Rekam Medik" class="w-full" />
+            <InputText v-model="formData.no_rekam_medik" placeholder="No Rekam Medik" class="w-full" />
             <div v-if="errors.no_rekam_medik" class="text-red-500 text-sm mt-1">{{ errors?.no_rekam_medik[0] }}</div>
           </div>
-          
-          <!-- Alamat Pasien -->
           <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Alamat Pasien</label>
-            <Textarea v-model="formData.alamat_pasien" placeholder="Alamat Pasien" class="w-full" rows="2" />
-            <div v-if="errors.alamat_pasien" class="text-red-50 text-sm mt-1">{{ errors?.alamat_pasien[0] }}</div>
+            <label class="block mb-2 text-sm font-medium text-gray-700">Nomor Pendaftaran</label>
+            <InputText v-model="formData.no_pendaftaran" placeholder="Nomor Pendaftaran" class="w-full" />
+            <div v-if="errors.no_pendaftaran" class="text-red-500 text-sm mt-1">{{ errors?.no_pendaftaran[0] }}</div>
           </div>
-          
-          <!-- Cara Bayar (dropdown) -->
+          <div>
+            <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Pendaftaran</label>
+            <DatePicker v-model="formData.tgl_pendaftaran" date-format="dd/mm/yy" placeholder="Tanggal Pendaftaran" showIcon class="w-full" />
+            <div v-if="errors.tgl_pendaftaran" class="text-red-500 text-sm mt-1">{{ errors?.tgl_pendaftaran[0] }}</div>
+          </div>
           <div>
             <label class="block mb-2 text-sm font-medium text-gray-700">Cara Bayar</label>
             <Dropdown v-model="formData.carabayar_id" :options="caraBayarOptions" optionLabel="label"
-              optionValue="value" placeholder="Pilih Cara Bayar" class="w-full" />
+              optionValue="value" placeholder="Cara Bayar" class="w-full" />
             <div v-if="errors.carabayar_id" class="text-red-500 text-sm mt-1">{{ errors?.carabayar_id[0] }}</div>
           </div>
-          
-          <!-- Penjamin (dropdown) -->
           <div>
             <label class="block mb-2 text-sm font-medium text-gray-700">Penjamin</label>
             <Dropdown v-model="formData.penjamin_id" :options="optionsPenjamin" optionLabel="label" optionValue="value"
               placeholder="Pilih Penjamin" class="w-full" />
             <div v-if="errors.penjamin_id" class="text-red-500 text-sm mt-1">{{ errors?.penjamin_id[0] }}</div>
           </div>
-          
-          <!-- Status (dropdown) -->
+        </div>
+
+      </Fieldset>
+
+      <div class="my-4"></div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Status</label>
-            <Dropdown v-model="formData.status_id" :options="optionsStatus" optionLabel="label" optionValue="value"
-              placeholder="Pilih Status" class="w-full" />
-            <div v-if="errors.status_id" class="text-red-500 text-sm mt-1">{{ errors?.status_id[0] }}</div>
+            <Fieldset class="mb-4">
+              <template #legend>
+                <span class="font-semibold text-gray-400">Data Billing</span>
+              </template>
+              <div class="flex flex-col gap-4 sm:gap-6">
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah</label>
+                  <InputNumber v-model="formData.total" placeholder="Jumlah" class="w-full" mode="currency"
+                    currency="IDR" locale="id-ID" />
+                  <div v-if="errors.total" class="text-red-500 text-sm mt-1">{{ errors?.total[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Biaya Admin EDC</label>
+                  <InputNumber v-model="formData.admin_kredit" placeholder="Biaya Admin EDC" class="w-full" mode="currency"
+                    currency="IDR" locale="id-ID" />
+                  <div v-if="errors.admin_kredit" class="text-red-500 text-sm mt-1">{{ errors?.admin_kredit[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Biaya Admin QRIS</label>
+                  <InputNumber v-model="formData.admin_debit" placeholder="Biaya Admin QRIS" class="w-full"
+                    mode="currency" currency="IDR" locale="id-ID" />
+                  <div v-if="errors.admin_debit" class="text-red-500 text-sm mt-1">{{ errors?.admin_debit[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah Netto</label>
+                  <InputNumber v-model="formData.jumlah_netto" placeholder="Jumlah Netto" class="w-full" mode="currency"
+                    currency="IDR" locale="id-ID" readonly disabled />
+                  <div v-if="errors.jumlah_nettot" class="text-red-500 text-sm mt-1">{{ errors?.jumlah_nettot[0] }}</div>
+                </div>
+              </div>
+            </Fieldset>
           </div>
-          
-          <!-- Klasifikasi (dropdown) -->
+
           <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Klasifikasi</label>
-            <Dropdown v-model="formData.klasifikasi" :options="optionsKlasifikasi" optionLabel="label" optionValue="value"
-              placeholder="Pilih Klasifikasi" class="w-full" />
-            <div v-if="errors.klasifikasi" class="text-red-500 text-sm mt-1">{{ errors?.klasifikasi[0] }}</div>
+            <Fieldset class="mb-4">
+              <template #legend><span class="font-semibold text-gray-400">Bukti Kwitansi / Setor</span></template>
+              <div class="flex flex-col gap-4 sm:gap-6">
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">No Bukti</label>
+                  <InputText v-model="formData.no_buktibayar" placeholder="No Bukti" class="w-full" />
+                  <div v-if="errors.no_buktibayar" class="text-red-500 text-sm mt-1">{{ errors?.no_buktibayar[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Bukti</label>
+                  <DatePicker v-model="formData.tgl_buktibayar" date-format="dd/mm/yy" placeholder="Tanggal Bukti" showIcon class="w-full" />
+                  <div v-if="errors.tgl_buktibayar" class="text-red-500 text-sm mt-1">{{ errors?.tgl_buktibayar[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Selisih</label>
+                  <InputNumber v-model="formData.selisih" placeholder="Selisih" class="w-full" mode="currency"
+                    currency="IDR" locale="id-ID" />
+                  <div v-if="errors.selisih" class="text-red-500 text-sm mt-1">{{ errors?.selisih[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Nama Kasir</label>
+                  <Dropdown v-model="formData.kasir_id" :options="optionsKasir" optionLabel="label" optionValue="value"
+                    placeholder="Pilih Kasir" class="w-full" />
+                  <div v-if="errors.kasir_id" class="text-red-500 text-sm mt-1">{{ errors?.kasir_id[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Loket Kasir</label>
+                  <Dropdown v-model="formData.loket_id" :options="optionsLoket" optionLabel="label" optionValue="value"
+                    placeholder="Pilih Loket" class="w-full" />
+                  <div v-if="errors.loket_id" class="text-red-500 text-sm mt-1">{{ errors?.loket_id[0] }}</div>
+                </div>
+              </div>
+            </Fieldset> 
           </div>
         </div>
-      </Fieldset>
     </div>
     <template #footer>
       <Button label="Batal" icon="pi pi-times" @click="closeModal" class="p-button-text" />
@@ -282,11 +260,7 @@ const formData = ref({
   // ==============
   pasien_nama: '',
   no_rekam_medik: '',
-  alamat_pasien: '',
   tgl_pendaftaran: null,
-  tgl_krs: null,
-  no_kartu_bank: '',
-  nama_bank_pasien: '',
   carabayar_id: null,
   penjamin_id: null,
   //
@@ -299,42 +273,13 @@ const formData = ref({
   selisih: 0
 })
 
+
 const toast = useToast()
 const loading = ref(false)
 const isEdit = ref(false)
 const caraBayarOptions = ref([])
 const visible = ref(props.modelValue)
 const errors = ref({})
-
-// New options for dropdowns
-const optionsTanggal = ref([
-  { label: '01/01/2023', value: '2023-01-01' },
-  { label: '02/01/2023', value: '2023-01-02' },
-  { label: '03/01/2023', value: '2023-01-03' },
-  // Add more dates as needed
-])
-
-const optionsClosingKasir = ref([
-  { label: 'Closing 001', value: '001' },
-  { label: 'Closing 002', value: '002' },
-  { label: 'Closing 003', value: '003' },
-  // Add more closing kasir options as needed
-])
-
-const optionsCaraPembayaran = ref([
-  { label: 'Tunai', value: 'TUNAI' },
-  { label: 'Transfer', value: 'TRANSFER' },
-  { label: 'EDC', value: 'EDC' },
-  { label: 'QRIS', value: 'QRIS' },
-  { label: 'S-TAPAY', value: 'STPAY' },
-  { label: 'UE Reader', value: 'READER' },
-])
-
-const optionsKlasifikasi = ref([
-  { label: 'Pendapatan', value: 'Pendapatan' },
-  { label: 'Piutang', value: 'Piutang' },
-  { label: 'PDD', value: 'PDD' },
-])
 
 watch(
   () => props.modelValue,
