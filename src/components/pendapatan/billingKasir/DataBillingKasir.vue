@@ -18,7 +18,6 @@ import * as XLSX from 'xlsx'
 import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import Calendar from 'primevue/calendar'
-import { isHidden } from '@primevue/core'
 
 const toast = useToast()
 
@@ -355,7 +354,9 @@ const handleValidasi = async (item) => {
   }
   try {
     
-    const response = await api.get(`/billing_kasir/${item.id}`)
+    const response = await api.get(`/billing_kasir/${item.id}`, {params: {
+      action: 'validasi'
+    }})
     if (response.data) {
       validasiItem.value = { ...response.data }
       showModalValidasi.value = true
@@ -870,20 +871,6 @@ const handleSyncSubmit = async () => {
         </Column>
 
         <Column
-          field="uraian"
-          header="Uraian"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.uraian }}
-          </template>
-          <!-- <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
-          </template> -->
-        </Column>
-
-        <Column
           field="noDokumen"
           header="No Dokumen"
           :showFilterMatchModes="false"
@@ -915,6 +902,20 @@ const handleSyncSubmit = async () => {
               :showSeconds="false"
               :showMilliseconds="false"
             />
+          </template>
+        </Column>
+
+        <Column
+          field="noClosingKasir"
+          header="No Closing"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.noClosingKasir }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by No noClosingKasir" />
           </template>
         </Column>
 

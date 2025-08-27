@@ -15,20 +15,7 @@
     </template>
     <div class="p-4">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Loket</label>
-          <Dropdown v-model="formData.loket_id" :options="optionsLoket" optionLabel="label" optionValue="value"
-            placeholder="Pilih Loket" class="w-full" />
-          <!-- Error -->
-          <div v-if="errors.loket_id" class="text-red-500 text-sm mt-1">{{ errors?.loket_id[0] }}</div>
-        </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Kasir</label>
-          <Dropdown v-model="formData.kasir_id" :options="optionsKasir" optionLabel="label" optionValue="value"
-            placeholder="Pilih Kasir" class="w-full" />
-          <!-- Error -->
-          <div v-if="errors.kasir_id" class="text-red-500 text-sm mt-1">{{ errors?.kasir_id[0] }}</div>
-        </div>
+        
         <div>
           <label class="block mb-2 text-sm font-medium text-gray-700">No Closing Kasir</label>
           <InputText v-model="formData.no_closingkasir" placeholder="No Closing Kasir" class="w-full" />
@@ -40,24 +27,15 @@
           <DatePicker v-model="formData.tgl_closingkasir" date-format="dd/mm/yy" placeholder="Tanggal Closing Kasir" showIcon class="w-full" />
           <div v-if="errors.tgl_closingkasir" class="text-red-500 text-sm mt-1">{{ errors?.tgl_closingkasir[0] }}</div>
         </div>
+        
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">No Bayar</label>
-          <InputText v-model="formData.no_buktibayar" placeholder="No Bayar" class="w-full" />
-          <div v-if="errors.no_buktibayar" class="text-red-500 text-sm mt-1">{{ errors?.no_buktibayar[0] }}</div>
-        </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Bayar</label>
-          <DatePicker v-model="formData.tgl_buktibayar" date-format="dd/mm/yy" placeholder="Tanggal Bayar" showIcon class="w-full" />
-          <div v-if="errors.tgl_buktibayar" class="text-red-500 text-sm mt-1">{{ errors?.tgl_buktibayar[0] }}</div>
-        </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">No Kwitansi</label>
-          <InputText v-model="formData.no_pendaftaran" placeholder="No Kwitansi" class="w-full" />
+          <label class="block mb-2 text-sm font-medium text-gray-700">No Dokumen</label>
+          <InputText v-model="formData.no_pendaftaran" placeholder="No Dokumen" class="w-full" />
           <div v-if="errors.no_pendaftaran" class="text-red-500 text-sm mt-1">{{ errors?.no_pendaftaran[0] }}</div>
         </div>
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Kwitansi</label>
-          <DatePicker v-model="formData.tgl_pelayanan" date-format="dd/mm/yy" placeholder="Tanggal Kwintansi" showIcon class="w-full" />
+          <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Dokumen</label>
+          <DatePicker v-model="formData.tgl_pelayanan" date-format="dd/mm/yy" placeholder="Tanggal Dokumn" showIcon class="w-full" />
           <div v-if="errors.tgl_pelayanan" class="text-red-500 text-sm mt-1">{{ errors?.tgl_pelayanan[0] }}</div>
         </div>
         <div>
@@ -75,11 +53,6 @@
           ]" optionLabel="label" optionValue="value"
             placeholder="Klasifikasi" class="w-full" />
           <div v-if="errors.klasifikasi" class="text-red-500 text-sm mt-1">{{ errors?.klasifikasi[0] }}</div>
-        </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Uraian</label>
-          <Textarea v-model="formData.uraian" placeholder="Uraian" rows="2" class="w-full" />
-          <div v-if="errors.uraian" class="text-red-500 text-sm mt-1">{{ errors?.uraian[0] }}</div>
         </div>
       </div>
 
@@ -125,7 +98,7 @@
         </template>
         <div class="grid grid-cols-2 gap-4 sm:gap-6">
           <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Nama Pasien</label>
+            <label class="block mb-2 text-sm font-medium text-gray-700">Penyetor</label>
             <InputText v-model="formData.pasien_nama" placeholder="Nama Pasien" class="w-full" />
             <div v-if="errors.pasien_nama" class="text-red-500 text-sm mt-1">{{ errors?.pasien_nama[0] }}</div>
           </div>
@@ -134,11 +107,6 @@
             <label class="block mb-2 text-sm font-medium text-gray-700">No Rekam Medik</label>
             <InputText v-model="formData.no_rekam_medik" placeholder="No Rekam Medik" class="w-full" />
             <div v-if="errors.no_rekam_medik" class="text-red-500 text-sm mt-1">{{ errors?.no_rekam_medik[0] }}</div>
-          </div>
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">No Rekening DPA</label>
-            <InputText v-model="formData.no_rekening_dpa" placeholder="No Rekening DPA" class="w-full" />
-            <div v-if="errors.no_rekening_dpa" class="text-red-500 text-sm mt-1">{{ errors?.no_rekening_dpa[0] }}</div>
           </div>
           <div>
             <label class="block mb-2 text-sm font-medium text-gray-700">Nomor Pendaftaran</label>
@@ -169,7 +137,6 @@
       <div class="my-4"></div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-          <div>&nbsp;</div>
           <div>
             <Fieldset class="mb-4">
               <template #legend>
@@ -195,12 +162,6 @@
                   <div v-if="errors.admin_debit" class="text-red-500 text-sm mt-1">{{ errors?.admin_debit[0] }}</div>
                 </div>
                 <div>
-                  <label class="block mb-2 text-sm font-medium text-gray-700">Selisih</label>
-                  <InputNumber v-model="formData.selisih" placeholder="Selisih" class="w-full" mode="currency"
-                    currency="IDR" locale="id-ID" />
-                  <div v-if="errors.selisih" class="text-red-500 text-sm mt-1">{{ errors?.selisih[0] }}</div>
-                </div>
-                <div>
                   <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah Netto</label>
                   <InputNumber v-model="formData.jumlah_netto" placeholder="Jumlah Netto" class="w-full" mode="currency"
                     currency="IDR" locale="id-ID" readonly disabled />
@@ -208,6 +169,42 @@
                 </div>
               </div>
             </Fieldset>
+          </div>
+
+          <div>
+            <Fieldset class="mb-4">
+              <template #legend><span class="font-semibold text-gray-400">Bukti Kwitansi / Setor</span></template>
+              <div class="flex flex-col gap-4 sm:gap-6">
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">No Bukti</label>
+                  <InputText v-model="formData.no_buktibayar" placeholder="No Bukti" class="w-full" />
+                  <div v-if="errors.no_buktibayar" class="text-red-500 text-sm mt-1">{{ errors?.no_buktibayar[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Bukti</label>
+                  <DatePicker v-model="formData.tgl_buktibayar" date-format="dd/mm/yy" placeholder="Tanggal Bukti" showIcon class="w-full" />
+                  <div v-if="errors.tgl_buktibayar" class="text-red-500 text-sm mt-1">{{ errors?.tgl_buktibayar[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Selisih</label>
+                  <InputNumber v-model="formData.selisih" placeholder="Selisih" class="w-full" mode="currency"
+                    currency="IDR" locale="id-ID" />
+                  <div v-if="errors.selisih" class="text-red-500 text-sm mt-1">{{ errors?.selisih[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Nama Kasir</label>
+                  <Dropdown v-model="formData.kasir_id" :options="optionsKasir" optionLabel="label" optionValue="value"
+                    placeholder="Pilih Kasir" class="w-full" />
+                  <div v-if="errors.kasir_id" class="text-red-500 text-sm mt-1">{{ errors?.kasir_id[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Loket Kasir</label>
+                  <Dropdown v-model="formData.loket_id" :options="optionsLoket" optionLabel="label" optionValue="value"
+                    placeholder="Pilih Loket" class="w-full" />
+                  <div v-if="errors.loket_id" class="text-red-500 text-sm mt-1">{{ errors?.loket_id[0] }}</div>
+                </div>
+              </div>
+            </Fieldset> 
           </div>
         </div>
     </div>
@@ -255,7 +252,6 @@ const formData = ref({
   tgl_pelayanan: null,
   status_id: null,
   klasifikasi: null,
-  uraian: '',
   // ==============
   cara_pembayaran: '',
   bank_tujuan: '',
@@ -265,7 +261,6 @@ const formData = ref({
   pasien_nama: '',
   no_rekam_medik: '',
   tgl_pendaftaran: null,
-  no_rekening_dpa: '',
   carabayar_id: null,
   penjamin_id: null,
   //
@@ -304,17 +299,8 @@ watch(
 
 watch(visible, (newValue) => {
   emit('update:modelValue', newValue)
-})
-
-watch(() => formData.value.jumlah_setor, (newVal) => {
-  if(formData.value.jumlah_setor != null || formData.value.jumlah_setor != undefined){
-    formData.value.jumlah_netto = newVal - formData.value.admin_kredit
-  }
-})
-
-watch(() => formData.value.admin_kredit, (newVal) => {
-  if(formData.value.jumlah_setor != null || formData.value.jumlah_setor != undefined){
-    formData.value.jumlah_netto = formData.value.jumlah_setor - newVal
+  if (newValue) {
+    formData.value.jumlah_netto = hitungJumlahNetto()
   }
 })
 
@@ -343,12 +329,15 @@ watch(
   { immediate: true }
 )
 
+const hitungJumlahNetto = () => {
+  const total = formData.value.total || 0
+  const adminKredit = formData.value.admin_kredit || 0
+  const selisih = formData.value.selisih || 0
+  return total - (adminKredit + selisih)
+}
+
 const jumlahNetto = computed(() => {
-  return (
-    (formData.value.total || 0) -
-    (formData.value.admin_kredit || 0) -
-    (formData.value.admin_debit || 0)
-  )
+  return hitungJumlahNetto()
 })
 
 watch(jumlahNetto, (newVal) => {
