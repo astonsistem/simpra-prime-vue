@@ -27,7 +27,8 @@ apiClient.interceptors.response.use(
         return response.data; // Return response.data for successful responses (as you were doing)
     },
     error => {
-        if (error.response?.status === 401) {
+        const status = error.response?.status;
+        if (status === 401) {
             // Handle 401 Unauthorized - token expired or invalid
             console.log('API Error 401: Unauthorized. Logging out.');
             authService.logout(); // Clear token and role from localStorage
@@ -37,8 +38,24 @@ apiClient.interceptors.response.use(
             router.push('/login');
             // For a simpler approach without router in interceptor, you can just reload the page:
             // window.location.reload(); // Reload to effectively redirect to login page due to route guard
+            return Promise.reject({ type: 'auth', status: status, message: 'Unauthorized. Please log in again.' });
         }
-        return Promise.reject(error.response?.data || error.message); // Reject with error data or message
+
+        if (status === 422) {
+            // Handle 422 Unprocessable Entity - validation errors
+            return Promise.reject({
+                type: 'validation',
+                status: status,
+                message: error.response?.data?.message || 'Validation Error',
+                errors: error.response?.data?.errors || null // Include validation errors if available
+            });
+        }
+        
+        return Promise.reject({
+            type: 'general',
+            status: status,
+            message: error.response?.data?.message || error.response?.data || error.message 
+        }); // Reject with error data or message
     }
 );
 

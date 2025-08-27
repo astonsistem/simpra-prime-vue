@@ -132,7 +132,6 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   try {
     const query = buildQuery(page, pageSize)
     const response = await api.get('/billing_kasir', { params: query })
-    console.log('Response:', response)
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
         ...item,
@@ -319,10 +318,10 @@ const handleEdit = async (item) => {
     return
   }
   try {
-    loading.value = true
+   
     const response = await api.get(`/billing_kasir/${item.id}`)
     if (response.data) {
-      selectedItem.value = { ...response.data }
+      selectedItem.value = response.data
       showModalEdit.value = true
     } else {
       toast.add({
@@ -355,7 +354,7 @@ const handleValidasi = async (item) => {
     return
   }
   try {
-    loading.value = true
+    
     const response = await api.get(`/billing_kasir/${item.id}`)
     if (response.data) {
       validasiItem.value = { ...response.data }
@@ -397,7 +396,7 @@ const handleCancelValidasi = async () => {
     return
   }
   try {
-    loading.value = true
+ 
     await api.put(`billing_kasir/cancel_validasi/penerimaan_layanan`, {
       id: item.id,
       rc_id: item.rcId,
@@ -467,12 +466,6 @@ const onReject = () => {
 
 const handleSaved = () => {
   showModalEdit.value = false
-  toast.add({
-    severity: 'success',
-    summary: 'Berhasil',
-    detail: 'Data berhasil disimpan',
-    life: 3000,
-  })
   loadData(1, rows.value)
 }
 
@@ -731,7 +724,6 @@ const handleSyncSubmit = async () => {
       <DataTable
         :filters="filters"
         :value="data"
-        :loading="loading"
         responsiveLayout="scroll"
         paginator
         lazy
@@ -835,7 +827,7 @@ const handleSyncSubmit = async () => {
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.noBayar }}
+            <span>{{ data.noBayar }}</span>
           </template>
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search by No Bayar" />

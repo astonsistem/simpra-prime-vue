@@ -54,7 +54,7 @@
           selectionMode="single"
           dataKey="rc_id"
           class="w-full"
-          :loading="rcOptions.length === 0 && modelValue"
+          :loading="rcOptions.length === 0 && modelValue" 
         >
           <Column header="ID" field="rc_id" :sortable="true" />
           <Column header="Nomor" field="no_rc" :sortable="true" />
@@ -87,7 +87,6 @@
 <script setup>
 import { reactive, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
-import Dropdown from 'primevue/dropdown'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/api/client.js'
