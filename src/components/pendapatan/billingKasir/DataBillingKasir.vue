@@ -18,7 +18,6 @@ import * as XLSX from 'xlsx'
 import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import Calendar from 'primevue/calendar'
-import { isHidden } from '@primevue/core'
 
 const toast = useToast()
 
@@ -132,7 +131,6 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   try {
     const query = buildQuery(page, pageSize)
     const response = await api.get('/billing_kasir', { params: query })
-    console.log('Response:', response)
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
         ...item,
@@ -319,10 +317,10 @@ const handleEdit = async (item) => {
     return
   }
   try {
-    loading.value = true
+   
     const response = await api.get(`/billing_kasir/${item.id}`)
     if (response.data) {
-      selectedItem.value = { ...response.data }
+      selectedItem.value = response.data
       showModalEdit.value = true
     } else {
       toast.add({
@@ -355,8 +353,10 @@ const handleValidasi = async (item) => {
     return
   }
   try {
-    loading.value = true
-    const response = await api.get(`/billing_kasir/${item.id}`)
+    
+    const response = await api.get(`/billing_kasir/${item.id}`, {params: {
+      action: 'validasi'
+    }})
     if (response.data) {
       validasiItem.value = { ...response.data }
       showModalValidasi.value = true
@@ -397,7 +397,7 @@ const handleCancelValidasi = async () => {
     return
   }
   try {
-    loading.value = true
+ 
     await api.put(`billing_kasir/cancel_validasi/penerimaan_layanan`, {
       id: item.id,
       rc_id: item.rcId,
@@ -467,12 +467,6 @@ const onReject = () => {
 
 const handleSaved = () => {
   showModalEdit.value = false
-  toast.add({
-    severity: 'success',
-    summary: 'Berhasil',
-    detail: 'Data berhasil disimpan',
-    life: 3000,
-  })
   loadData(1, rows.value)
 }
 
@@ -731,7 +725,6 @@ const handleSyncSubmit = async () => {
       <DataTable
         :filters="filters"
         :value="data"
-        :loading="loading"
         responsiveLayout="scroll"
         paginator
         lazy
@@ -835,7 +828,7 @@ const handleSyncSubmit = async () => {
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.noBayar }}
+            <span>{{ data.noBayar }}</span>
           </template>
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search by No Bayar" />
@@ -878,20 +871,6 @@ const handleSyncSubmit = async () => {
         </Column>
 
         <Column
-          field="uraian"
-          header="Uraian"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.uraian }}
-          </template>
-          <!-- <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
-          </template> -->
-        </Column>
-
-        <Column
           field="noDokumen"
           header="No Dokumen"
           :showFilterMatchModes="false"
@@ -923,6 +902,20 @@ const handleSyncSubmit = async () => {
               :showSeconds="false"
               :showMilliseconds="false"
             />
+          </template>
+        </Column>
+
+        <Column
+          field="noClosingKasir"
+          header="No Closing"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.noClosingKasir }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by No noClosingKasir" />
           </template>
         </Column>
 

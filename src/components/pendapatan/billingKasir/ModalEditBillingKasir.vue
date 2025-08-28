@@ -1,121 +1,222 @@
 <template>
-  <Dialog
-    :visible="visible"
-    @update:visible="visible = $event"
-    modal
-    :header="isEdit ? 'Edit Data' : 'Tambah Data'"
-    :style="{ width: '60rem' }"
-    :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
-  >
+  <Dialog :visible="visible" @update:visible="visible = $event" modal :header="isEdit ? 'Edit Data' : 'Tambah Data'"
+    :style="{ width: '60rem' }" :breakpoints="{ '1199px': '75vw', '575px': '90vw' }">
+    <template #header>
+      <div class="flex items-center justify-between w-full">
+        <div>
+          <h2 class="text-lg font-semibold">
+            {{ isEdit ? 'Edit Data Billing Kasir' : 'Tambah Data Billing Kasir' }}
+          </h2>
+          <p class="text-sm text-gray-500">
+            {{ isEdit ? 'Perbarui informasi billing kasir di bawah ini.' : 'Isi informasi billing kasir di bawah ini.' }}
+          </p>
+        </div>
+      </div>
+    </template>
     <div class="p-4">
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">No Bayar</label>
-          <InputText v-model="formData.no_bayar" placeholder="No Bayar" class="w-full" />
+          <label class="block mb-2 text-sm font-medium text-gray-700">No Closing Kasir</label>
+          <InputText v-model="formData.no_closingkasir" placeholder="No Closing Kasir" class="w-full" />
+        <!-- Error -->
+          <div v-if="errors.no_closingkasir" class="text-red-500 text-sm mt-1">{{ errors?.no_closingkasir[0] }}</div>
         </div>
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Bayar</label>
-          <DatePicker
-            v-model="formData.tgl_bayar"
-            placeholder="Tanggal Bayar"
-            showIcon
-            class="w-full"
-          />
+          <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Closing Kasir</label>
+          <DatePicker v-model="formData.tgl_closingkasir" date-format="dd/mm/yy" placeholder="Tanggal Closing Kasir" showIcon class="w-full" />
+          <div v-if="errors.tgl_closingkasir" class="text-red-500 text-sm mt-1">{{ errors?.tgl_closingkasir[0] }}</div>
         </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Pasien</label>
-          <InputText v-model="formData.pasien" placeholder="Pasien" class="w-full" />
-        </div>
+        
         <div>
           <label class="block mb-2 text-sm font-medium text-gray-700">No Dokumen</label>
-          <InputText v-model="formData.no_dokumen" placeholder="No Dokumen" class="w-full" />
+          <InputText v-model="formData.no_pendaftaran" placeholder="No Dokumen" class="w-full" />
+          <div v-if="errors.no_pendaftaran" class="text-red-500 text-sm mt-1">{{ errors?.no_pendaftaran[0] }}</div>
         </div>
         <div>
           <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Dokumen</label>
-          <DatePicker
-            v-model="formData.tgl_dokumen"
-            placeholder="Tanggal Dokumen"
-            showIcon
-            class="w-full"
-          />
+          <DatePicker v-model="formData.tgl_pelayanan" date-format="dd/mm/yy" placeholder="Tanggal Dokumn" showIcon class="w-full" />
+          <div v-if="errors.tgl_pelayanan" class="text-red-500 text-sm mt-1">{{ errors?.tgl_pelayanan[0] }}</div>
         </div>
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Cara Bayar</label>
-          <Dropdown
-            v-model="formData.cara_bayar_id"
-            :options="caraBayarOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Pilih Cara Bayar"
-            class="w-full"
-          />
-        </div>
-        <div class="col-span-2">
-          <label class="block mb-2 text-sm font-medium text-gray-700">Uraian</label>
-          <Textarea v-model="formData.uraian" placeholder="Uraian" rows="3" class="w-full" />
+          <label class="block mb-2 text-sm font-medium text-gray-700">Status</label>
+          <Dropdown v-model="formData.status_id" :options="optionsStatus" optionLabel="label" optionValue="value" placeholder="status"
+            class="w-full" />
+          <div v-if="errors.status_id" class="text-red-500 text-sm mt-1">{{ errors?.status_id[0] }}</div>
         </div>
         <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah Bruto</label>
-          <InputNumber
-            v-model="formData.jumlah_bruto"
-            placeholder="Jumlah Bruto"
-            class="w-full"
-            mode="currency"
-            currency="IDR"
-            locale="id-ID"
-          />
-        </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Biaya Admin EDC</label>
-          <InputNumber
-            v-model="formData.biaya_admin_edc"
-            placeholder="Biaya Admin EDC"
-            class="w-full"
-            mode="currency"
-            currency="IDR"
-            locale="id-ID"
-          />
-        </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Biaya Admin QRIS</label>
-          <InputNumber
-            v-model="formData.biaya_admin_qris"
-            placeholder="Biaya Admin QRIS"
-            class="w-full"
-            mode="currency"
-            currency="IDR"
-            locale="id-ID"
-          />
-        </div>
-        <div>
-          <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah Netto</label>
-          <InputNumber
-            v-model="formData.jumlah_netto"
-            placeholder="Jumlah Netto"
-            class="w-full"
-            mode="currency"
-            currency="IDR"
-            locale="id-ID"
-            disabled
-          />
+          <label class="block mb-2 text-sm font-medium text-gray-700">Klasifikasi</label>
+          <Dropdown v-model="formData.klasifikasi" :options="[
+            { label: 'Pendapatan', value: 'Pendapatan' },
+            { label: 'Piutang', value: 'Piutang' },
+            { label: 'PDD', value: 'PDD' },
+          ]" optionLabel="label" optionValue="value"
+            placeholder="Klasifikasi" class="w-full" />
+          <div v-if="errors.klasifikasi" class="text-red-500 text-sm mt-1">{{ errors?.klasifikasi[0] }}</div>
         </div>
       </div>
+
+      <Divider />
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4">
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Cara Pembayaran</label>
+          <Dropdown v-model="formData.cara_pembayaran" :options="[
+            { label: 'Tunai', value: 'TUNAI' },
+            { label: 'Transfer', value: 'TRANSFER' },
+            { label: 'EDC', value: 'EDC' },
+            { label: 'QRIS', value: 'QRIS' },
+            { label: 'S-TAPAY', value: 'STPAY' },
+            { label: 'UE Reader', value: 'READER' },
+          ]" optionLabel="label" optionValue="value"
+            placeholder="Pilih Cara Pembayaran" class="w-full" />
+          <div v-if="errors.cara_pembayaran" class="text-red-500 text-sm mt-1">{{ errors?.cara_pembayaran[0] }}</div>
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Instalasi</label>
+          <Dropdown v-model="formData.instalasi_id" :options="optionsInstalasi" optionLabel="label" optionValue="value"
+            placeholder="Pilih Instalasi" class="w-full" />
+          <div v-if="errors.instalasi_id" class="text-red-500 text-sm mt-1">{{ errors?.instalasi_id[0] }}</div>
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Bank Tujuan</label>
+          <Dropdown v-model="formData.bank_tujuan" :options="optionsBankTujuan" optionLabel="label" optionValue="value"
+            placeholder="Pilih Bank Tujuan" class="w-full" />
+          <div v-if="errors.bank_tujuan" class="text-red-500 text-sm mt-1">{{ errors?.bank_tujuan[0] }}</div>
+        </div>
+        <div>
+          <label class="block mb-2 text-sm font-medium text-gray-700">Sumber Transaksi</label>
+          <Dropdown v-model="formData.jenis_tagihan" :options="optionsSumberTransaksi" optionLabel="label" optionValue="value"
+            placeholder="Pilih Sumber Transaksi" class="w-full" />
+          <div v-if="errors.jenis_tagihan" class="text-red-500 text-sm mt-1">{{ errors?.jenis_tagihan[0] }}</div>
+        </div>
+      </div>
+
+      <Fieldset class="mb-4">
+        <template #legend>
+          <span class="font-semibold text-gray-400">Data Pasien</span>
+        </template>
+        <div class="grid grid-cols-2 gap-4 sm:gap-6">
+          <div>
+            <label class="block mb-2 text-sm font-medium text-gray-700">Penyetor</label>
+            <InputText v-model="formData.pasien_nama" placeholder="Nama Pasien" class="w-full" />
+            <div v-if="errors.pasien_nama" class="text-red-500 text-sm mt-1">{{ errors?.pasien_nama[0] }}</div>
+          </div>
+          <div>&nbsp;</div>
+          <div>
+            <label class="block mb-2 text-sm font-medium text-gray-700">No Rekam Medik</label>
+            <InputText v-model="formData.no_rekam_medik" placeholder="No Rekam Medik" class="w-full" />
+            <div v-if="errors.no_rekam_medik" class="text-red-500 text-sm mt-1">{{ errors?.no_rekam_medik[0] }}</div>
+          </div>
+          <div>
+            <label class="block mb-2 text-sm font-medium text-gray-700">Nomor Pendaftaran</label>
+            <InputText v-model="formData.no_pendaftaran" placeholder="Nomor Pendaftaran" class="w-full" />
+            <div v-if="errors.no_pendaftaran" class="text-red-500 text-sm mt-1">{{ errors?.no_pendaftaran[0] }}</div>
+          </div>
+          <div>
+            <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Pendaftaran</label>
+            <DatePicker v-model="formData.tgl_pendaftaran" date-format="dd/mm/yy" placeholder="Tanggal Pendaftaran" showIcon class="w-full" />
+            <div v-if="errors.tgl_pendaftaran" class="text-red-500 text-sm mt-1">{{ errors?.tgl_pendaftaran[0] }}</div>
+          </div>
+          <div>
+            <label class="block mb-2 text-sm font-medium text-gray-700">Cara Bayar</label>
+            <Dropdown v-model="formData.carabayar_id" :options="caraBayarOptions" optionLabel="label"
+              optionValue="value" placeholder="Cara Bayar" class="w-full" />
+            <div v-if="errors.carabayar_id" class="text-red-500 text-sm mt-1">{{ errors?.carabayar_id[0] }}</div>
+          </div>
+          <div>
+            <label class="block mb-2 text-sm font-medium text-gray-700">Penjamin</label>
+            <Dropdown v-model="formData.penjamin_id" :options="optionsPenjamin" optionLabel="label" optionValue="value"
+              placeholder="Pilih Penjamin" class="w-full" />
+            <div v-if="errors.penjamin_id" class="text-red-500 text-sm mt-1">{{ errors?.penjamin_id[0] }}</div>
+          </div>
+        </div>
+
+      </Fieldset>
+
+      <div class="my-4"></div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+          <div>
+            <Fieldset class="mb-4">
+              <template #legend>
+                <span class="font-semibold text-gray-400">Data Billing</span>
+              </template>
+              <div class="flex flex-col gap-4 sm:gap-6">
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah</label>
+                  <InputNumber v-model="formData.total" placeholder="Jumlah" class="w-full" mode="currency"
+                    currency="IDR" locale="id-ID" />
+                  <div v-if="errors.total" class="text-red-500 text-sm mt-1">{{ errors?.total[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Biaya Admin EDC</label>
+                  <InputNumber v-model="formData.admin_kredit" placeholder="Biaya Admin EDC" class="w-full" mode="currency"
+                    currency="IDR" locale="id-ID" />
+                  <div v-if="errors.admin_kredit" class="text-red-500 text-sm mt-1">{{ errors?.admin_kredit[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Biaya Admin QRIS</label>
+                  <InputNumber v-model="formData.admin_debit" placeholder="Biaya Admin QRIS" class="w-full"
+                    mode="currency" currency="IDR" locale="id-ID" />
+                  <div v-if="errors.admin_debit" class="text-red-500 text-sm mt-1">{{ errors?.admin_debit[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah Netto</label>
+                  <InputNumber v-model="formData.jumlah_netto" placeholder="Jumlah Netto" class="w-full" mode="currency"
+                    currency="IDR" locale="id-ID" readonly disabled />
+                  <div v-if="errors.jumlah_nettot" class="text-red-500 text-sm mt-1">{{ errors?.jumlah_nettot[0] }}</div>
+                </div>
+              </div>
+            </Fieldset>
+          </div>
+
+          <div>
+            <Fieldset class="mb-4">
+              <template #legend><span class="font-semibold text-gray-400">Bukti Kwitansi / Setor</span></template>
+              <div class="flex flex-col gap-4 sm:gap-6">
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">No Bukti</label>
+                  <InputText v-model="formData.no_buktibayar" placeholder="No Bukti" class="w-full" />
+                  <div v-if="errors.no_buktibayar" class="text-red-500 text-sm mt-1">{{ errors?.no_buktibayar[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Tanggal Bukti</label>
+                  <DatePicker v-model="formData.tgl_buktibayar" date-format="dd/mm/yy" placeholder="Tanggal Bukti" showIcon class="w-full" />
+                  <div v-if="errors.tgl_buktibayar" class="text-red-500 text-sm mt-1">{{ errors?.tgl_buktibayar[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Selisih</label>
+                  <InputNumber v-model="formData.selisih" placeholder="Selisih" class="w-full" mode="currency"
+                    currency="IDR" locale="id-ID" />
+                  <div v-if="errors.selisih" class="text-red-500 text-sm mt-1">{{ errors?.selisih[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Nama Kasir</label>
+                  <Dropdown v-model="formData.kasir_id" :options="optionsKasir" optionLabel="label" optionValue="value"
+                    placeholder="Pilih Kasir" class="w-full" />
+                  <div v-if="errors.kasir_id" class="text-red-500 text-sm mt-1">{{ errors?.kasir_id[0] }}</div>
+                </div>
+                <div>
+                  <label class="block mb-2 text-sm font-medium text-gray-700">Loket Kasir</label>
+                  <Dropdown v-model="formData.loket_id" :options="optionsLoket" optionLabel="label" optionValue="value"
+                    placeholder="Pilih Loket" class="w-full" />
+                  <div v-if="errors.loket_id" class="text-red-500 text-sm mt-1">{{ errors?.loket_id[0] }}</div>
+                </div>
+              </div>
+            </Fieldset> 
+          </div>
+        </div>
     </div>
     <template #footer>
       <Button label="Batal" icon="pi pi-times" @click="closeModal" class="p-button-text" />
-      <Button
-        label="Simpan"
-        icon="pi pi-check"
-        @click="saveData"
-        :loading="loading"
-        class="p-button-success"
-      />
+      <Button label="Simpan" icon="pi pi-check" @click="saveData" :loading="loading" class="p-button-success" />
     </template>
   </Dialog>
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
@@ -125,6 +226,7 @@ import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/services/http.js'
+import client from '@/api/client.js'
 
 const props = defineProps({
   modelValue: {
@@ -139,26 +241,45 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'saved'])
 
+const formData = ref({
+  loket_id: null,
+  kasir_id: null,
+  no_closingkasir: '',
+  tgl_closingkasir: null,
+  no_buktibayar: '',
+  tgl_buktibayar: null,
+  no_pendaftaran: '',
+  tgl_pelayanan: null,
+  status_id: null,
+  klasifikasi: null,
+  // ==============
+  cara_pembayaran: '',
+  bank_tujuan: '',
+  instalasi_id: null,
+  jenis_tagihan: '',
+  // ==============
+  pasien_nama: '',
+  no_rekam_medik: '',
+  tgl_pendaftaran: null,
+  carabayar_id: null,
+  penjamin_id: null,
+  //
+  jumlah_setor: 0,
+  total: 0, // bruto
+  selisih: 0,
+  jumlah_netto: 0,
+  admin_kredit: 0,
+  admin_debit: 0,
+  selisih: 0
+})
+
+
 const toast = useToast()
 const loading = ref(false)
 const isEdit = ref(false)
-
-const formData = ref({
-  no_bayar: '',
-  tgl_bayar: null,
-  pasien: '',
-  no_dokumen: '',
-  tgl_dokumen: null,
-  uraian: '',
-  cara_bayar_id: null,
-  jumlah_bruto: 0,
-  biaya_admin_edc: 0,
-  biaya_admin_qris: 0,
-})
-
 const caraBayarOptions = ref([])
-
 const visible = ref(props.modelValue)
+const errors = ref({})
 
 watch(
   () => props.modelValue,
@@ -166,27 +287,33 @@ watch(
     visible.value = newValue
     if (newValue) {
       fetchCaraBayar()
+      fetchLoket()
+      fetchKasir()
+      fetchInstalasi()
+      fetchBankTujuan()
+      fetchSumberTransaksi()
+      fetchPenjamin()
     }
   }
 )
 
 watch(visible, (newValue) => {
   emit('update:modelValue', newValue)
+  if (newValue) {
+    formData.value.jumlah_netto = hitungJumlahNetto()
+  }
 })
 
 const resetForm = () => {
-  formData.value = {
-    no_bayar: '',
-    tgl_bayar: null,
-    pasien: '',
-    no_dokumen: '',
-    tgl_dokumen: null,
-    uraian: '',
-    cara_bayar_id: null,
-    jumlah_bruto: 0,
-    biaya_admin_edc: 0,
-    biaya_admin_qris: 0,
-  }
+  Object.keys(formData.value).forEach((key) => {
+    if (typeof formData.value[key] === 'string') {
+      formData.value[key] = ''
+    } else if (typeof formData.value[key] === 'number') {
+      formData.value[key] = 0
+    } else {
+      formData.value[key] = null
+    }
+  })
 }
 
 watch(
@@ -194,20 +321,7 @@ watch(
   (newItem) => {
     isEdit.value = !!(newItem && newItem.id)
     if (isEdit.value) {
-      formData.value = {
-        ...newItem,
-        id: newItem.id,
-        no_bayar: newItem.noBayar,
-        tgl_bayar: new Date(newItem.tglBayar),
-        pasien: newItem.pasien,
-        no_dokumen: newItem.noDokumen,
-        tgl_dokumen: new Date(newItem.tglDokumen),
-        uraian: newItem.uraian,
-        cara_bayar_id: newItem.caraBayarId,
-        jumlah_bruto: newItem.jumlahBruto,
-        biaya_admin_edc: newItem.biayaAdminEdc,
-        biaya_admin_qris: newItem.biayaAdminQris,
-      }
+      formData.value = {...newItem}
     } else {
       resetForm()
     }
@@ -215,12 +329,15 @@ watch(
   { immediate: true }
 )
 
+const hitungJumlahNetto = () => {
+  const total = formData.value.total || 0
+  const adminKredit = formData.value.admin_kredit || 0
+  const selisih = formData.value.selisih || 0
+  return total - (adminKredit + selisih)
+}
+
 const jumlahNetto = computed(() => {
-  return (
-    (formData.value.jumlah_bruto || 0) -
-    (formData.value.biaya_admin_edc || 0) -
-    (formData.value.biaya_admin_qris || 0)
-  )
+  return hitungJumlahNetto()
 })
 
 watch(jumlahNetto, (newVal) => {
@@ -246,79 +363,158 @@ const fetchCaraBayar = async () => {
   }
 }
 
+const optionsLoket = ref([])
+const optionsKasir = ref([])
+const optionsStatus = ref([
+  { label: 'Tagihan', value: '1' },
+  { label: 'Klaim', value: '2' },
+  { label: 'Verif', value: '3' },
+  { label: 'Terima', value: '4' },
+  { label: 'Setor', value: '5' },
+  { label: 'BKU', value: '6' },
+  { label: 'Pending', value: '7' },
+  { label: 'Gagal', value: '8' },
+  { label: 'Batal', value: '1-' },
+])
+
+const fetchLoket = async () => {
+  if(optionsLoket.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  try {
+    const response = await api.get('/loket/list')
+    // console.log('Loket Response data:', response.data)
+    if (response.data) {
+      optionsLoket.value = response.data.data.map((item) => ({
+        label: item.loket_nama,
+        value: item.loket_id,
+      }))
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Gagal memuat data loket',
+      life: 3000,
+    })
+  }
+}
+
+const fetchKasir = async () => {
+  if(optionsKasir.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  try {
+    const response = await api.get('/kasir/list')
+    if (response.data) {
+      optionsKasir.value = response.data.data.map((item) => ({
+        label: item.kasir_nama,
+        value: item.kasir_id,
+      }))
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Gagal memuat data kasir',
+      life: 3000,
+    })
+  }
+}
+
+const optionsInstalasi = ref([])
+const fetchInstalasi = async () => {
+  if(optionsInstalasi.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  try {
+    const response = await api.get('/instalasi')
+    console.log('Instalasi Response data:', response.data.items)
+    if (response.data.items) {
+      optionsInstalasi.value = response.data.items.map((item) => ({
+        label: item.instalasi_nama,
+        value: item.instalasi_id,
+      }))
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Gagal memuat data instalasi',
+      life: 3000,
+    })
+  }
+}
+
+// bank tujuan
+const optionsBankTujuan = ref([])
+const fetchBankTujuan = async () => {
+  if(optionsBankTujuan.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  try {
+    const response = await api.get('/bank/list')
+    if (response.data.data) {
+      optionsBankTujuan.value = response.data.data.map((item) => ({
+        label: item.bank_nama,
+        value: item.bank_id,
+      }))
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Gagal memuat data bank tujuan',
+      life: 3000,
+    })
+  }
+}
+
+// sumber transaksi
+const optionsSumberTransaksi = ref([])
+const fetchSumberTransaksi = async () => {
+  if(optionsSumberTransaksi.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  try {
+    const response = await api.get('/sumbertransaksi/list')
+    if (response.data.data) {
+      optionsSumberTransaksi.value = response.data.data.map((item) => ({
+        label: item.sumber_nama,
+        value: item.sumber_id,
+      }))
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Gagal memuat data sumber transaksi',
+      life: 3000,
+    })
+  }
+}
+
+const optionsPenjamin = ref([])
+const fetchPenjamin = async () => {
+  if(optionsPenjamin.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  try {
+    const response = await api.get('/penjamin/list')
+    if (response.data.data) {
+      optionsPenjamin.value = response.data.data.map((item) => ({
+        label: item.penjamin_nama,
+        value: item.penjamin_id,
+      }))
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Gagal memuat data penjamin',
+      life: 3000,
+    })    
+  }
+}
+
 const saveData = async () => {
   loading.value = true
+  errors.value = {} // Reset errors sebelum menyimpan
   try {
-    const payload = {
-      id: formData.value.id,
-      pendaftaran_id: formData.value.pendaftaran_id,
-      no_pendaftaran: formData.value.no_pendaftaran,
-      tgl_pendaftaran: formData.value.tgl_pendaftaran,
-      pasien_id: formData.value.pasien_id,
-      no_rekam_medik: formData.value.no_rekam_medik,
-      pasien_nama: formData.value.pasien,
-      pasien_alamat: formData.value.pasien_alamat,
-      jenis_tagihan: formData.value.jenis_tagihan,
-      tgl_krs: formData.value.tgl_krs,
-      tgl_pelayanan: formData.value.tgl_pelayanan,
-      carabayar_id: formData.value.cara_bayar_id,
-      carabayar_nama: formData.value.carabayar_nama,
-      penjamin_id: formData.value.penjamin_id,
-      penjamin_nama: formData.value.penjamin_nama,
-      instalasi_id: formData.value.instalasi_id,
-      instalasi_nama: formData.value.instalasi_nama,
-      metode_bayar: formData.value.metode_bayar,
-      tandabuktibayar_id: formData.value.tandabuktibayar_id,
-      no_buktibayar: formData.value.no_bayar,
-      tgl_buktibayar: formData.value.tgl_bayar,
-      sep_id: formData.value.sep_id,
-      no_sep: formData.value.no_sep,
-      tgl_sep: formData.value.tgl_sep,
-      cara_pembayaran: formData.value.cara_pembayaran,
-      bank_tujuan: formData.value.bank_tujuan,
-      admin_kredit: formData.value.admin_kredit,
-      admin_debit: formData.value.admin_debit,
-      kartubank_pasien: formData.value.kartubank_pasien,
-      no_kartubank_pasien: formData.value.no_kartubank_pasien,
-      closingkasir_id: formData.value.closingkasir_id,
-      tgl_closingkasir: formData.value.tgl_closingkasir,
-      no_closingkasir: formData.value.no_closingkasir,
-      kasir_id: formData.value.kasir_id,
-      kasir_nama: formData.value.kasir_nama,
-      loket_id: formData.value.loket_id,
-      loket_nama: formData.value.loket_nama,
-      guna_bayar: formData.value.uraian,
-      total: formData.value.jumlah_bruto,
-      klasifikasi: formData.value.klasifikasi,
-      status_id: formData.value.status_id,
-      bulan_mrs: formData.value.bulan_mrs,
-      bulan_krs: formData.value.bulan_krs,
-      bulan_pelayanan: formData.value.bulan_pelayanan,
-      akun_id: formData.value.akun_id,
-      selisih: formData.value.selisih,
-      jumlah_netto: formData.value.jumlah_netto,
-      rc_id: formData.value.rc_id,
-      is_web_change: true,
-    }
-
-    // Membersihkan payload dari nilai null atau undefined
-    const cleanedPayload = Object.entries(payload).reduce((acc, [key, value]) => {
-      if (value !== null && value !== undefined) {
-        acc[key] = value
-      }
-      return acc
-    }, {})
-
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }
+    const payload = formData.value
 
     if (isEdit.value) {
-      await api.put(`/billing_kasir/${formData.value.id}`, cleanedPayload, config)
+      await client.put(`/billing_kasir/${formData.value.id}`, payload)
     } else {
-      await api.post('/billing_kasir', cleanedPayload, config)
+      await client.post('/billing_kasir', payload)
     }
 
     toast.add({
@@ -335,9 +531,13 @@ const saveData = async () => {
     toast.add({
       severity: 'error',
       summary: 'Gagal',
-      detail: 'Gagal menyimpan data. Silakan coba lagi.',
+      detail: error.message || 'Gagal menyimpan data. Silakan coba lagi.',
       life: 3000,
     })
+
+    if (error.errors) {
+      errors.value = error.errors; // Simpan pesan error validasi
+    }
   } finally {
     loading.value = false
   }
