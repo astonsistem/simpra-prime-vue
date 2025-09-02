@@ -1,4 +1,5 @@
 import axios from 'axios'
+import api from '../api/client'
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:8000/api'
 
@@ -16,13 +17,8 @@ export const authService = {
     return response.data
   },
 
-  async getCurrentUser(token) {
-    const response = await axios.get(`${BASE_URL}/auth/user/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-    return response.data
+  async getCurrentUser() {
+    return await api.get(`${BASE_URL}/auth/user/me`)
   },
 
   decodeJWT(token) {
