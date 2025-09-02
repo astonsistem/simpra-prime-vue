@@ -111,12 +111,13 @@ const login = async () => {
     const response = await authService.login(loginData.value)
     const accessToken = response.token
     const refreshToken = response.refresh_token
-    const user = await authService.getCurrentUser()
-
+    
     localStorage.setItem('accessToken', accessToken)
     localStorage.setItem('refreshToken', refreshToken)
-    localStorage.setItem('user', JSON.stringify(user))
     localStorage.setItem('browserId', browserId.value)
+    
+    const user = await authService.getCurrentUser()
+    localStorage.setItem('user', JSON.stringify(user))
 
     toast.add({
       severity: 'success',
