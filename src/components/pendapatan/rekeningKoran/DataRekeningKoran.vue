@@ -9,6 +9,7 @@ import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import SplitButton from 'primevue/splitbutton'
 import api from '@/services/http.js'
+import apiClient from '@/api/client.js'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
 import * as XLSX from 'xlsx'
@@ -109,7 +110,8 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   loading.value = true
   try {
     const query = buildQuery(page, pageSize)
-    const response = await api.get('/rekening_koran', { params: query })
+    const response = await apiClient.get('/rekening_koran', { params: query })
+    console.log('response', response.data.items)
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
         ...item,
@@ -471,6 +473,13 @@ const handleDelete = (data) => {
               outlined
               @click="clearFilter()"
             />
+          </div>
+        </template>
+
+        <template #empty>
+          <div class="flex items-center text-gray-500 min-h-24">
+            <i class="pi pi-info-circle mr-2" style="font-size: 1.5rem"></i>
+            <p>Data Kosong</p>
           </div>
         </template>
 
