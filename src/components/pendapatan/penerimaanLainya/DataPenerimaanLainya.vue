@@ -601,6 +601,12 @@ const clearFilter = () => {
             </IconField>
           </div>
         </template>
+        <template #empty>
+            <div class="flex items-center text-gray-500 min-h-24">
+              <i class="pi pi-info-circle mr-2" style="font-size: 1.5rem"></i>
+              <p>Data Kosong</p>
+            </div>
+          </template>
         <Column field="no" header="No" style="width: 5%" />
         <Column header="Action" style="width: 15%">
           <template #body="slotProps">
