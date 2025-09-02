@@ -109,10 +109,9 @@ const login = async () => {
 
   try {
     const response = await authService.login(loginData.value)
-
     const accessToken = response.token
     const refreshToken = response.refresh_token
-    const user = await authService.getCurrentUser(accessToken)
+    const user = await authService.getCurrentUser()
 
     localStorage.setItem('accessToken', accessToken)
     localStorage.setItem('refreshToken', refreshToken)
