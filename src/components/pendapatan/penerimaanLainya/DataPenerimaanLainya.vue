@@ -115,11 +115,31 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   try {
     const query = buildQuery(page, pageSize)
     const response = await api.get('/penerimaan_lain', { params: query })
+    console.log('Response dari backend:', response.data) // Tambahkan ini untuk debug
+    
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
         ...item,
-        no: (page - 1) * pageSize + index + 1,
-        akun_nama: item.akun_data?.akun_nama || '',
+         no: (page - 1) * pageSize + index + 1,
+  // Mapping field names dari backend ke frontend
+  no_bayar: item.noBayar || '',
+  tgl_bayar: item.tglBayar || '',
+  pihak3: item.pihak3 || '',           // ← INI YANG DIPERBAIKI
+  uraian: item.uraian || '',
+  no_dokumen: item.noDokumen || '',
+  tgl_dokumen: item.tglDokumen || '',
+  sumber_transaksi: item.sumberTransaksi || '',
+  instalasi: item.instalasi || '',
+  metode_pembayaran: item.metodeBayar || '',
+  cara_pembayaran: item.caraBayar || '',
+  rekening_dpa: item.rekeningDpa || '',
+  bank_tujuan: item.bank || '',
+  total: parseInt(item.jumlahBruto) || 0,
+  admin_kredit: parseInt(item.biayaAdminEdc) || 0,
+  admin_debit: parseInt(item.biayaAdminQris) || 0,
+  selisih: parseInt(item.selisih) || 0,
+  jumlah_netto: parseInt(item.jumlahNetto) || 0,
+  akun_nama: item.akun_data?.akun_nama || '',
       }))
       totalRecords.value = response.data.total ?? 0
 
@@ -135,7 +155,6 @@ const loadData = async (page = 1, pageSize = rows.value) => {
     loading.value = false
   }
 }
-
 const onPageChange = (event) => {
   first.value = event.first
   rows.value = event.rows
@@ -174,7 +193,7 @@ const exportExcel = () => {
       'No',
       'No Bayar',
       'Tanggal Bayar',
-      'Pasien',
+      'Pihak3',
       'Uraian',
       'No Dokumen',
       'Tanggal Dokumen',
@@ -672,7 +691,7 @@ const clearFilter = () => {
         </Column>
         <Column
           field="pihak3"
-          header="Pasien"
+          header="Pihak3"
           :showFilterMatchModes="false"
           style="min-width: 12rem"
         >
@@ -680,7 +699,7 @@ const clearFilter = () => {
             {{ data.pihak3 }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Pasien" />
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Pihak3" />
           </template>
         </Column>
         <Column
