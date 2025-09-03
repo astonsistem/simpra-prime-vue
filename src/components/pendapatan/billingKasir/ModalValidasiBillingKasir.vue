@@ -1,11 +1,6 @@
 <template>
-  <Dialog
-    :visible="modelValue"
-    @update:visible="closeModal"
-    modal
-    header="Validasi Billing Kasir"
-    :style="{ width: '60rem' }"
-  >
+  <Dialog :visible="modelValue" @update:visible="closeModal" modal header="Validasi Billing Kasir"
+    :style="{ width: '65rem' }">
     <div class="p-4 space-y-4">
       <div>
         <h4 class="font-semibold mb-2">Data Billing</h4>
@@ -31,20 +26,14 @@
       <div class="grid grid-cols-2 gap-2 mb-4">
         <h4 class="font-semibold mb-2 self-center">Pilih Rekening Koran (RC)</h4>
         <div>
-          <input
-            id="rc-search"
-            type="text"
-            v-model="rc.search"
-            @input="searchRc"
-            class="w-full border border-gray-300 rounded p-2"
-            placeholder="No Referensi"
-          />
+          <input id="rc-search" type="text" v-model="rc.search" @input="searchRc"
+            class="w-full border border-gray-300 rounded p-2" placeholder="No Referensi" />
         </div>
       </div>
 
       <!-- Make result of selectedRc -->
-      <div v-if="selectedRc" class="mb-4">
-        <DataTable :value="[selectedRc]" size="small" showGridlines :rowClass="() => 'bg-gray-400'" >
+      <div v-if="selectedRc" class="mb-8">
+        <DataTable :value="[selectedRc]" size="small" showGridlines :rowClass="() => 'bg-gray-400'">
           <Column header="ID" field="rc_id" />
           <Column header="No. Referensi" field="no_rc" />
           <Column header="Tgl RC" field="tgl_rc_format" />
@@ -54,45 +43,53 @@
           <Column header="Uraian" field="uraian" />
         </DataTable>
       </div>
-      <div class="flex flex-col md:flex-row md:flex-nowrap md:overflow-y-auto md:max-h-[calc(100vh-22rem)] border border-gray-300 rounded">
-        <DataTable
-          v-model:selection="selectedRc"
-          :value="rcOptions"
-          selectionMode="single"
-          dataKey="rc_id"
-          class="w-full"
-          :loading="rcOptions.length === 0 && modelValue" 
-        >
+      <div
+        class="flex flex-col md:flex-row md:flex-nowrap md:overflow-y-auto md:max-h-[calc(100vh-22rem)] border border-gray-300 rounded">
+        <DataTable v-model:selection="selectedRc" v-model:filters="filters"
+          :globalFilterFields="['no_rc', 'nominal', 'uraian']" filterDisplay="row" :value="rcOptions"
+          selectionMode="single" dataKey="rc_id" class="w-full" :loading="rcOptions.length === 0 && modelValue">
+          <template #header>
+            <div class="flex justify-end">
+              <IconField>
+                  <InputIcon>
+                    <i class="pi pi-search" />
+                  </InputIcon>
+                  <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
+                </IconField>
+            </div>
+          </template>
+
           <Column header="ID" field="rc_id" :sortable="true" />
-          <Column header="No. Referensi" field="no_rc" :sortable="true" />
+          <Column header="No. Referensi" field="no_rc" :sortable="true">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText v-model="filterModel.value" type="text" @input="filterCallback()" placeholder="Cari No. Referensi" />
+            </template>
+          </Column>
           <Column header="Tgl RC" field="tgl_rc_format" :sortable="true" />
           <Column header="Nominal" field="nominal" :sortable="true">
             <template #body="slotProps">{{ formatCurrency(slotProps.data.nominal) }}</template>
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText v-model="filterModel.value" @input="filterCallback()" placeholder="Cari Nominal"/>
+            </template>
           </Column>
-          <Column header="Uraian" field="uraian" :sortable="true" />
+          <Column header="Uraian" field="uraian" :sortable="true">
+            <template #filter="{ filterModel, filterCallback }">
+              <InputText v-model="filterModel.value" type="text" @input="filterCallback()" placeholder="Cari uraian" />
+            </template>
+          </Column>
         </DataTable>
       </div>
       <!-- result total of -->
       <div class="text-sm text-end text-gray-500">
         Total Rekening Koran: <span class="font-bold">{{ rc.total }}</span>
       </div>
-      <Paginator
-        v-if="rcOptions.length > 0"
-        v-model:first="rc.first"
-        :rows="rc.rows"
-        :totalRecords="rc.total"
-        @page="onPageChangeRc($event)"
-      />
+      <Paginator v-if="rcOptions.length > 0" v-model:first="rc.first" :rows="rc.rows" :totalRecords="rc.total"
+        @page="onPageChangeRc($event)" />
     </div>
     <template #footer>
       <Button label="Batal" class="p-button-secondary" @click="closeModal" />
-      <Button
-        label="Validasi"
-        class="p-button-success"
-        :disabled="!selectedRc || loading"
-        @click="doValidasi"
-        :loading="loading"
-      />
+      <Button label="Validasi" class="p-button-success" :disabled="!selectedRc || loading" @click="doValidasi"
+        :loading="loading" />
     </template>
   </Dialog>
 </template>
@@ -103,6 +100,7 @@ import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/api/client.js'
 import { formatCurrency } from '@/utils/utils'
+import { FilterMatchMode } from '@primevue/core'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -118,6 +116,12 @@ const rc = reactive({
   first: 1,
   rows: 20,
   search: '',
+})
+const filters = ref({
+  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+  no_rc: { value: null, matchMode: 'contains' },
+  nominal: { value: null, matchMode: 'equals' },
+  uraian: { value: null, matchMode: 'contains' },
 })
 
 watch(
@@ -194,7 +198,7 @@ async function doValidasi() {
     // TODO: Backend needs to be updated to handle this POST request.
     // The endpoint should be `/billing_kasir/validasi` and it should accept a JSON payload
     // with `id` and `rc_id`.
-    if(!selectedRc.value || !selectedRc.value.rc_id) {
+    if (!selectedRc.value || !selectedRc.value.rc_id) {
       toast.add({ severity: 'error', summary: 'Gagal', detail: 'Pilih Rekening Koran terlebih dahulu', life: 3000 })
       loading.value = false
       return
