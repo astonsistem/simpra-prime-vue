@@ -106,8 +106,8 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
       q.tglAkhir = formatDateToYYYYMMDD(endDate)
     }
   } else if (formFilters.value.jenis_periode === 'TANGGAL') {
-    if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
-    if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
+    if (formFilters.value.tglAwal) q.tglAwal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
+if (formFilters.value.tglAkhir) q.tglAkhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
   }
 
   if (filters.value) {
@@ -122,8 +122,8 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
       }
     })
   }
-
-  return q
+console.log('Query parameters:', q) // Tambahkan ini di akhir fungsi buildQuery sebelum return
+return q
 }
 
 const loadData = async (page = 1, pageSize = rows.value) => {
