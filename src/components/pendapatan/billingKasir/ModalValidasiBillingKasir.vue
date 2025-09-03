@@ -4,7 +4,7 @@
     @update:visible="closeModal"
     modal
     header="Validasi Billing Kasir"
-    :style="{ width: '40rem' }"
+    :style="{ width: '60rem' }"
   >
     <div class="p-4 space-y-4">
       <div>
@@ -37,15 +37,22 @@
             v-model="rc.search"
             @input="searchRc"
             class="w-full border border-gray-300 rounded p-2"
-            placeholder="Masukkan kata kunci..."
+            placeholder="No Referensi"
           />
         </div>
       </div>
 
       <!-- Make result of selectedRc -->
-      <div v-if="selectedRc" class="grid grid-cols-2 gap-2 text-sm mb-2 ml-4">
-        <div>ID: <span class="font-bold">{{ selectedRc.rc_id || '-' }}</span></div>
-        <div>Nomor: <span class="font-bold">{{ selectedRc.no_rc || '-' }}</span></div>
+      <div v-if="selectedRc" class="mb-4">
+        <DataTable :value="[selectedRc]" size="small" showGridlines :rowClass="() => 'bg-gray-400'" >
+          <Column header="ID" field="rc_id" />
+          <Column header="No. Referensi" field="no_rc" />
+          <Column header="Tgl RC" field="tgl_rc_format" />
+          <Column header="Nominal" field="nominal">
+            <template #body="slotProps">{{ formatCurrency(slotProps.data.nominal) }}</template>
+          </Column>
+          <Column header="Uraian" field="uraian" />
+        </DataTable>
       </div>
       <div class="flex flex-col md:flex-row md:flex-nowrap md:overflow-y-auto md:max-h-[calc(100vh-22rem)] border border-gray-300 rounded">
         <DataTable
@@ -57,7 +64,12 @@
           :loading="rcOptions.length === 0 && modelValue" 
         >
           <Column header="ID" field="rc_id" :sortable="true" />
-          <Column header="Nomor" field="no_rc" :sortable="true" />
+          <Column header="No. Referensi" field="no_rc" :sortable="true" />
+          <Column header="Tgl RC" field="tgl_rc_format" :sortable="true" />
+          <Column header="Nominal" field="nominal" :sortable="true">
+            <template #body="slotProps">{{ formatCurrency(slotProps.data.nominal) }}</template>
+          </Column>
+          <Column header="Uraian" field="uraian" :sortable="true" />
         </DataTable>
       </div>
       <!-- result total of -->
@@ -90,6 +102,7 @@ import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/api/client.js'
+import { formatCurrency } from '@/utils/utils'
 
 const props = defineProps({
   modelValue: Boolean,
