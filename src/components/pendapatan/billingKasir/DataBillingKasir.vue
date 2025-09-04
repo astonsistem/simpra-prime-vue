@@ -8,6 +8,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import SplitButton from 'primevue/splitbutton'
+
 import api from '@/api/client.js'
 import { useToast } from 'primevue/usetoast'
 import ModalSyncPenerimaan from '@/components/ModalSyncPenerimaan.vue'
@@ -77,7 +78,7 @@ const validasiItem = ref(null)
 const showModalCancelValidasi = ref(false)
 const cancelValidasiItem = ref(null)
 
-// Helper function to format date to YYYY-MM-DD
+// 
 const formatDateToYYYYMMDD = (date) => {
   if (!date) return null
   const d = new Date(date)
@@ -97,12 +98,14 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
     if (formFilters.value.tahunPeriode) {
       q.tahunPeriode = formFilters.value.tahunPeriode
     }
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
-      const startDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAwal - 1, 1)
+    if (formFilters.value.bulanAwal) {
+      const year = formFilters.value.tahunPeriode || new Date().getFullYear()
+      const startDate = new Date(year, formFilters.value.bulanAwal - 1, 1)
       q.tglAwal = formatDateToYYYYMMDD(startDate)
     }
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAkhir) {
-      const endDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAkhir, 0)
+    if (formFilters.value.bulanAkhir) {
+      const year = formFilters.value.tahunPeriode || new Date().getFullYear()
+      const endDate = new Date(year, formFilters.value.bulanAkhir, 0)
       q.tglAkhir = formatDateToYYYYMMDD(endDate)
     }
   } else if (formFilters.value.jenis_periode === 'TANGGAL') {
@@ -113,7 +116,7 @@ if (formFilters.value.tglAkhir) q.tglAkhir = formatDateToYYYYMMDD(formFilters.va
   if (filters.value) {
     Object.keys(filters.value).forEach((key) => {
       if (filters.value[key].value) {
-        // Handle date filters specially
+        // 
         if (key === 'tglBayar' || key === 'tglDokumen') {
           q[key] = formatDateToYYYYMMDD(filters.value[key].value)
         } else {
@@ -122,7 +125,7 @@ if (formFilters.value.tglAkhir) q.tglAkhir = formatDateToYYYYMMDD(formFilters.va
       }
     })
   }
-console.log('Query parameters:', q) // Tambahkan ini di akhir fungsi buildQuery sebelum return
+console.log('Query parameters:', q) // 
 return q
 }
 
@@ -138,7 +141,7 @@ const loadData = async (page = 1, pageSize = rows.value) => {
       }))
       totalRecords.value = response.data.total ?? 0
 
-      // If "All" is selected, update rows to show total records
+      
       if (pageSize === totalRecords.value && pageSize > 100) {
         rows.value = 1000
       }
@@ -155,9 +158,9 @@ const onPageChange = (event) => {
   first.value = event.first
   rows.value = event.rows
 
-  // Handle "All" option (1000) - load all data in one page
+
   if (event.rows === 1000) {
-    // This is the "All" option, load all data
+    
     loadData(1, totalRecords.value)
   } else {
     const page = event.page + 1
@@ -185,7 +188,7 @@ const searchData = () => {
 
 const exportExcel = () => {
   try {
-    // Prepare headers for Excel (excluding Action column)
+   
     const headers = [
       'No',
       'No Bayar',
@@ -207,7 +210,7 @@ const exportExcel = () => {
       'Jumlah Netto',
     ]
 
-    // Prepare data for Excel
+   
     const excelData = data.value.map((item, index) => [
       item.no || index + 1,
       item.noBayar || '',
@@ -229,7 +232,7 @@ const exportExcel = () => {
       item.jumlahNetto || 0,
     ])
 
-    // Create workbook and worksheet
+  
     const workbook = XLSX.utils.book_new()
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...excelData])
 
@@ -1021,10 +1024,11 @@ const handleSyncSubmit = async () => {
           </template>
         </Column>
 
-        <Column field="jumlahBruto" header="Jumlah Bruto" style="text-align: right">
+        < <Column field="jumlahBruto" header="Jumlah Bruto" style="text-align: right">
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlahBruto || 0) }}
           </template>
+
         </Column>
 
         <Column field="biayaAdminEdc" header="Biaya Admin EDC" style="text-align: right">
