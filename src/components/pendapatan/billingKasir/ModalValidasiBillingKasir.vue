@@ -27,6 +27,7 @@
       <Fieldset legend="Pilih Rekening Koran (RC)">
         <FormRekeningDpa 
           v-model="form.rc_id" 
+          v-model:selection="selectedRc"
           placeholder="Rekening Koran" 
           class="w-full" 
           :errorMessage="errors?.rc_id?.length ? errors?.rc_id[0] : ''" 
