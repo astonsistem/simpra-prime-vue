@@ -259,7 +259,7 @@ const exportExcel = () => {
     // Generate Excel file
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
     const blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      type: 'application/vnd.openxmlformatxs-officedocument.spreadsheetml.sheet',
     })
 
     // Download file
@@ -317,7 +317,7 @@ const handleEdit = async (item) => {
 
     const response = await api.get(`/billing_kasir/${item.id}`)
     if (response.data) {
-      selectedItem.value = response.data
+      selectedItem.value = response.data.data
       showModalEdit.value = true
     } else {
       toast.add({
@@ -515,8 +515,8 @@ const openSyncDialog = async () => {
   loadingSyncOptions.value = true
   try {
     const response = await api.get('/syncapi/list/BILLING KASIR')
-    if (response.data && Array.isArray(response.data)) {
-      syncOptions.value = response.data.map((item) => ({
+    if (response.data && Array.isArray(response.data.data)) {
+      syncOptions.value = response.data.data.map((item) => ({
         label: item.sinkronisasi_nama,
         value: item,
       }))
@@ -537,7 +537,7 @@ const openSyncDialog = async () => {
 }
 
 const isValidated = (rowData) => {
-  return rowData.rcId && rowData.rcId > 0
+  return rowData.rcId && parseInt(rowData.rcId) > 0 && parseInt(rowData.statusId) === 6
 }
 
 onMounted(async () => {

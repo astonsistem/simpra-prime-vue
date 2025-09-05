@@ -154,7 +154,7 @@ function onPageChangeRc(event) {
 async function fetchRcOptions() {
   rcOptions.value = []
   try {
-    const res = await api.get(`/rekening_koran`, {
+    const { data } = await api.get(`/rekening_koran`, {
       params: {
         billing_id: props.item.id,
         page: Math.floor(rc.first / rc.rows) + 1,
@@ -162,9 +162,9 @@ async function fetchRcOptions() {
         search: rc.search || undefined,
       },
     })
-    if (res.data && Array.isArray(res.data.items)) {
-      rcOptions.value = res.data.items
-      rc.total = res.data.total || res.data.items.length
+    if (data.data && Array.isArray(data.data.items)) {
+      rcOptions.value = data.data.items
+      rc.total = data.data.total || data.data.items.length
     } else {
       toast.add({
         severity: 'warn',
