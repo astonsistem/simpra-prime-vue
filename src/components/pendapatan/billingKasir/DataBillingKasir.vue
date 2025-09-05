@@ -357,7 +357,7 @@ const handleValidasi = async (item) => {
       }
     })
     if (response.data) {
-      validasiItem.value = { ...response.data }
+      validasiItem.value = { ...response.data.data }
       showModalValidasi.value = true
     } else {
       toast.add({

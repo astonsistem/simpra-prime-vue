@@ -38,11 +38,11 @@
 import { useAttrs, ref, watch, computed, onMounted } from 'vue';
 import api from '@/api/client.js';
 
+const emits = defineEmits(['update:modelValue', 'row-select'])
 const attrs = useAttrs();
 const visible = ref(false)
 const items = ref([])
 const selectedItem = ref(null)
-const emits = defineEmits(['update:modelValue', 'row-select'])
 const loading = ref(false)
 const params = ref({
   page: 1,
@@ -65,6 +65,7 @@ onMounted(() => {
       if(attrs.modelValue) {
         selectedItem.value = items.value.find(item => item.rc_id == attrs.modelValue)
         inputValue.value = `${selectedItem.value.no_rc} - ${selectedItem.value.uraian}`
+        emits('row-select', selectedItem.value)
       }
     })
   }
