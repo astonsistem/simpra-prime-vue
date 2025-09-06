@@ -3,11 +3,10 @@
     <InputText v-bind="attrs" :value="inputValue" readonly />
     <InputIcon class="pi pi-chevron-down" />
   </IconField>
-  <pre>{{ selection }}</pre>
   <div v-if="attrs.errorMessage" class="text-red-500 text-sm mt-1">{{ attrs.errorMessage }}</div>
 
   <Teleport to="body">
-    <Dialog v-model:visible="visible" :style="{ width: '50rem' }" header="Pilih Rekening" :modal="true">
+    <Dialog v-model:visible="visible" :style="{ width: '60rem' }" header="Pilih Rekening" :modal="true">
 
       <DataTable stripedRows rowHover lazy :value="items" v-model:selection="selectedItem"
         :loading="loading"
@@ -46,6 +45,7 @@
           </template>
         </Column>
         <Column field="tgl_rc" header="Tgl. Rekening"></Column>
+        <Column field="bank" header="Bank"></Column>
         <Column field="nominal" header="Nominal" sortable filterField="nominal" dataType="numeric" :show-filter-match-modes="false" filter-menu-style="width: 14rem">
           <template #body="{ data }">{{ formatCurrency(data.nominal) }}</template>
           <template #filter="{ filterCallback }">
@@ -158,10 +158,13 @@ function loadData() {
 }
 
 function getSelection(rc_id) {
-  api.get(`/rekening_koran/${rc_id}`)
+  api.get(`/rekening_koran/${rc_id}`, {params: {simple: true}})
     .then((response) => {
-      console.log('response show', response)
-      selectedItem.value = response.data
+      selectedItem.value = response.data.data
+      if(selectedItem.value.nominal) {
+        selectedItem.value.nominal = formatCurrency(selectedItem.value.nominal)
+      }
+      emits('row-select', selectedItem.value)
     })
     .catch((error) => {
       console.error('error', error)
@@ -174,6 +177,9 @@ function onPageChange(event) {
   loadData()
 }
 function onRowSelect(event) {
+  if(event.data?.nominal) {
+    event.data.nominal = formatCurrency(event.data.nominal)
+  }
   emits('update:modelValue', event.data.rc_id)
   emits('row-select', event.data)
   visible.value = false
@@ -195,7 +201,6 @@ function onSearch(event) {
 }
 
 function onFilter(event) {
-  console.log('event', event)
   params.value.page = 1
   params.value.per_page = 20
   params.value.filters = event.filters
@@ -204,7 +209,6 @@ function onFilter(event) {
 }
 
 function onSort(event) {
-  console.log('event', event)
   params.value.sortField = event.sortField
   params.value.sortOrder = event.sortOrder > 0 ? 'asc' : 'desc'
   params.value.page = 1

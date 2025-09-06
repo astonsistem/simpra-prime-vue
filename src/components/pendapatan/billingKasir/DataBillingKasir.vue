@@ -19,6 +19,7 @@ import * as XLSX from 'xlsx'
 import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import Calendar from 'primevue/calendar'
+import ModalSetorBillingKasir from './ModalSetorBillingKasir.vue'
 
 const toast = useToast()
 
@@ -65,6 +66,7 @@ const first = ref(0)
 const loading = ref(false)
 const selectedItem = ref(null)
 const showModalEdit = ref(false)
+const showModalSetor = ref(false)
 const showModalSync = ref(false)
 const showSyncDialog = ref(false)
 const syncOptions = ref([])
@@ -605,6 +607,11 @@ const handleSyncSubmit = async () => {
     loadingSync.value = false
   }
 }
+
+function setor(data) {
+  selectedItem.value = data
+  showModalSetor.value = true
+}
 </script>
 
 <template>
@@ -720,6 +727,13 @@ const handleSyncSubmit = async () => {
                 icon: 'pi pi-check',
                 visible: () => !isValidated(slotProps.data),
                 command: () => handleValidasi(slotProps.data),
+              },
+              {
+                label: 'Setor', // pay
+                icon: 'pi pi-send',
+                style: 'color: green;',
+                visible: () => !!isValidated(slotProps.data),
+                command: () => setor(slotProps.data),
               },
               {
                 label: 'Batal Validasi',
@@ -885,6 +899,8 @@ const handleSyncSubmit = async () => {
     <ModalSyncPenerimaan v-model="showModalSync" @sync="loadData" />
     <ModalEditBillingKasir v-model="showModalEdit" :item="selectedItem" @saved="handleSaved" />
     <ModalValidasiBillingKasir v-model="showModalValidasi" :item="validasiItem" @validated="handleValidated" />
+    <ModalSetorBillingKasir v-model="showModalSetor" :item="selectedItem" />
+
     <Dialog :visible="showSyncDialog" @update:visible="showSyncDialog = $event" modal header="Tarik Data Billing Kasir"
       :closable="true" :style="{ width: '500px' }">
       <div v-if="loadingSyncOptions" class="py-8 text-center">Loading...</div>

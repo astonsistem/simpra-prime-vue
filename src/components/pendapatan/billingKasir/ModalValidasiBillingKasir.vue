@@ -45,6 +45,9 @@
           <div>Nominal</div>
           <div>: <span class="font-bold">{{ selectedRc?.nominal || '-' }}</span></div>
 
+          <div>Bank</div>
+          <div>: <span class="font-bold">{{ selectedRc?.bank || '-' }}</span></div>
+
           <div>Uraian</div>
           <div>: <span class="font-bold">{{ selectedRc.uraian }}</span></div>
       
