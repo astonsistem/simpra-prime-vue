@@ -1,228 +1,267 @@
 <template>
   <Dialog
     :visible="visible"
-    @update:visible="visible = $event"
+    @update:visible="closeModal"
     modal
-    :header="isEdit ? 'Edit Data' : 'Tambah Data'"
-    :style="{ width: '80rem' }"
+    :style="{ width: '60rem' }"
     :breakpoints="{ '1199px': '95vw', '575px': '95vw' }"
   >
-    <div class="p-4">
-      <Fieldset class="mb-6">
-        <template #legend>
-          <span class="font-semibold text-gray-700">Data Billing SWA</span>
-        </template>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <!-- Jenis Penerimaan (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Jenis Penerimaan</label>
-            <Dropdown
-              v-model="formData.jenis_penerimaan"
-              :options="jenisPenerimaanOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Pilih Jenis Penerimaan"
+    <template #header>
+      <div class="flex items-center justify-between w-full">
+        <div>
+          <h2 class="text-lg font-semibold">
+            {{ isEdit ? 'Ubah Billing SWA' : 'Tambah Billing SWA' }} ID: {{ props.item?.no_buktibayar }}
+          </h2>
+          <p class="text-sm text-gray-500">
+            {{ isEdit ? 'Perbarui informasi billing SWA di bawah ini.' : 'Isi informasi billing SWA di bawah ini.' }}
+          </p>
+        </div>
+      </div>
+    </template>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 text-sm">
+      <Fieldset legend="Informasi Billing">
+        <!-- No Dokumen -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">No Dokumen</label>
+          <InputText v-model="formData.no_dokumen" placeholder="Nomor Dokumen" class="w-full" :invalid="errors?.no_dokumen?.length" />
+          <Message v-if="errors.no_dokumen" severity="error" size="small" variant="simple">{{ errors?.no_dokumen[0] }}</Message>
+        </div>
+        
+        <!-- Tgl Dokumen (dropdown) -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Tgl Dokumen</label>
+          <DatePicker
+              v-model="formData.tgl_dokumen"
+              showIcon
+              date-format="dd/mm/yy"
+              placeholder="Tgl. Dokumen"
               class="w-full"
+              :invalid="errors?.tgl_dokumen?.length"
             />
+          <Message v-if="errors.tgl_dokumen" severity="error" size="small" variant="simple">{{ errors?.tgl_dokumen[0] }}</Message>
+        </div>
+        
+        <!-- Jumlah Bruto -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jumlah Bruto</label>
+          <InputNumber
+            v-model="formData.total"
+            placeholder="Jumlah Bruto"
+            class="w-full"
+            mode="currency"
+            currency="IDR"
+            locale="id-ID"
+            :invalid="errors?.total?.length"
+          />
+          <div v-if="errors.total" class="text-red-500 text-sm mt-1">{{ errors?.total[0] }}</div>
+        </div>
+        
+        <!-- Biaya Admin EDC -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Biaya Admin EDC</label>
+          <InputNumber
+            v-model="formData.admin_kredit"
+            placeholder="Biaya Admin EDC"
+            class="w-full"
+            mode="currency"
+            currency="IDR"
+            locale="id-ID"
+            :invalid="errors?.admin_kredit?.length"
+          />
+        </div>
+        <Message v-if="errors.admin_kredit" severity="error" size="small" variant="simple">{{ errors?.admin_kredit[0] }}</Message>
+        
+        <!-- Biaya Admin QRIS -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Biaya Admin QRIS</label>
+          <InputNumber
+            v-model="formData.admin_debit"
+            placeholder="Biaya Admin QRIS"
+            class="w-full"
+            mode="currency"
+            currency="IDR"
+            locale="id-ID"
+            :invalid="errors?.admin_debit?.length"
+          />
+          <Message v-if="errors.admin_debit" severity="error" size="small" variant="simple">{{ errors?.admin_debit[0] }}</Message>
+        </div>
+        
+        <!-- Selisih -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Selisih</label>
+          <InputNumber
+            v-model="formData.selisih"
+            placeholder="Selisih"
+            class="w-full"
+            mode="currency"
+            currency="IDR"
+            locale="id-ID"
+            :invalid="errors?.selisih?.length"
+          />
+          <Message v-if="errors.selisih" severity="error" size="small" variant="simple">{{ errors?.selisih[0] }}</Message>
+        </div>
+        
+        <!-- Jumlah Netto -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jumlah Netto</label>
+          <InputNumber
+            v-model="formData.jumlah_netto"
+            placeholder="Jumlah Netto"
+            class="w-full"
+            mode="currency"
+            currency="IDR"
+            locale="id-ID"
+            readonly
+            disabled
+          />
+          <Message v-if="errors.jumlah_netto" severity="error" size="small" variant="simple">{{ errors?.jumlah_netto[0] }}</Message>
+        </div>
+        
+        <!-- Cara Pembayaran (dropdown) -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Cara Pembayaran</label>
+          <Dropdown
+            v-model="formData.cara_pembayaran"
+            :options="optionsCaraPembayaran"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Pilih Cara Pembayaran"
+            class="w-full"
+          />
+          <Message v-if="errors.cara_pembayaran" severity="error" size="small" variant="simple">{{ errors?.cara_pembayaran[0] }}</Message>
+        </div>
+        
+        <!-- Bank Tujuan (dropdown) -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Bank Tujuan</label>
+          <Dropdown
+            v-model="formData.bank_tujuan"
+            :options="optionsBankTujuan" 
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Pilih Bank Tujuan"
+            class="w-full"
+          />
+          <Message v-if="errors.bank_tujuan" severity="error" size="small" variant="simple">{{ errors?.bank_tujuan[0] }}</Message>
+        </div>
+        
+        <!-- Pendapatan -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Pendapatan</label>
+          <InputNumber
+            v-model="formData.pendapatan"
+            placeholder="Pendapatan"
+            class="w-full"
+            mode="currency"
+            currency="IDR"
+            locale="id-ID"
+          />
+          <Message v-if="errors.pendapatan" severity="error" size="small" variant="simple">{{ errors?.pendapatan[0] }}</Message>
+        </div>
+        
+        <!-- PDD -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">PDD</label>
+          <InputNumber
+            v-model="formData.pdd"
+            placeholder="PDD"
+            class="w-full"
+            mode="currency"
+            currency="IDR"
+            locale="id-ID"
+          />
+          <Message v-if="errors.pdd" severity="error" size="small" variant="simple">{{ errors?.pdd[0] }}</Message>
+        </div>
+        
+        <!-- Piutang -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Piutang</label>
+          <InputNumber
+            v-model="formData.piutang"
+            placeholder="Piutang"
+            class="w-full"
+            mode="currency"
+            currency="IDR"
+            locale="id-ID"
+          />
+          <Message v-if="errors.piutang" severity="error" size="small" variant="simple">{{ errors?.piutang[0] }}</Message>
+        </div>
+      </Fieldset>
+      <Fieldset legend="Informasi Detail">
+        <!-- Jenis Penerimaan (dropdown) -->
+          <div class="mb-4">
+            <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Penerimaan</label>
+            <FormJenisPenerimaan v-model="formData.akun_id" dataKey="akun_id" :invalid="errors?.akun_id?.length" class="w-full" />
+            <Message v-if="errors.akun_id" severity="error" size="small" variant="simple">{{ errors?.akun_id[0] }}</Message>
           </div>
           
           <!-- Sumber Transaksi (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Sumber Transaksi</label>
+          <div class="mb-4">
+            <label class="block mb-1 text-sm font-medium text-gray-700">Sumber Transaksi</label>
             <Dropdown
               v-model="formData.sumber_transaksi"
-              :options="sumberTransaksiOptions"
+              :options="optionsSumberTransaksi"
               optionLabel="label"
               optionValue="value"
               placeholder="Pilih Sumber Transaksi"
               class="w-full"
+              :invalid="errors?.sumber_transaksi?.length"
             />
+            <div v-if="errors.sumber_transaksi" class="text-red-500 text-sm mt-1">{{ errors?.sumber_transaksi[0] }}</div>
           </div>
           
           <!-- Tgl. Bayar (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Tgl. Bayar</label>
-            <Dropdown
+          <div class="mb-4">
+            <label class="block mb-1 text-sm font-medium text-gray-700">Tgl. Bayar</label>
+            <DatePicker
               v-model="formData.tgl_bayar"
-              :options="tanggalOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Pilih Tanggal Bayar"
+              showIcon
+              date-format="dd/mm/yy"
+              placeholder="Tgl. Bayar"
               class="w-full"
+              :invalid="errors?.tgl_bayar?.length"
             />
+            <div v-if="errors.tgl_bayar" class="text-red-500 text-sm mt-1">{{ errors?.tgl_bayar[0] }}</div>
           </div>
           
           <!-- No. Bayar -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">No. Bayar</label>
-            <InputText v-model="formData.no_bayar" placeholder="Nomor Bayar" class="w-full" />
+          <div class="mb-4">
+            <label class="block mb-1 text-sm font-medium text-gray-700">No. Bayar</label>
+            <InputText v-model="formData.no_bayar" placeholder="Nomor Bayar" class="w-full" :invalid="errors?.no_bayar?.length" />
+            <Message v-if="errors.no_bayar" severity="error" size="small" variant="simple">{{ errors?.no_bayar[0] }}</Message>
           </div>
           
-          <!-- Pasien -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Pasien</label>
-            <InputText v-model="formData.pasien" placeholder="Nama Pasien" class="w-full" />
+          <!-- pihak3 -->
+          <div class="mb-4">
+            <label class="block mb-1 text-sm font-medium text-gray-700">Penyetor</label>
+            <InputText v-model="formData.pihak3" placeholder="Penyetor" class="w-full" :invalid="errors?.pihak3?.length" />
+            <div v-if="errors.pihak3" class="text-red-500 text-sm mt-1">{{ errors?.pihak3[0] }}</div>
           </div>
           
           <!-- Uraian -->
-          <div class="lg:col-span-3">
-            <label class="block mb-2 text-sm font-medium text-gray-700">Uraian</label>
-            <Textarea v-model="formData.uraian" placeholder="Uraian" rows="3" class="w-full" />
+          <div class="lg:col-span-3 mb-4">
+            <label class="block mb-1 text-sm font-medium text-gray-700">Uraian</label>
+            <Textarea v-model="formData.uraian" placeholder="Uraian" rows="3" class="w-full" :invalid="errors?.uraian?.length" />
+            <div v-if="errors.uraian" class="text-red-500 text-sm mt-1">{{ errors?.uraian[0] }}</div>
           </div>
-          
-          <!-- No Dokumen -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">No Dokumen</label>
-            <InputText v-model="formData.no_dokumen" placeholder="Nomor Dokumen" class="w-full" />
-          </div>
-          
-          <!-- Tgl Dokumen (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Tgl Dokumen</label>
+          <!-- rekening dpa -->
+          <div class="mb-4">
+            <label class="block mb-1 text-sm font-medium text-gray-700">Rekening DPA</label>
             <Dropdown
-              v-model="formData.tgl_dokumen"
-              :options="tanggalOptions"
+              v-model="formData.rek_id"
+              :options="optionsRekeningDpa"
               optionLabel="label"
               optionValue="value"
-              placeholder="Pilih Tanggal Dokumen"
+              placeholder="Pilih Rekening DPA"
               class="w-full"
+              :invalid="errors?.rek_id?.length"
             />
+            <Message v-if="errors.rek_id" severity="error" size="small" variant="simple">{{ errors?.rek_id[0] }}</Message>
           </div>
-          
-          <!-- Jumlah Bayar -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah Bayar</label>
-            <InputNumber
-              v-model="formData.jumlah_bayar"
-              placeholder="Jumlah Bayar"
-              class="w-full"
-              mode="currency"
-              currency="IDR"
-              locale="id-ID"
-            />
-          </div>
-          
-          <!-- Biaya Admin EDC -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Biaya Admin EDC</label>
-            <InputNumber
-              v-model="formData.biaya_admin_edc"
-              placeholder="Biaya Admin EDC"
-              class="w-full"
-              mode="currency"
-              currency="IDR"
-              locale="id-ID"
-            />
-          </div>
-          
-          <!-- Biaya Admin QRIS -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Biaya Admin QRIS</label>
-            <InputNumber
-              v-model="formData.biaya_admin_qris"
-              placeholder="Biaya Admin QRIS"
-              class="w-full"
-              mode="currency"
-              currency="IDR"
-              locale="id-ID"
-            />
-          </div>
-          
-          <!-- Selisih -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Selisih</label>
-            <InputNumber
-              v-model="formData.selisih"
-              placeholder="Selisih"
-              class="w-full"
-              mode="currency"
-              currency="IDR"
-              locale="id-ID"
-            />
-          </div>
-          
-          <!-- Jumlah Netto -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Jumlah Netto</label>
-            <InputNumber
-              v-model="formData.jumlah_netto"
-              placeholder="Jumlah Netto"
-              class="w-full"
-              mode="currency"
-              currency="IDR"
-              locale="id-ID"
-              readonly
-              disabled
-            />
-          </div>
-          
-          <!-- Cara Pembayaran (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Cara Pembayaran</label>
-            <Dropdown
-              v-model="formData.cara_pembayaran"
-              :options="caraPembayaranOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Pilih Cara Pembayaran"
-              class="w-full"
-            />
-          </div>
-          
-          <!-- Bank Tujuan (dropdown) -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Bank Tujuan</label>
-            <Dropdown
-              v-model="formData.bank_tujuan"
-              :options="bankTujuanOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Pilih Bank Tujuan"
-              class="w-full"
-            />
-          </div>
-          
-          <!-- Pendapatan -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Pendapatan</label>
-            <InputNumber
-              v-model="formData.pendapatan"
-              placeholder="Pendapatan"
-              class="w-full"
-              mode="currency"
-              currency="IDR"
-              locale="id-ID"
-            />
-          </div>
-          
-          <!-- PDD -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">PDD</label>
-            <InputNumber
-              v-model="formData.pdd"
-              placeholder="PDD"
-              class="w-full"
-              mode="currency"
-              currency="IDR"
-              locale="id-ID"
-            />
-          </div>
-          
-          <!-- Piutang -->
-          <div>
-            <label class="block mb-2 text-sm font-medium text-gray-700">Piutang</label>
-            <InputNumber
-              v-model="formData.piutang"
-              placeholder="Piutang"
-              class="w-full"
-              mode="currency"
-              currency="IDR"
-              locale="id-ID"
-            />
-          </div>
-        </div>
       </Fieldset>
     </div>
+
     <template #footer>
       <Button label="Batal" icon="pi pi-times" @click="closeModal" class="p-button-text" />
       <Button
@@ -238,15 +277,9 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue'
-import Dialog from 'primevue/dialog'
-import InputText from 'primevue/inputtext'
-import DatePicker from 'primevue/datepicker'
-import Dropdown from 'primevue/dropdown'
-import Textarea from 'primevue/textarea'
-import InputNumber from 'primevue/inputnumber'
-import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
-import api from '@/services/http.js'
+import apiClient from '@/api/client'
+import FormJenisPenerimaan from '@/components/form/JenisPenerimaan.vue'
 
 const props = defineProps({
   modelValue: {
@@ -264,62 +297,18 @@ const emit = defineEmits(['update:modelValue', 'saved'])
 const toast = useToast()
 const loading = ref(false)
 const isEdit = ref(false)
+const errors = ref({})
 
-const formData = ref({
-  jenis_penerimaan: null,
-  sumber_transaksi: null,
-  tgl_bayar: null,
-  no_bayar: '',
-  pasien: '',
-  uraian: '',
-  no_dokumen: '',
-  tgl_dokumen: null,
-  jumlah_bayar: 0,
-  biaya_admin_edc: 0,
-  biaya_admin_qris: 0,
-  selisih: 0,
-  jumlah_netto: 0,
-  cara_pembayaran: null,
-  bank_tujuan: null,
-  pendapatan: 0,
-  pdd: 0,
-  piutang: 0,
-})
+const formData = ref({})
 
-// New options for dropdowns
-const jenisPenerimaanOptions = ref([
-  { label: 'Penerimaan 1', value: '1' },
-  { label: 'Penerimaan 2', value: '2' },
-  { label: 'Penerimaan 3', value: '3' },
+const optionsCaraPembayaran = ref([
+  { label: 'Tunai', value: 'TUNAI' },
+  { label: 'Transfer', value: 'TRANSFER' },
+  { label: 'EDC', value: 'EDC' },
+  { label: 'QRIS', value: 'QRIS' },
+  { label: 'S-TAPAY', value: 'STPAY' },
+  { label: 'UE Reader', value: 'READER' },
 ])
-
-const sumberTransaksiOptions = ref([
-  { label: 'Sumber 1', value: '1' },
-  { label: 'Sumber 2', value: '2' },
-  { label: 'Sumber 3', value: '3' },
-])
-
-const tanggalOptions = ref([
-  { label: '01/01/2023', value: '2023-01-01' },
-  { label: '02/01/2023', value: '2023-01-02' },
-  { label: '03/01/2023', value: '2023-01-03' },
-])
-
-const caraPembayaranOptions = ref([
-  { label: 'Tunai', value: 'tunai' },
-  { label: 'Transfer', value: 'transfer' },
-  { label: 'EDC', value: 'edc' },
-  { label: 'QRIS', value: 'qris' },
-])
-
-const bankTujuanOptions = ref([
-  { label: 'Bank BCA', value: 'bca' },
-  { label: 'Bank BNI', value: 'bni' },
-  { label: 'Bank BRI', value: 'bri' },
-  { label: 'Bank Mandiri', value: 'mandiri' },
-])
-
-const caraBayarOptions = ref([])
 
 const visible = ref(props.modelValue)
 
@@ -328,8 +317,9 @@ watch(
   (newValue) => {
     visible.value = newValue
     if (newValue) {
-      fetchCaraBayar()
-      fetchDataForDropdowns()
+      fetchRekeningDpa()
+      fetchBankTujuan()
+      fetchSumberTransaksi()
     }
   }
 )
@@ -339,26 +329,15 @@ watch(visible, (newValue) => {
 })
 
 const resetForm = () => {
-  formData.value = {
-    jenis_penerimaan: null,
-    sumber_transaksi: null,
-    tgl_bayar: null,
-    no_bayar: '',
-    pasien: '',
-    uraian: '',
-    no_dokumen: '',
-    tgl_dokumen: null,
-    jumlah_bayar: 0,
-    biaya_admin_edc: 0,
-    biaya_admin_qris: 0,
-    selisih: 0,
-    jumlah_netto: 0,
-    cara_pembayaran: null,
-    bank_tujuan: null,
-    pendapatan: 0,
-    pdd: 0,
-    piutang: 0,
-  }
+  Object.keys(formData.value).forEach((key) => {
+    if (typeof formData.value[key] === 'string') {
+      formData.value[key] = ''
+    } else if (typeof formData.value[key] === 'number') {
+      formData.value[key] = 0
+    } else {
+      formData.value[key] = null
+    }
+  })
 }
 
 watch(
@@ -366,27 +345,7 @@ watch(
   (newItem) => {
     isEdit.value = !!(newItem && newItem.id)
     if (isEdit.value) {
-      formData.value = {
-        id: newItem.id,
-        jenis_penerimaan: newItem.jenisPenerimaan || null,
-        sumber_transaksi: newItem.sumberTransaksi || null,
-        tgl_bayar: newItem.tglBayar || null,
-        no_bayar: newItem.noBayar || '',
-        pasien: newItem.pasien || '',
-        uraian: newItem.uraian || '',
-        no_dokumen: newItem.noDokumen || '',
-        tgl_dokumen: newItem.tglDokumen || null,
-        jumlah_bayar: newItem.jumlahBayar || 0,
-        biaya_admin_edc: newItem.biayaAdminEdc || 0,
-        biaya_admin_qris: newItem.biayaAdminQris || 0,
-        selisih: newItem.selisih || 0,
-        jumlah_netto: newItem.jumlahNetto || 0,
-        cara_pembayaran: newItem.caraPembayaran || null,
-        bank_tujuan: newItem.bankTujuan || null,
-        pendapatan: newItem.pendapatan || 0,
-        pdd: newItem.pdd || 0,
-        piutang: newItem.piutang || 0,
-      }
+      formData.value = props.item
     } else {
       resetForm()
     }
@@ -396,10 +355,10 @@ watch(
 
 const jumlahNetto = computed(() => {
   return (
-    (formData.value.jumlah_bayar || 0) -
-    (formData.value.biaya_admin_edc || 0) -
-    (formData.value.biaya_admin_qris || 0) -
-    (formData.value.selisih || 0)
+    parseInt(formData.value.total || 0) -
+    parseInt(formData.value.admin_kredit || 0) -
+    parseInt(formData.value.admin_debit || 0) -
+    parseInt(formData.value.selisih || 0)
   )
 })
 
@@ -407,85 +366,82 @@ watch(jumlahNetto, (newVal) => {
   formData.value.jumlah_netto = newVal
 })
 
-const fetchCaraBayar = async () => {
+// bank tujuan
+const optionsBankTujuan = ref([])
+const fetchBankTujuan = async () => {
+  if (optionsBankTujuan.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
   try {
-    const response = await api.get('/carabayar')
-    if (response.data.items) {
-      caraBayarOptions.value = response.data.items.map((item) => ({
-        label: item.caraBayar,
-        value: item.id,
+    const response = await apiClient.get('/bank/list')
+    if (response.data.data) {
+      optionsBankTujuan.value = response.data.data.map((item) => ({
+        label: item.bank_nama,
+        value: item.bank_id,
       }))
     }
   } catch (error) {
     toast.add({
       severity: 'error',
       summary: 'Error',
-      detail: 'Gagal memuat data cara bayar',
+      detail: 'Gagal memuat data bank tujuan',
       life: 3000,
     })
   }
 }
 
-// Fetch data for new dropdown fields
-const fetchDataForDropdowns = async () => {
-  // In a real application, these would be API calls
-  // For now, we're using static data defined earlier
-  // You can replace these with actual API calls as needed
-  
-  // Example of how you might fetch data for jenis penerimaan:
-  // try {
-  //   const response = await api.get('/jenis-penerimaan')
-  //   if (response.data) {
-  //     jenisPenerimaanOptions.value = response.data.map((item) => ({
-  //       label: item.nama,
-  //       value: item.id,
-  //     }))
-  //   }
-  // } catch (error) {
-  //   toast.add({
-  //     severity: 'error',
-  //     summary: 'Error',
-  //     detail: 'Gagal memuat data jenis penerimaan',
-  //     life: 3000,
-  //   })
-  // }
-  
-  // Similar API calls would be made for:
-  // - sumberTransaksiOptions
-  // - caraPembayaranOptions
-  // - bankTujuanOptions
+const optionsSumberTransaksi = ref([])
+const fetchSumberTransaksi = async () => {
+  if (optionsSumberTransaksi.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  try {
+    const response = await apiClient.get('/sumbertransaksi/list?sumber-transaksi')
+
+    if (response.data.data) {
+      optionsSumberTransaksi.value = response.data.data.map((item) => ({
+        value: item.sumber_id,
+        label: item.sumber_nama,
+      }))
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Gagal memuat data sumber transaksi',
+      life: 3000,
+    })
+  }
+}
+
+const optionsRekeningDpa = ref([])
+const fetchRekeningDpa = async () => {
+  if (optionsRekeningDpa.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  try {
+    const response = await apiClient.get('/akun/list/pendapatan')
+
+    if (response.data.data) {
+      optionsRekeningDpa.value = response.data.data.map((item) => ({
+        value: item.rek_id,
+        label: item.rek_nama,
+      }))
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Gagal memuat data rekening dpa',
+      life: 3000,
+    })
+  }
 }
 
 const saveData = async () => {
   loading.value = true
+  errors.value = {}
   try {
-    // Map form field names to API field names
-    const payload = {
-      id: formData.value.id,
-      jenisPenerimaan: formData.value.jenis_penerimaan,
-      sumberTransaksi: formData.value.sumber_transaksi,
-      tglBayar: formData.value.tgl_bayar,
-      noBayar: formData.value.no_bayar,
-      pasien: formData.value.pasien,
-      uraian: formData.value.uraian,
-      noDokumen: formData.value.no_dokumen,
-      tglDokumen: formData.value.tgl_dokumen,
-      jumlahBayar: formData.value.jumlah_bayar,
-      biayaAdminEdc: formData.value.biaya_admin_edc,
-      biayaAdminQris: formData.value.biaya_admin_qris,
-      selisih: formData.value.selisih,
-      jumlahNetto: formData.value.jumlah_netto,
-      caraPembayaran: formData.value.cara_pembayaran,
-      bankTujuan: formData.value.bank_tujuan,
-      pendapatan: formData.value.pendapatan,
-      pdd: formData.value.pdd,
-      piutang: formData.value.piutang,
-    }
+    const payload = formData.value
     
     if (isEdit.value) {
-      await api.put(`/billing_swa/${formData.value.id}`, payload)
+      await apiClient.put(`/billing_swa/${formData.value.id}`, payload)
     } else {
-      await api.post('/billing_swa', payload)
+      await apiClient.post('/billing_swa', payload)
     }
 
     toast.add({
@@ -502,9 +458,13 @@ const saveData = async () => {
     toast.add({
       severity: 'error',
       summary: 'Gagal',
-      detail: 'Gagal menyimpan data. Silakan coba lagi.',
+      detail: error.message || 'Gagal menyimpan data. Silakan coba lagi.',
       life: 3000,
     })
+
+    if (error.errors) {
+      errors.value = error.errors; // Simpan pesan error validasi
+    }
   } finally {
     loading.value = false
   }
@@ -512,6 +472,7 @@ const saveData = async () => {
 
 const closeModal = () => {
   visible.value = false
+  errors.value = {}
   resetForm()
 }
 </script>

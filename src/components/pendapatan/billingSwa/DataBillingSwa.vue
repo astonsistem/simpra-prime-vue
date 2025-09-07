@@ -12,6 +12,7 @@ import Menu from 'primevue/menu'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import api from '@/services/http.js'
+import apiClient from '@/api/client.js'
 import { useToast } from 'primevue/usetoast'
 import ModalSyncPenerimaan from '@/components/ModalSyncPenerimaan.vue'
 import ModalEditBillingSwa from '@/components/pendapatan/billingSwa/ModalEditBillingSwa.vue'
@@ -433,9 +434,10 @@ const handleEdit = async (item) => {
   }
   try {
     loading.value = true
-    const response = await api.get(`/billing_swa/${item.id}`)
+    const response = await apiClient.get(`/billing_swa/${item.id}`)
+
     if (response.data) {
-      selectedItem.value = { ...response.data }
+      selectedItem.value = response.data.data
       showModalEdit.value = true
     } else {
       toast.add({
@@ -446,6 +448,7 @@ const handleEdit = async (item) => {
       })
     }
   } catch (error) {
+    console.error('Gagal memuat detail data:', error)
     toast.add({
       severity: 'error',
       summary: 'Gagal',
@@ -537,14 +540,8 @@ const onReject = () => {
 }
 
 const handleSaved = () => {
-  showModalEdit.value = false
-  toast.add({
-    severity: 'success',
-    summary: 'Berhasil',
-    detail: 'Data berhasil disimpan',
-    life: 3000,
-  })
   loadData(1, rows.value)
+  showModalEdit.value = false
 }
 
 const onFilter = (event) => {
