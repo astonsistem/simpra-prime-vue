@@ -74,7 +74,7 @@
           <div v-if="errors.bank_tujuan" class="text-red-500 text-sm mt-1">{{ errors?.bank_tujuan[0] }}</div>
         </div>
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">No. Kartu Bank {{ errors?.no_kartubank_pasien?.length }}</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">No. Kartu Bank</label>
           <InputText v-model="formData.no_kartubank_pasien" placeholder="No. Kartu Bank" class="w-full" :invalid="errors?.no_kartubank_pasien?.length" />
           <div v-if="errors.no_kartubank_pasien" class="text-red-500 text-sm mt-1">{{ errors?.no_kartubank_pasien[0]
             }}
@@ -202,15 +202,20 @@
           ]" optionLabel="label" optionValue="value" placeholder="Klasifikasi" class="w-full" :invalid="errors?.klasifikasi?.length" />
           <div v-if="errors.klasifikasi" class="text-red-500 text-sm mt-1">{{ errors?.klasifikasi[0] }}</div>
         </div>
-        <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Rekening DPA</label>
-          <Dropdown v-model="formData.rek_id" :options="[
-            { label: 'Pendapatan', value: 'Pendapatan' },
-            { label: 'Piutang', value: 'Piutang' },
-            { label: 'PDD', value: 'PDD' },
-          ]" optionLabel="label" optionValue="value" placeholder="Rekening DPA" class="w-full" :invalid="errors?.rek_id?.length" />
-          <div v-if="errors.rek_id" class="text-red-500 text-sm mt-1">{{ errors?.rek_id[0] }}</div>
-        </div>
+        <!-- rekening dpa -->
+          <div class="mb-4">
+            <label class="block mb-1 text-sm font-medium text-gray-700">Rekening DPA</label>
+            <Dropdown
+              v-model="formData.rek_id"
+              :options="optionsRekeningDpa"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Pilih Rekening DPA"
+              class="w-full"
+              :invalid="errors?.rek_id?.length"
+            />
+            <Message v-if="errors.rek_id" severity="error" size="small" variant="simple">{{ errors?.rek_id[0] }}</Message>
+          </div>
       </Fieldset>
 
     </div>
@@ -228,7 +233,6 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
 import Dropdown from 'primevue/dropdown'
-import Textarea from 'primevue/textarea'
 import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
@@ -277,6 +281,7 @@ const formData = ref({
   penjamin_id: null,
   status_id: null,
   klasifikasi: '',
+  rc_id: null,
   rek_id: null,
   rekening_koran: '',
   tervalidasi: false
@@ -314,13 +319,6 @@ watch(
   (newValue) => {
     visible.value = newValue
     if (newValue) {
-      fetchCaraBayar()
-      fetchLoket()
-      fetchKasir()
-      fetchInstalasi()
-      fetchBankTujuan()
-      fetchSumberTransaksi()
-      fetchPenjamin()
     }
   }
 )
@@ -329,6 +327,14 @@ watch(visible, (newValue) => {
   emit('update:modelValue', newValue)
   if (newValue) {
     formData.value.jumlah_netto = hitungJumlahNetto()
+    fetchCaraBayar()
+    fetchLoket()
+    fetchKasir()
+    fetchInstalasi()
+    fetchBankTujuan()
+    fetchSumberTransaksi()
+    fetchPenjamin()
+    fetchRekeningDpa()
   }
 })
 
@@ -494,6 +500,30 @@ const fetchSumberTransaksi = async () => {
       severity: 'error',
       summary: 'Error',
       detail: 'Gagal memuat data sumber transaksi',
+      life: 3000,
+    })
+  }
+}
+
+
+const optionsRekeningDpa = ref([])
+const fetchRekeningDpa = async () => {
+  console.log('fetchRekeningDpa')
+  if (optionsRekeningDpa.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  try {
+    const response = await api.get('/akun/list/pendapatan?rekening-dpa')
+
+    if (response.data.data) {
+      optionsRekeningDpa.value = response.data.data.map((item) => ({
+        value: item.rek_id,
+        label: item.rek_nama,
+      }))
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Gagal memuat data rekening dpa',
       life: 3000,
     })
   }

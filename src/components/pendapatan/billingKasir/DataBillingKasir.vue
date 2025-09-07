@@ -19,6 +19,7 @@ import * as XLSX from 'xlsx'
 import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import Calendar from 'primevue/calendar'
+import ModalSetorBillingKasir from './ModalSetorBillingKasir.vue'
 
 const toast = useToast()
 
@@ -44,18 +45,18 @@ const jenisPeriodeOptions = ref([
 ])
 
 const bulanOptions = ref([
-    { label: 'Januari', value: 1 },
-    { label: 'Februari', value: 2 },
-    { label: 'Maret', value: 3 },
-    { label: 'April', value: 4 },
-    { label: 'Mei', value: 5 },
-    { label: 'Juni', value: 6 },
-    { label: 'Juli', value: 7 },
-    { label: 'Agustus', value: 8 },
-    { label: 'September', value: 9 },
-    { label: 'Oktober', value: 10 },
-    { label: 'November', value: 11 },
-    { label: 'Desember', value: 12 },
+  { label: 'Januari', value: 1 },
+  { label: 'Februari', value: 2 },
+  { label: 'Maret', value: 3 },
+  { label: 'April', value: 4 },
+  { label: 'Mei', value: 5 },
+  { label: 'Juni', value: 6 },
+  { label: 'Juli', value: 7 },
+  { label: 'Agustus', value: 8 },
+  { label: 'September', value: 9 },
+  { label: 'Oktober', value: 10 },
+  { label: 'November', value: 11 },
+  { label: 'Desember', value: 12 },
 ])
 
 const data = ref([])
@@ -65,6 +66,7 @@ const first = ref(0)
 const loading = ref(false)
 const selectedItem = ref(null)
 const showModalEdit = ref(false)
+const showModalSetor = ref(false)
 const showModalSync = ref(false)
 const showSyncDialog = ref(false)
 const syncOptions = ref([])
@@ -91,7 +93,7 @@ const formatDateToYYYYMMDD = (date) => {
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
-    size: 100,
+    size: pageSize,
   }
   if (formFilters.value.jenis_periode) q.periode = formFilters.value.jenis_periode
   if (formFilters.value.jenis_periode === 'BULANAN') {
@@ -110,7 +112,7 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
     }
   } else if (formFilters.value.jenis_periode === 'TANGGAL') {
     if (formFilters.value.tglAwal) q.tglAwal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
-if (formFilters.value.tglAkhir) q.tglAkhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
+    if (formFilters.value.tglAkhir) q.tglAkhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
   }
 
   if (filters.value) {
@@ -125,8 +127,8 @@ if (formFilters.value.tglAkhir) q.tglAkhir = formatDateToYYYYMMDD(formFilters.va
       }
     })
   }
-console.log('Query parameters:', q) // 
-return q
+
+  return q
 }
 
 const loadData = async (page = 1, pageSize = rows.value) => {
@@ -134,17 +136,10 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   try {
     const query = buildQuery(page, pageSize)
     const response = await api.get('/billing_kasir', { params: query })
-    if (response.data && response.data.items) {
-      data.value = response.data.items.map((item, index) => ({
-        ...item,
-        no: (page - 1) * pageSize + index + 1,
-      }))
-      totalRecords.value = response.data.total ?? 0
 
-      
-      if (pageSize === totalRecords.value && pageSize > 100) {
-        rows.value = 1000
-      }
+    if (response.data && response.data.data) {
+      data.value = response.data.data
+      totalRecords.value = response.data?.meta?.total ?? 0
     }
   } catch (error) {
     console.error('Gagal memuat data:', error)
@@ -155,17 +150,18 @@ const loadData = async (page = 1, pageSize = rows.value) => {
 }
 
 const onPageChange = (event) => {
+  let page = event.rows === 1000 ? 1 : event.page + 1
   first.value = event.first
-  rows.value = event.rows
 
-
-  if (event.rows === 1000) {
-    
-    loadData(1, totalRecords.value)
-  } else {
-    const page = event.page + 1
-    loadData(page, event.rows)
+  // jika size sebelumnya lebih tinggi dari size saat ini, maka set page ke 1
+  if (rows.value > event.rows) {
+    page = 1
+    first.value = 0
   }
+
+  rows.value = event.rows
+  
+  loadData(page, event.rows)
 }
 
 const resetFilter = () => {
@@ -188,7 +184,7 @@ const searchData = () => {
 
 const exportExcel = () => {
   try {
-   
+
     const headers = [
       'No',
       'No Bayar',
@@ -210,7 +206,7 @@ const exportExcel = () => {
       'Jumlah Netto',
     ]
 
-   
+
     const excelData = data.value.map((item, index) => [
       item.no || index + 1,
       item.noBayar || '',
@@ -232,7 +228,7 @@ const exportExcel = () => {
       item.jumlahNetto || 0,
     ])
 
-  
+
     const workbook = XLSX.utils.book_new()
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...excelData])
 
@@ -265,7 +261,7 @@ const exportExcel = () => {
     // Generate Excel file
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
     const blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      type: 'application/vnd.openxmlformatxs-officedocument.spreadsheetml.sheet',
     })
 
     // Download file
@@ -320,10 +316,10 @@ const handleEdit = async (item) => {
     return
   }
   try {
-   
+
     const response = await api.get(`/billing_kasir/${item.id}`)
     if (response.data) {
-      selectedItem.value = response.data
+      selectedItem.value = response.data.data
       showModalEdit.value = true
     } else {
       toast.add({
@@ -356,12 +352,14 @@ const handleValidasi = async (item) => {
     return
   }
   try {
-    
-    const response = await api.get(`/billing_kasir/${item.id}`, {params: {
-      action: 'validasi'
-    }})
+
+    const response = await api.get(`/billing_kasir/${item.id}`, {
+      params: {
+        action: 'validasi'
+      }
+    })
     if (response.data) {
-      validasiItem.value = { ...response.data }
+      validasiItem.value = { ...response.data.data }
       showModalValidasi.value = true
     } else {
       toast.add({
@@ -400,12 +398,12 @@ const handleCancelValidasi = async () => {
     return
   }
   try {
- 
+
     await api.put(`billing_kasir/cancel_validasi/penerimaan_layanan`, {
       id: item.id,
       rc_id: item.rcId,
     })
-    
+
     toast.add({
       severity: 'success',
       summary: 'Berhasil',
@@ -519,8 +517,8 @@ const openSyncDialog = async () => {
   loadingSyncOptions.value = true
   try {
     const response = await api.get('/syncapi/list/BILLING KASIR')
-    if (response.data && Array.isArray(response.data)) {
-      syncOptions.value = response.data.map((item) => ({
+    if (response.data && Array.isArray(response.data.data)) {
+      syncOptions.value = response.data.data.map((item) => ({
         label: item.sinkronisasi_nama,
         value: item,
       }))
@@ -541,7 +539,7 @@ const openSyncDialog = async () => {
 }
 
 const isValidated = (rowData) => {
-  return rowData.rcId && rowData.rcId > 0
+  return rowData.rcId && parseInt(rowData.rcId) > 0
 }
 
 onMounted(async () => {
@@ -609,137 +607,75 @@ const handleSyncSubmit = async () => {
     loadingSync.value = false
   }
 }
+
+function setor(data) {
+  selectedItem.value = data
+  showModalSetor.value = true
+}
 </script>
 
 <template>
   <div class="p-4">
     <!-- Filter Section -->
     <div
-      class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
-    >
+      class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
       <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
-          <Select
-            v-model="formFilters.jenis_periode"
-            :options="jenisPeriodeOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Jenis Periode"
-            class="w-full"
-          />
+          <Select v-model="formFilters.jenis_periode" :options="jenisPeriodeOptions" optionLabel="label"
+            optionValue="value" placeholder="Jenis Periode" class="w-full" />
         </div>
         <template v-if="formFilters.jenis_periode === 'BULANAN'">
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
-            <Select
-              v-model="formFilters.tahunPeriode"
-              :options="tahunPeriodeOptions"
-              placeholder="Tahun Periode"
-              class="w-full"
-            />
+            <Select v-model="formFilters.tahunPeriode" :options="tahunPeriodeOptions" placeholder="Tahun Periode"
+              class="w-full" />
           </div>
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Awal</label>
-            <Select
-              v-model="formFilters.bulanAwal"
-              :options="bulanOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Bulan Awal"
-              class="w-full"
-            />
+            <Select v-model="formFilters.bulanAwal" :options="bulanOptions" optionLabel="label" optionValue="value"
+              placeholder="Bulan Awal" class="w-full" />
           </div>
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Akhir</label>
-            <Select
-              v-model="formFilters.bulanAkhir"
-              :options="bulanOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Bulan Akhir"
-              class="w-full"
-            />
+            <Select v-model="formFilters.bulanAkhir" :options="bulanOptions" optionLabel="label" optionValue="value"
+              placeholder="Bulan Akhir" class="w-full" />
           </div>
         </template>
         <template v-if="formFilters.jenis_periode === 'TANGGAL'">
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Awal</label>
-            <DatePicker
-              v-model="formFilters.tglAwal"
-              placeholder="Tanggal Awal"
-              showIcon
-              class="w-full"
-              dateFormat="dd/mm/yy"
-              :showTime="false"
-              :showSeconds="false"
-              :showMilliseconds="false"
-            />
+            <DatePicker v-model="formFilters.tglAwal" placeholder="Tanggal Awal" showIcon class="w-full"
+              dateFormat="dd/mm/yy" :showTime="false" :showSeconds="false" :showMilliseconds="false" />
           </div>
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Akhir</label>
-            <DatePicker
-              v-model="formFilters.tglAkhir"
-              placeholder="Tanggal Akhir"
-              showIcon
-              class="w-full"
-              dateFormat="dd/mm/yy"
-              :showTime="false"
-              :showSeconds="false"
-              :showMilliseconds="false"
-            />
+            <DatePicker v-model="formFilters.tglAkhir" placeholder="Tanggal Akhir" showIcon class="w-full"
+              dateFormat="dd/mm/yy" :showTime="false" :showSeconds="false" :showMilliseconds="false" />
           </div>
         </template>
       </div>
       <div class="mt-4 flex gap-2">
         <Button label="Cari" icon="pi pi-search" class="p-button-info" @click="searchData" />
-        <Button
-          label="Reset Filter"
-          icon="pi pi-refresh"
-          class="p-button-secondary"
-          @click="resetFilter"
-        />
-        <Button
-          label="Tarik Data Billing"
-          icon="pi pi-refresh"
-          class="p-button-warning"
-          style="background-color: #ffa500; border: none; color: #fff"
-          @click="openSyncDialog"
-        />
+        <Button label="Reset Filter" icon="pi pi-refresh" class="p-button-secondary" @click="resetFilter" />
+        <Button label="Tarik Data Billing" icon="pi pi-refresh" class="p-button-warning"
+          style="background-color: #ffa500; border: none; color: #fff" @click="openSyncDialog" />
       </div>
     </div>
 
     <!-- Data Table Section -->
     <div
-      class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
-    >
+      class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-xl font-semibold text-[#17316E]">Data Biling Kasir</h3>
         <div class="flex gap-2">
-          <Button
-            label="Export Excel"
-            icon="pi pi-file-excel"
-            class="p-button-success"
-            @click="exportExcel"
-          />
+          <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel" />
         </div>
       </div>
-      <DataTable
-        :filters="filters"
-        :value="data"
-        responsiveLayout="scroll"
-        paginator
-        lazy
-        :totalRecords="totalRecords"
-        :rows="rows"
-        :first="first"
-        :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
-        @page="onPageChange"
-        @filter="onFilter"
-        dataKey="id"
-        filterDisplay="menu"
-        :globalFilterFields="[
+      <DataTable :filters="filters" :value="data" responsiveLayout="scroll" paginator lazy :totalRecords="totalRecords"
+        :rows="rows" :first="first" :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]" @page="onPageChange" :loading="loading"
+        @filter="onFilter" dataKey="id" filterDisplay="menu" :globalFilterFields="[
           'noBayar',
           'pasien',
           'uraian',
@@ -750,24 +686,11 @@ const handleSyncSubmit = async () => {
           'caraBayar',
           'rekeningDpa',
           'bank',
-        ]"
-        class="p-datatable-sm"
-      >
+        ]" class="p-datatable-sm">
         <template #header>
           <div class="flex justify-between">
-            <Button
-              type="button"
-              icon="pi pi-filter-slash"
-              label="Clear"
-              outlined
-              @click="clearFilter()"
-            />
-            <!-- <IconField>
-              <InputIcon>
-                <i class="pi pi-search" />
-              </InputIcon>
-              <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
-            </IconField> -->
+            <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />
+
           </div>
         </template>
 
@@ -778,65 +701,58 @@ const handleSyncSubmit = async () => {
           </div>
         </template>
 
-        <Column field="no" header="No" style="width: 5%" />
+        <Column field="no" header="No" style="width: 5%;">
+          <template #body="{ index }">{{ first + index + 1}}</template>
+        </Column>
 
-        <Column
-          field="rcId"
-          header="#"
-          style="width: 10%; text-align: center"
-        >
+        <Column field="rcId" header="#" style="width: 10%; text-align: center">
           <template #body="{ data }">
-            <i
-              class="pi pi-check-circle"
+            <i class="pi pi-check-circle"
               :class="[isValidated(data) ? 'text-green-500' : 'text-gray-300', 'cursor-pointer']"
-              v-if="isValidated(data)"
-            ></i>
+              v-if="isValidated(data)"></i>
           </template>
         </Column>
 
         <Column header="Action" style="width: 10%">
           <template #body="slotProps">
-            <SplitButton
-              label="Aksi"
-              size="small"
-              severity="secondary"
-              :model="[
-                { 
-                  label: 'Ubah', 
-                  icon: 'pi pi-pencil', 
-                  visible: () => !isValidated(slotProps.data), 
-                  command: () => handleEdit(slotProps.data) 
-                },
-                {
-                  label: 'Validasi',
-                  icon: 'pi pi-check',
-                  visible: () => !isValidated(slotProps.data),
-                  command: () => handleValidasi(slotProps.data),
-                },
-                {
-                  label: 'Batal Validasi',
-                  icon: 'pi pi-times-circle',
-                  style: 'color: red;',
-                  visible: () => !!isValidated(slotProps.data),
-                  command: () => confirmCancelValidasi(slotProps.data),
-                },
-                {
-                  label: 'Hapus',
-                  icon: 'pi pi-trash',
-                  visible: () => !isValidated(slotProps.data),
-                  command: () => handleDelete(slotProps.data),
-                },
-              ]"
-            />
+            <SplitButton label="Aksi" size="small" severity="secondary" :model="[
+              {
+                label: 'Ubah',
+                icon: 'pi pi-pencil',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleEdit(slotProps.data)
+              },
+              {
+                label: 'Validasi',
+                icon: 'pi pi-check',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleValidasi(slotProps.data),
+              },
+              {
+                label: 'Setor', // pay
+                icon: 'pi pi-send',
+                style: 'color: green;',
+                visible: () => !!isValidated(slotProps.data),
+                command: () => setor(slotProps.data),
+              },
+              {
+                label: 'Batal Validasi',
+                icon: 'pi pi-times-circle',
+                style: 'color: red;',
+                visible: () => !!isValidated(slotProps.data),
+                command: () => confirmCancelValidasi(slotProps.data),
+              },
+              {
+                label: 'Hapus',
+                icon: 'pi pi-trash',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleDelete(slotProps.data),
+              },
+            ]" />
           </template>
         </Column>
 
-        <Column
-          field="noBayar"
-          header="No Bayar"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
+        <Column field="noBayar" header="No Bayar" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
             <span>{{ data.noBayar }}</span>
           </template>
@@ -845,33 +761,17 @@ const handleSyncSubmit = async () => {
           </template>
         </Column>
 
-        <Column
-          field="tglBayar"
-          header="Tanggal Bayar"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
+        <Column field="tglBayar" header="Tanggal Bayar" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.tglBayar }}
           </template>
           <template #filter="{ filterModel }">
-            <DatePicker
-              v-model="filterModel.value"
-              dateFormat="dd/mm/yy"
-              placeholder="dd/mm/yyyy"
-              :showTime="false"
-              :showSeconds="false"
-              :showMilliseconds="false"
-            />
+            <DatePicker v-model="filterModel.value" dateFormat="dd/mm/yy" placeholder="dd/mm/yyyy" :showTime="false"
+              :showSeconds="false" :showMilliseconds="false" />
           </template>
         </Column>
 
-        <Column
-          field="pasien"
-          header="Pasien"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
+        <Column field="pasien" header="Pasien" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.pasien }}
           </template>
@@ -880,12 +780,7 @@ const handleSyncSubmit = async () => {
           </template>
         </Column>
 
-        <Column
-          field="noDokumen"
-          header="No Dokumen"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
+        <Column field="noDokumen" header="No Dokumen" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.noDokumen }}
           </template>
@@ -894,33 +789,17 @@ const handleSyncSubmit = async () => {
           </template>
         </Column>
 
-        <Column
-          field="tglDokumen"
-          header="Tanggal Dokumen"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
+        <Column field="tglDokumen" header="Tanggal Dokumen" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.tglDokumen }}
           </template>
           <template #filter="{ filterModel }">
-            <DatePicker
-              v-model="filterModel.value"
-              dateFormat="dd/mm/yy"
-              placeholder="dd/mm/yyyy"
-              :showTime="false"
-              :showSeconds="false"
-              :showMilliseconds="false"
-            />
+            <DatePicker v-model="filterModel.value" dateFormat="dd/mm/yy" placeholder="dd/mm/yyyy" :showTime="false"
+              :showSeconds="false" :showMilliseconds="false" />
           </template>
         </Column>
 
-        <Column
-          field="noClosingKasir"
-          header="No Closing"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
+        <Column field="noClosingKasir" header="No Closing" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.noClosingKasir }}
           </template>
@@ -929,30 +808,17 @@ const handleSyncSubmit = async () => {
           </template>
         </Column>
 
-        <Column
-          field="sumberTransaksi"
-          header="Sumber Transaksi"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
+        <Column field="sumberTransaksi" header="Sumber Transaksi" :showFilterMatchModes="false"
+          style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.sumberTransaksi }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by Sumber Transaksi"
-            />
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Sumber Transaksi" />
           </template>
         </Column>
 
-        <Column
-          field="instalasi"
-          header="Instalasi"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
+        <Column field="instalasi" header="Instalasi" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.instalasi }}
           </template>
@@ -961,57 +827,30 @@ const handleSyncSubmit = async () => {
           </template>
         </Column>
 
-        <Column
-          field="metodeBayar"
-          header="Metode Bayar"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
+        <Column field="metodeBayar" header="Metode Bayar" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.metodeBayar }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by Metode Bayar"
-            />
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Metode Bayar" />
           </template>
         </Column>
 
-        <Column
-          field="caraBayar"
-          header="Cara Pembayaran"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
+        <Column field="caraBayar" header="Cara Pembayaran" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.caraBayar }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by Cara Pembayaran"
-            />
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Cara Pembayaran" />
           </template>
         </Column>
 
-        <Column
-          field="rekeningDpa"
-          header="Rekening DPA"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
+        <Column field="rekeningDpa" header="Rekening DPA" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.rekeningDpa }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by Rekening DPA"
-            />
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Rekening DPA" />
           </template>
         </Column>
 
@@ -1024,7 +863,7 @@ const handleSyncSubmit = async () => {
           </template>
         </Column>
 
-        < <Column field="jumlahBruto" header="Jumlah Bruto" style="text-align: right">
+        <Column field="jumlahBruto" header="Jumlah Bruto" style="text-align: right">
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlahBruto || 0) }}
           </template>
@@ -1059,60 +898,28 @@ const handleSyncSubmit = async () => {
 
     <ModalSyncPenerimaan v-model="showModalSync" @sync="loadData" />
     <ModalEditBillingKasir v-model="showModalEdit" :item="selectedItem" @saved="handleSaved" />
-    <ModalValidasiBillingKasir
-      v-model="showModalValidasi"
-      :item="validasiItem"
-      @validated="handleValidated"
-    />
-    <Dialog
-      :visible="showSyncDialog"
-      @update:visible="showSyncDialog = $event"
-      modal
-      header="Tarik Data Billing Kasir"
-      :closable="true"
-      :style="{ width: '500px' }"
-    >
+    <ModalValidasiBillingKasir v-model="showModalValidasi" :item="validasiItem" @validated="handleValidated" />
+    <ModalSetorBillingKasir v-model="showModalSetor" :item="selectedItem" />
+
+    <Dialog :visible="showSyncDialog" @update:visible="showSyncDialog = $event" modal header="Tarik Data Billing Kasir"
+      :closable="true" :style="{ width: '500px' }">
       <div v-if="loadingSyncOptions" class="py-8 text-center">Loading...</div>
       <div v-else class="space-y-4">
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Sinkronisasi</label>
-          <Dropdown
-            v-model="selectedSync"
-            :options="syncOptions"
-            optionLabel="label"
-            placeholder="Pilih Request"
-            class="w-full"
-          />
+          <Dropdown v-model="selectedSync" :options="syncOptions" optionLabel="label" placeholder="Pilih Request"
+            class="w-full" />
         </div>
         <div v-for="param in syncParams" :key="param.field">
           <label class="block mb-1 text-sm font-medium text-gray-700">{{ param.label }}</label>
-          <Calendar
-            v-if="param.type === 'date'"
-            v-model="syncForm[param.field]"
-            placeholder="Tanggal"
-            showIcon
-            class="w-full"
-          />
-          <InputText
-            v-else
-            v-model="syncForm[param.field]"
-            :placeholder="param.label"
-            class="w-full"
-          />
+          <Calendar v-if="param.type === 'date'" v-model="syncForm[param.field]" placeholder="Tanggal" showIcon
+            class="w-full" />
+          <InputText v-else v-model="syncForm[param.field]" :placeholder="param.label" class="w-full" />
         </div>
         <div class="flex justify-end gap-2 pt-4">
-          <Button
-            label="Sinkronisasi"
-            icon="pi pi-sync"
-            class="p-button-success"
-            :loading="loadingSync"
-            @click="handleSyncSubmit"
-          />
-          <Button
-            label="Batal"
-            class="p-button-secondary"
-            @click="() => (showSyncDialog = false)"
-          />
+          <Button label="Sinkronisasi" icon="pi pi-sync" class="p-button-success" :loading="loadingSync"
+            @click="handleSyncSubmit" />
+          <Button label="Batal" class="p-button-secondary" @click="() => (showSyncDialog = false)" />
         </div>
       </div>
     </Dialog>
@@ -1132,27 +939,13 @@ const handleSyncSubmit = async () => {
         </div>
       </template>
     </Toast>
-    <Dialog
-      :visible="showModalCancelValidasi"
-      @update:visible="showModalCancelValidasi = $event"
-      modal
-      header="Konfirmasi Batal Validasi"
-      :closable="true"
-      :style="{ width: '400px' }"
-    >
+    <Dialog :visible="showModalCancelValidasi" @update:visible="showModalCancelValidasi = $event" modal
+      header="Konfirmasi Batal Validasi" :closable="true" :style="{ width: '400px' }">
       <div class="p-4">
         <p>Apakah Anda yakin ingin membatalkan validasi data ini?</p>
         <div class="flex justify-end gap-2 pt-4">
-          <Button
-            label="Ya, Batalkan Validasi"
-            class="p-button-warning"
-            @click="handleCancelValidasi"
-          />
-          <Button
-            label="Tidak"
-            class="p-button-secondary"
-            @click="() => (showModalCancelValidasi = false)"
-          />
+          <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi" />
+          <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)" />
         </div>
       </div>
     </Dialog>

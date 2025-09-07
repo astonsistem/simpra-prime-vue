@@ -1,94 +1,63 @@
 <template>
   <Dialog :visible="modelValue" @update:visible="closeModal" modal header="Validasi Billing Kasir"
-    :style="{ width: '65rem' }">
+    :style="{ width: '35rem' }">
     <div class="p-4 space-y-4">
-      <div>
-        <h4 class="font-semibold mb-2">Data Billing</h4>
-        <div class="grid grid-cols-2 gap-2 text-sm mb-2 ml-4">
-          <div>
-            No Bayar: <span class="font-bold">{{ item?.noBayar || '-' }}</span>
-          </div>
-          <div>
-            Tanggal Bayar: <span class="font-bold">{{ item?.tglBayar || '-' }}</span>
-          </div>
-          <div>
-            Pasien: <span class="font-bold">{{ item?.pasien || '-' }}</span>
-          </div>
-          <div>
-            Jumlah Bruto: <span class="font-bold">{{ formatNumber(item?.jumlahBruto) }}</span>
-          </div>
-          <div>
-            Jumlah Netto: <span class="font-bold">{{ formatNumber(item?.jumlahNetto) }}</span>
-          </div>
+      <Fieldset legend="Data Billing Kasir">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mb-2 ml-4">
+          <!-- grid 2 column -->
+          <div>No. Bayar</div>
+          <div>: <span class="font-bold">{{ item?.noBayar || '-' }}</span></div>
+
+          <div>Tanggal Bayar</div>
+          <div>: <span class="font-bold">{{ item?.tglBayar || '-' }}</span></div>
+
+          <div>Pasien</div>
+          <div>: <span class="font-bold">{{ item?.pasien || '-' }}</span></div>
+
+          <div>Jumlah Bruto</div>
+          <div>: <span class="font-bold">{{ formatCurrency(item?.jumlahBruto) }}</span></div>
+
+          <div>Jumlah Netto</div>
+          <div>: <span class="font-bold">{{ formatCurrency(item?.jumlahNetto) }}</span></div>
+      
         </div>
-      </div>
+      </Fieldset>
       <!-- Search -->
-      <div class="grid grid-cols-2 gap-2 mb-4">
-        <h4 class="font-semibold mb-2 self-center">Pilih Rekening Koran (RC)</h4>
-        <div>
-          <input id="rc-search" type="text" v-model="rc.search" @input="searchRc"
-            class="w-full border border-gray-300 rounded p-2" placeholder="No Referensi" />
+      <div class="my-0">&nbsp;</div>
+      <Fieldset legend="Pilih Rekening Koran (RC)">
+        <FormRekeningKoran 
+          v-model="form.rc_id" 
+          v-model:selection="selectedRc"
+          placeholder="Rekening Koran" 
+          class="w-full" 
+          :errorMessage="errors?.rc_id?.length ? errors?.rc_id[0] : ''" 
+          :invalid="errors?.rc_id?.length"
+          @row-select="selectedRc = $event" />
+
+        <div v-if="selectedRc && selectedRc.rc_id" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm m-4">
+          <!-- grid 2 column -->
+          <div>No. Referensi</div>
+          <div>: <span class="font-bold">{{ selectedRc?.no_rc || '-' }}</span></div>
+
+          <div>Tgl. Referensi</div>
+          <div>: <span class="font-bold">{{ selectedRc?.tgl_rc || '-' }}</span></div>
+
+          <div>Nominal</div>
+          <div>: <span class="font-bold">{{ selectedRc?.nominal || '-' }}</span></div>
+
+          <div>Bank</div>
+          <div>: <span class="font-bold">{{ selectedRc?.bank || '-' }}</span></div>
+
+          <div>Uraian</div>
+          <div>: <span class="font-bold">{{ selectedRc.uraian }}</span></div>
+      
         </div>
-      </div>
+      </Fieldset>
 
-      <!-- Make result of selectedRc -->
-      <div v-if="selectedRc" class="mb-8">
-        <DataTable :value="[selectedRc]" size="small" showGridlines :rowClass="() => 'bg-gray-400'">
-          <Column header="ID" field="rc_id" />
-          <Column header="No. Referensi" field="no_rc" />
-          <Column header="Tgl RC" field="tgl_rc_format" />
-          <Column header="Nominal" field="nominal">
-            <template #body="slotProps">{{ formatCurrency(slotProps.data.nominal) }}</template>
-          </Column>
-          <Column header="Uraian" field="uraian" />
-        </DataTable>
-      </div>
-      <div
-        class="flex flex-col md:flex-row md:flex-nowrap md:overflow-y-auto md:max-h-[calc(100vh-22rem)] border border-gray-300 rounded">
-        <DataTable v-model:selection="selectedRc" v-model:filters="filters"
-          :globalFilterFields="['no_rc', 'nominal', 'uraian']" filterDisplay="row" :value="rcOptions"
-          selectionMode="single" dataKey="rc_id" class="w-full" :loading="rcOptions.length === 0 && modelValue">
-          <template #header>
-            <div class="flex justify-end">
-              <IconField>
-                  <InputIcon>
-                    <i class="pi pi-search" />
-                  </InputIcon>
-                  <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
-                </IconField>
-            </div>
-          </template>
-
-          <Column header="ID" field="rc_id" :sortable="true" />
-          <Column header="No. Referensi" field="no_rc" :sortable="true">
-            <template #filter="{ filterModel, filterCallback }">
-              <InputText v-model="filterModel.value" type="text" @input="filterCallback()" placeholder="Cari No. Referensi" />
-            </template>
-          </Column>
-          <Column header="Tgl RC" field="tgl_rc_format" :sortable="true" />
-          <Column header="Nominal" field="nominal" :sortable="true">
-            <template #body="slotProps">{{ formatCurrency(slotProps.data.nominal) }}</template>
-            <template #filter="{ filterModel, filterCallback }">
-              <InputText v-model="filterModel.value" @input="filterCallback()" placeholder="Cari Nominal"/>
-            </template>
-          </Column>
-          <Column header="Uraian" field="uraian" :sortable="true">
-            <template #filter="{ filterModel, filterCallback }">
-              <InputText v-model="filterModel.value" type="text" @input="filterCallback()" placeholder="Cari uraian" />
-            </template>
-          </Column>
-        </DataTable>
-      </div>
-      <!-- result total of -->
-      <div class="text-sm text-end text-gray-500">
-        Total Rekening Koran: <span class="font-bold">{{ rc.total }}</span>
-      </div>
-      <Paginator v-if="rcOptions.length > 0" v-model:first="rc.first" :rows="rc.rows" :totalRecords="rc.total"
-        @page="onPageChangeRc($event)" />
     </div>
     <template #footer>
       <Button label="Batal" class="p-button-secondary" @click="closeModal" />
-      <Button label="Validasi" class="p-button-success" :disabled="!selectedRc || loading" @click="doValidasi"
+      <Button label="Validasi" class="p-button-success" :disabled="!form.rc_id || loading" @click="doValidasi"
         :loading="loading" />
     </template>
   </Dialog>
@@ -100,7 +69,7 @@ import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/api/client.js'
 import { formatCurrency } from '@/utils/utils'
-import { FilterMatchMode } from '@primevue/core'
+import FormRekeningKoran from '../../form/RekeningKoran.vue'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -110,85 +79,23 @@ const emit = defineEmits(['update:modelValue', 'validated'])
 const toast = useToast()
 const selectedRc = ref(null)
 const loading = ref(false)
-const rcOptions = ref([])
-const rc = reactive({
-  total: 0,
-  first: 1,
-  rows: 20,
-  search: '',
+const form = ref({
+  rc_id: null,
 })
-const filters = ref({
-  global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  no_rc: { value: null, matchMode: 'contains' },
-  nominal: { value: null, matchMode: 'equals' },
-  uraian: { value: null, matchMode: 'contains' },
-})
+const errors = ref({})
 
 watch(
   () => props.modelValue,
   async (val) => {
     selectedRc.value = null
-    rc.search = ''
-    if (val && props.item?.id) {
-      await fetchRcOptions()
+    if(val) {
+      form.value.rc_id = props.item.rcId
     }
   }
 )
 
-// Debounce search input
-let searchTimeout = null
-function searchRc() {
-  if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => {
-    rc.first = 1 // Reset to first page on new search
-    fetchRcOptions()
-  }, 800)
-}
-
-function onPageChangeRc(event) {
-  rc.first = event.first
-  rc.rows = event.rows
-  fetchRcOptions()
-}
-
-async function fetchRcOptions() {
-  rcOptions.value = []
-  try {
-    const res = await api.get(`/rekening_koran`, {
-      params: {
-        billing_id: props.item.id,
-        page: Math.floor(rc.first / rc.rows) + 1,
-        size: rc.rows,
-        search: rc.search || undefined,
-      },
-    })
-    if (res.data && Array.isArray(res.data.items)) {
-      rcOptions.value = res.data.items
-      rc.total = res.data.total || res.data.items.length
-    } else {
-      toast.add({
-        severity: 'warn',
-        summary: 'Data RC kosong',
-        detail: 'Tidak ada data rekening koran ditemukan',
-        life: 3000,
-      })
-    }
-  } catch (e) {
-    toast.add({
-      severity: 'error',
-      summary: 'Gagal',
-      detail: 'Gagal memuat data rekening koran',
-      life: 3000,
-    })
-  }
-}
-
 function closeModal() {
   emit('update:modelValue', false)
-}
-
-function formatNumber(val) {
-  return new Intl.NumberFormat('id-ID').format(val || 0)
 }
 
 async function doValidasi() {

@@ -24,9 +24,7 @@ apiClient.interceptors.request.use(config => {
 import router from '../router';
 // Response interceptor
 apiClient.interceptors.response.use(
-    response => {
-        return response.data; // Return response.data for successful responses (as you were doing)
-    },
+    response => response,
     error => {
         const status = error.response?.status;
         if (status === 401) {
