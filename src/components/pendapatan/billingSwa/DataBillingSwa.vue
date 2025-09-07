@@ -22,6 +22,7 @@ import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import Calendar from 'primevue/calendar'
 import ModalValidasiBillingSwa from './ModalValidasiBillingSwa.vue'
+import ModalSetorBillingSwa from './ModalSetorBillingSwa.vue'
 
 const toast = useToast()
 
@@ -179,6 +180,10 @@ const resetFilter = () => {
 const searchData = () => {
   first.value = 0
   loadData(1, rows.value)
+}
+
+const isValidated = (rowData) => {
+  return rowData.rcId && parseInt(rowData.rcId) > 0
 }
 
 const exportExcel = () => {
@@ -474,7 +479,7 @@ const handleValidasi = async (item) => {
     loading.value = true
     const response = await api.get(`/billing_swa/${item.id}`)
     if (response.data) {
-      validasiItem.value = { ...response.data }
+      validasiItem.value = { ...response.data.data }
       showModalValidasi.value = true
     } else {
       toast.add({
@@ -494,10 +499,6 @@ const handleValidasi = async (item) => {
   } finally {
     loading.value = false
   }
-}
-
-const handleBuktiBayar = (item) => {
-  console.log('Bukti Bayar item:', item)
 }
 
 const handleDelete = (item) => {
@@ -583,6 +584,12 @@ const clearFilter = () => {
 onMounted(() => {
   loadData(1, rows.value)
 })
+
+const showModalSetor = ref(false)
+function setor(data) {
+  selectedItem.value = data
+  showModalSetor.value = true
+}
 </script>
 
 <template>
@@ -742,32 +749,50 @@ onMounted(() => {
         </template>
 
         <Column field="no" header="No" style="width: 5%" />
+        <Column field="rcId" header="#" style="width: 10%; text-align: center">
+          <template #body="{ data }">
+            <i class="pi pi-check-circle"
+              :class="[isValidated(data) ? 'text-green-500' : 'text-gray-300', 'cursor-pointer']"
+              v-if="isValidated(data)"></i>
+          </template>
+        </Column>
         <Column header="Action" style="width: 15%">
           <template #body="slotProps">
-            <SplitButton
-              label="Aksi"
-              icon="pi pi-ellipsis-v"
-              size="small"
-              severity="secondary"
-              :model="[
-                { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
-                // {
-                //   label: 'Bukti Bayar',
-                //   icon: 'pi pi-file',
-                //   command: () => handleBuktiBayar(slotProps.data),
-                // },
-                {
-                  label: 'Validasi',
-                  icon: 'pi pi-check',
-                  command: () => handleValidasi(slotProps.data),
-                },
-                {
-                  label: 'Hapus',
-                  icon: 'pi pi-trash',
-                  command: () => handleDelete(slotProps.data),
-                },
-              ]"
-            />
+            <SplitButton label="Aksi" size="small" severity="secondary" :model="[
+              {
+                label: 'Ubah',
+                icon: 'pi pi-pencil',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleEdit(slotProps.data)
+              },
+              {
+                label: 'Validasi',
+                icon: 'pi pi-check',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleValidasi(slotProps.data),
+              },
+              {
+                label: 'Bukti Bayar',
+                icon: 'pi pi-file',
+                style: 'color: green;',
+                visible: () => !!isValidated(slotProps.data),
+                command: () => setor(slotProps.data),
+              },
+              {
+                label: 'Batal Validasi',
+                icon: 'pi pi-times-circle',
+                style: 'color: red;',
+                visible: () => !!isValidated(slotProps.data),
+                command: () => confirmCancelValidasi(slotProps.data),
+              },
+              {
+                label: 'Hapus',
+                icon: 'pi pi-trash',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleDelete(slotProps.data),
+              },
+            ]" />
+
           </template>
         </Column>
         <Column
@@ -1049,6 +1074,8 @@ onMounted(() => {
       :item="validasiItem"
       @validated="loadData(1, rows)"
     />
+    <ModalSetorBillingSwa v-model="showModalSetor" :item="selectedItem" />
+
     <Toast />
     <Toast position="center" group="confirm">
       <template #message="slotProps">

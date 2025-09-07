@@ -202,15 +202,20 @@
           ]" optionLabel="label" optionValue="value" placeholder="Klasifikasi" class="w-full" :invalid="errors?.klasifikasi?.length" />
           <div v-if="errors.klasifikasi" class="text-red-500 text-sm mt-1">{{ errors?.klasifikasi[0] }}</div>
         </div>
-        <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Rekening DPA</label>
-          <FormRekeningDpa 
-            v-model="formData.rc_id" 
-            placeholder="Rekening DPA" 
-            class="w-full" 
-            :errorMessage="errors?.rc_id?.length ? errors?.rc_id[0] : ''"
-            :invalid="errors?.rc_id?.length" readonly />
-        </div>
+        <!-- rekening dpa -->
+          <div class="mb-4">
+            <label class="block mb-1 text-sm font-medium text-gray-700">Rekening DPA</label>
+            <Dropdown
+              v-model="formData.rek_id"
+              :options="optionsRekeningDpa"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Pilih Rekening DPA"
+              class="w-full"
+              :invalid="errors?.rek_id?.length"
+            />
+            <Message v-if="errors.rek_id" severity="error" size="small" variant="simple">{{ errors?.rek_id[0] }}</Message>
+          </div>
       </Fieldset>
 
     </div>
@@ -233,7 +238,6 @@ import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/services/http.js'
 import client from '@/api/client.js'
-import FormRekeningDpa from '../../form/RekeningDpa.vue'
 
 const props = defineProps({
   modelValue: {
@@ -278,6 +282,7 @@ const formData = ref({
   status_id: null,
   klasifikasi: '',
   rc_id: null,
+  rek_id: null,
   rekening_koran: '',
   tervalidasi: false
 })
@@ -314,13 +319,6 @@ watch(
   (newValue) => {
     visible.value = newValue
     if (newValue) {
-      fetchCaraBayar()
-      fetchLoket()
-      fetchKasir()
-      fetchInstalasi()
-      fetchBankTujuan()
-      fetchSumberTransaksi()
-      fetchPenjamin()
     }
   }
 )
@@ -329,7 +327,14 @@ watch(visible, (newValue) => {
   emit('update:modelValue', newValue)
   if (newValue) {
     formData.value.jumlah_netto = hitungJumlahNetto()
-    formData.value.rek_id = null
+    fetchCaraBayar()
+    fetchLoket()
+    fetchKasir()
+    fetchInstalasi()
+    fetchBankTujuan()
+    fetchSumberTransaksi()
+    fetchPenjamin()
+    fetchRekeningDpa()
   }
 })
 
@@ -495,6 +500,30 @@ const fetchSumberTransaksi = async () => {
       severity: 'error',
       summary: 'Error',
       detail: 'Gagal memuat data sumber transaksi',
+      life: 3000,
+    })
+  }
+}
+
+
+const optionsRekeningDpa = ref([])
+const fetchRekeningDpa = async () => {
+  console.log('fetchRekeningDpa')
+  if (optionsRekeningDpa.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  try {
+    const response = await api.get('/akun/list/pendapatan?rekening-dpa')
+
+    if (response.data.data) {
+      optionsRekeningDpa.value = response.data.data.map((item) => ({
+        value: item.rek_id,
+        label: item.rek_nama,
+      }))
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Gagal memuat data rekening dpa',
       life: 3000,
     })
   }

@@ -25,7 +25,7 @@
       <!-- Search -->
       <div class="my-0">&nbsp;</div>
       <Fieldset legend="Pilih Rekening Koran (RC)">
-        <FormRekeningDpa 
+        <FormRekeningKoran 
           v-model="form.rc_id" 
           v-model:selection="selectedRc"
           placeholder="Rekening Koran" 
@@ -69,7 +69,7 @@ import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/api/client.js'
 import { formatCurrency } from '@/utils/utils'
-import FormRekeningDpa from '../../form/RekeningDpa.vue'
+import FormRekeningKoran from '../../form/RekeningKoran.vue'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -93,8 +93,6 @@ watch(
     }
   }
 )
-
-
 
 function closeModal() {
   emit('update:modelValue', false)

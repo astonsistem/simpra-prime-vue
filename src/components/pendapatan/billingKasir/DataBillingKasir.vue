@@ -539,7 +539,7 @@ const openSyncDialog = async () => {
 }
 
 const isValidated = (rowData) => {
-  return rowData.rcId && parseInt(rowData.rcId) > 0 && parseInt(rowData.statusId) === 5
+  return rowData.rcId && parseInt(rowData.rcId) > 0
 }
 
 onMounted(async () => {
