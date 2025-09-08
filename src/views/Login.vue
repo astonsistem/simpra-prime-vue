@@ -175,7 +175,7 @@ const login = async () => {
             <div class="flex items-center gap-2">
               <canvas ref="captchaCanvas" width="100" height="40"
                 class="rounded border border-gray-300 bg-white"></canvas>
-              <button @click="refreshCaptcha" class="text-gray-500 hover:text-black">
+              <button @click="refreshCaptcha" type="button" class="text-gray-500 hover:text-black">
                 <i class="pi pi-refresh"></i>
               </button>
             </div>
