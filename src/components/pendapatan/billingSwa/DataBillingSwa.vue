@@ -125,6 +125,10 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
         } else {
           q[key] = filters.value[key].value
         }
+        // rekeningDpa filter
+        if( key === 'rekeningDpa' && typeof filters.value[key].value === 'object' && filters.value[key].value !== null) {
+          q['rekId'] = filters.value[key].value.rekId
+        }
       }
     })
   }
@@ -136,16 +140,11 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   loading.value = true
   try {
     const query = buildQuery(page, pageSize)
+
     const response = await api.get('/billing_swa', { params: query })
-    if (response.data && response.data.items) {
-      data.value = response.data.items.map((item, index) => ({
-        ...item,
-        no: (page - 1) * pageSize + index + 1,
-      }))
-      totalRecords.value = response.data.total ?? 0
-      if (pageSize === totalRecords.value && pageSize > 100) {
-        rows.value = 1000
-      }
+    if (response.data && response.data.data) {
+      data.value = response.data.data
+      totalRecords.value = response.data?.meta?.total ?? 0
     }
   } catch (error) {
     console.error('Gagal memuat data:', error)
@@ -156,15 +155,16 @@ const loadData = async (page = 1, pageSize = rows.value) => {
 }
 
 const onPageChange = (event) => {
+  let page = event.rows === 1000 ? 1 : event.page + 1
   first.value = event.first
-  rows.value = event.rows
-  if (event.rows === 1000) {
-    loadData(1, totalRecords.value)
-  } else {
-    const page = event.page + 1
-    loadData(page, event.rows)
+  if (rows.value > event.rows) {
+    page = 1
+    first.value = 0
   }
+  rows.value = event.rows
+  loadData(page, event.rows)
 }
+
 
 const resetFilter = () => {
   formFilters.value = {
@@ -194,7 +194,7 @@ const exportExcel = () => {
       'No',
       'No Bayar',
       'Tanggal Bayar',
-      'Pasien',
+      'Penyetor',
       'Uraian',
       'No Dokumen',
       'Tanggal Dokumen',
@@ -214,7 +214,7 @@ const exportExcel = () => {
       item.no || index + 1,
       item.noBayar || '',
       item.tglBayar || '',
-      item.pasien || '',
+      item.pihak3 || '',
       item.uraian || '',
       item.noDokumen || '',
       item.tglDokumen || '',
@@ -479,7 +479,7 @@ const handleValidasi = async (item) => {
   }
   try {
     loading.value = true
-    const response = await api.get(`/billing_swa/${item.id}`)
+    const response = await apiClient.get(`/billing_swa/${item.id}`)
     if (response.data) {
       validasiItem.value = { ...response.data.data }
       showModalValidasi.value = true
@@ -499,6 +499,49 @@ const handleValidasi = async (item) => {
       life: 3000,
     })
   } finally {
+    loading.value = false
+  }
+}
+
+const showModalCancelValidasi = ref(false)
+
+const confirmCancelValidasi = (item) => {
+  showModalCancelValidasi.value = true
+  selectedItem.value = item
+}
+
+const handleCancelValidasi = async () => {
+  try {
+    const item = selectedItem.value
+
+    if (!item.rcId) {
+      throw new Error("Data belum divalidasi");
+    }
+
+    await apiClient.post(`billing_swa/cancel_validasi/penerimaan_lain`, {
+      id: item.id,
+      rc_id: item.rcId,
+    })
+
+    toast.add({
+      severity: 'success',
+      summary: 'Berhasil',
+      detail: 'Validasi berhasil dibatalkan',
+      life: 3000,
+    })
+    selectedItem.value.value = null
+    showModalCancelValidasi.value = false
+    loadData(1, rows.value)
+  } catch (error) {
+    console.error('Gagal membatalkan validasi:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal',
+      detail: 'Gagal membatalkan validasi. Silakan coba lagi.',
+      life: 3000,
+    })
+  } finally {
+    showModalCancelValidasi.value = false
     loading.value = false
   }
 }
@@ -713,13 +756,7 @@ function setor(data) {
         :value="data"
         :loading="loading"
         responsiveLayout="scroll"
-        paginator
         lazy
-        :totalRecords="totalRecords"
-        :rows="rows"
-        :first="first"
-        :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
-        @page="onPageChange"
         @filter="onFilter"
         dataKey="id"
         filterDisplay="menu"
@@ -750,7 +787,9 @@ function setor(data) {
           </div>
         </template>
 
-        <Column field="no" header="No" style="width: 5%" />
+        <Column field="no" header="No" style="width: 5%">
+          <template #body="{ data, index }">{{ index + 1 + first }}</template>
+        </Column>
         <Column field="rcId" header="#" style="width: 10%; text-align: center">
           <template #body="{ data }">
             <i class="pi pi-check-circle"
@@ -828,16 +867,16 @@ function setor(data) {
           </template>
         </Column>
         <Column
-          field="pasien"
-          header="Pasien"
+          field="pihak3"
+          header="Penyetor"
           :showFilterMatchModes="false"
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.pasien }}
+            {{ data.pihak3 }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Pasien" />
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Penyetor" />
           </template>
         </Column>
         <Column
@@ -954,15 +993,15 @@ function setor(data) {
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.rekeningDpa }}
+            {{ data.rekeningDpa?.rekNama }}
           </template>
-          <template #filter="{ filterModel }">
+          <!-- <template #filter="{ filterModel }">
             <InputText
               v-model="filterModel.value"
               type="text"
               placeholder="Search by Rekening DPA"
             />
-          </template>
+          </template> -->
         </Column>
         <Column field="bank" header="Bank" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
@@ -998,6 +1037,14 @@ function setor(data) {
           </template>
         </Column>
       </DataTable>
+      <Paginator
+        :first="first"
+        :rows="rows"
+        :totalRecords="totalRecords"
+        :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
+        @page="onPageChange"
+        class="mt-4"
+      />
     </div>
     <Dialog
       :visible="showSyncDialog"
@@ -1088,12 +1135,22 @@ function setor(data) {
             <p>{{ slotProps.message.detail }}</p>
           </div>
           <div class="grid grid-cols-2 gap-4 mt-4">
-            <Button label="Tidak" @click="onReject()" />
-            <Button label="Ya" @click="onConfirmDelete(slotProps.message)" />
+            <Button label="Tidak" @click="onReject()" severity="secondary" />
+            <Button label="Ya" @click="onConfirmDelete(slotProps.message)" severity="danger" />
           </div>
         </div>
       </template>
     </Toast>
+    <Dialog :visible="showModalCancelValidasi" @update:visible="showModalCancelValidasi = $event" modal
+      header="Konfirmasi Batal Validasi" :closable="true" :style="{ width: '400px' }">
+      <div class="p-4">
+        <p>Apakah Anda yakin ingin membatalkan validasi data ini?</p>
+        <div class="flex justify-end gap-2 pt-4">
+          <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi" />
+          <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)" />
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
 

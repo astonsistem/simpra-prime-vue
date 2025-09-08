@@ -933,8 +933,8 @@ function setor(data) {
             <p>{{ slotProps.message.detail }}</p>
           </div>
           <div class="grid grid-cols-2 gap-4 mt-4">
-            <Button label="Tidak" @click="onReject()" />
-            <Button label="Ya" @click="onConfirmDelete(slotProps.message)" />
+            <Button label="Tidak" @click="onReject()" severity="secondary" />
+            <Button label="Ya" @click="onConfirmDelete(slotProps.message)" severity="danger" />
           </div>
         </div>
       </template>
@@ -944,8 +944,8 @@ function setor(data) {
       <div class="p-4">
         <p>Apakah Anda yakin ingin membatalkan validasi data ini?</p>
         <div class="flex justify-end gap-2 pt-4">
-          <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi" />
-          <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)" />
+          <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)" severity="secondary" />
+          <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi" severity="warn" />
         </div>
       </div>
     </Dialog>
