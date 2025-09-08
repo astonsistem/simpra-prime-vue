@@ -18,7 +18,7 @@
           <div>: <span class="font-bold">{{ formatCurrency(item?.jumlahBruto) }}</span></div>
 
           <div>Jumlah Netto</div>
-          <div>: <span class="font-bold">{{ formatCurrency(item?.jumlahNetto) }}</span></div>
+          <div>: <span class="font-bold">{{ formatCurrency(jumlahNetto) }}</span></div>
       
         </div>
       </Fieldset>
@@ -63,7 +63,7 @@
   </Dialog>
 </template>
 <script setup>
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
@@ -93,6 +93,17 @@ watch(
     }
   }
 )
+
+const jumlahNetto = computed(() => {
+  if (!props.item) return 0
+
+  return (
+    parseInt(props.item.jumlahBruto || 0) -
+    parseInt(props.item.admin_kredit || 0) -
+    parseInt(props.item.admin_debit || 0) -
+    parseInt(props.item.selisih || 0)
+  )
+})
 
 function closeModal() {
   emit('update:modelValue', false)

@@ -30,19 +30,19 @@
     </div>
 
     <div class="pb-8">
-      <h3 class="text-lg font-semibold mb-2">Kwitansi Billing Kasir</h3>
-      <DataTable :value="billingKasirItems" class="p-datatable-sm" responsiveLayout="scroll" show-gridlines>
+      <h3 class="text-lg font-semibold mb-2">Kwitansi dan Penerimaan Lain</h3>
+      <DataTable :value="items" class="p-datatable-sm" responsiveLayout="scroll" show-gridlines>
         <Column field="no" header="No" style="width: 5%;">
           <template #body="{ index }">{{ 1 + index}}</template>
         </Column>
-        <Column header="No. Kwitansi" field="no_buktibayar" ></Column>
-        <Column header="Tgl. Kwitansi" field="tgl_buktibayar"></Column>
-        <Column header="No Closing" field="no_closingkasir"></Column>
-        <Column header="Nama Pasien" field="pasien_nama" style="width: 120px"></Column>
-        <Column header="No. Pendaftaran" field="no_pendaftaran"></Column>
-        <Column header="Tgl. Pelayanan" field="tgl_pelayanan"></Column>
-        <Column header="Jenis Tagihan" field="jenis_tagihan"></Column>
-        <Column header="Metode Bayar" field="carabayar_nama"></Column>
+        <Column header="No. Bayar" field="no_bayar" ></Column>
+        <Column header="Tgl. Bayar" field="tgl_bayar"></Column>
+        <Column header="Uraian" field="uraian"></Column>
+        <Column header="Penyetor" field="pihak3" style="width: 120px"></Column>
+        <Column header="No. Dokumen" field="no_dokumen"></Column>
+        <Column header="Tgl. Dokumen" field="tgl_dokumen"></Column>
+        <Column header="Sumber Transaksi" field="sumber_transaksi"></Column>
+        <Column header="Metode Bayar" field="metode_bayar"></Column>
         <Column header="Cara Pembayaran" field="cara_pembayaran"></Column>
         <Column header="Bank" field="bank_tujuan"></Column>
         <Column header="Jumlah Bruto" field="total" class="text-end">
@@ -55,9 +55,9 @@
           <div class="flex justify-end">
             <div class="w-1/4 grid grid-cols-2 gap-2">
               <div>Total Bruto:</div>
-              <div class="text-end font-medium">{{ formatCurrency(billingKasirItems.reduce((total, item) => total + parseInt(item.total), 0)) }}</div>
+              <div class="text-end font-medium">{{ formatCurrency(items.reduce((total, item) => total + parseInt(item.total), 0)) }}</div>
               <div>Total Netto:</div>
-              <div class="text-end font-medium text-blue-700">{{ formatCurrency(billingKasirItems.reduce((total, item) => total + parseInt(item.jumlah_netto), 0)) }}</div>
+              <div class="text-end font-medium text-blue-700">{{ formatCurrency(items.reduce((total, item) => total + parseInt(item.jumlah_netto), 0)) }}</div>
             </div>
           </div>
         </template>
@@ -79,7 +79,7 @@ import { formatCurrency } from '@/utils/utils'
 
 const model = defineModel()
 const rekeningKoran = ref(null)
-const billingKasirItems = ref([])
+const items = ref([])
 const toast = useToast()
 const loading = ref(false)
 
@@ -100,11 +100,11 @@ watch(() => model.value, (val) => {
 
 function load() {
   loading.value = true
-  api.get(`/billing_kasir/setor/${getRcId()}`)
+  api.get(`/billing_swa/setor/${getRcId()}`)
   .then((response) => {
     if(response.data.status == 200) {
       rekeningKoran.value = response.data.rekening_koran
-      billingKasirItems.value = response.data.billing_kasir
+      items.value = response.data.items
     }
   })
   .catch((error) => {
@@ -136,6 +136,6 @@ function getRcId() {
 const closeModal = () => {
   model.value = false
   rekeningKoran.value = null
-  billingKasirItems.value = []
+  items.value = []
 }
 </script>
