@@ -94,24 +94,26 @@ const formatDateToYYYYMMDD = (date) => {
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
-    size: 100,
+    size: pageSize,
   }
   if (formFilters.value.jenis_periode) q.periode = formFilters.value.jenis_periode
   if (formFilters.value.jenis_periode === 'BULANAN') {
     if (formFilters.value.tahunPeriode) {
       q.tahunPeriode = formFilters.value.tahunPeriode
     }
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
-      const startDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAwal - 1, 1)
+    if (formFilters.value.bulanAwal) {
+      const year = formFilters.value.tahunPeriode || new Date().getFullYear()
+      const startDate = new Date(year, formFilters.value.bulanAwal - 1, 1)
       q.tglAwal = formatDateToYYYYMMDD(startDate)
     }
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAkhir) {
-      const endDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAkhir, 0)
+    if (formFilters.value.bulanAkhir) {
+      const year = formFilters.value.tahunPeriode || new Date().getFullYear()
+      const endDate = new Date(year, formFilters.value.bulanAkhir, 0)
       q.tglAkhir = formatDateToYYYYMMDD(endDate)
     }
   } else if (formFilters.value.jenis_periode === 'TANGGAL') {
-    if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
-    if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
+    if (formFilters.value.tglAwal) q.tglAwal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
+    if (formFilters.value.tglAkhir) q.tglAkhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
   }
 
   if (filters.value) {
