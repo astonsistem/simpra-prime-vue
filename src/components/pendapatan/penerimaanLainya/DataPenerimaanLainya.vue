@@ -81,11 +81,18 @@ const formatDateToYYYYMMDD = (date) => {
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
-    size: 100,
+    size: pageSize,
   }
+  if (formFilters.value.jenis_periode) q.periode = formFilters.value.jenis_periode
   if (formFilters.value.jenis_periode === 'BULANAN') {
     if (formFilters.value.tahunPeriode) {
       q.tahunPeriode = formFilters.value.tahunPeriode
+    }
+    if (formFilters.value.bulanAwal) {
+      q.bulanAwal = formFilters.value.bulanAwal
+    }
+    if (formFilters.value.bulanAkhir) {
+      q.bulanAkhir = formFilters.value.bulanAkhir
     }
     if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
       const startDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAwal - 1, 1)
@@ -96,14 +103,19 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
       q.tglAkhir = formatDateToYYYYMMDD(endDate)
     }
   } else if (formFilters.value.jenis_periode === 'TANGGAL') {
-    if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
-    if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
+    if (formFilters.value.tglAwal) q.tglAwal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
+    if (formFilters.value.tglAkhir) q.tglAkhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
   }
 
   if (filters.value) {
     Object.keys(filters.value).forEach((key) => {
       if (filters.value[key].value) {
-        q[key] = filters.value[key].value
+        // Handle date filters specially
+        if (key === 'tgl_bayar' || key === 'tgl_dokumen') {
+          q[key] = formatDateToYYYYMMDD(filters.value[key].value)
+        } else {
+          q[key] = filters.value[key].value
+        }
       }
     })
   }
@@ -156,17 +168,14 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   }
 }
 const onPageChange = (event) => {
+  let page = event.rows === 1000 ? 1 : event.page + 1
   first.value = event.first
-  rows.value = event.rows
-
-  // Handle "All" option (1000) - load all data in one page
-  if (event.rows === 1000) {
-    // This is the "All" option, load all data
-    loadData(1, totalRecords.value)
-  } else {
-    const page = event.page + 1
-    loadData(page, event.rows)
+  if (rows.value > event.rows) {
+    page = 1
+    first.value = 0
   }
+  rows.value = event.rows
+  loadData(page, event.rows)
 }
 
 const resetFilter = () => {
@@ -179,6 +188,7 @@ const resetFilter = () => {
     tglAkhir: null,
   }
   first.value = 0
+  rows.value = 10
   loadData(1, rows.value)
 }
 
