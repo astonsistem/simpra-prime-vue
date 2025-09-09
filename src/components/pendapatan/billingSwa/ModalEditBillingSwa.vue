@@ -10,7 +10,7 @@
       <div class="flex items-center justify-between w-full">
         <div>
           <h2 class="text-lg font-semibold">
-            {{ isEdit ? 'Ubah Billing SWA' : 'Tambah Billing SWA' }} ID: {{ props.item?.no_buktibayar }}
+            {{ isEdit ? 'Ubah Billing 118' : 'Tambah Billing SWA' }} ID: {{ props.item?.no_buktibayar }}
           </h2>
           <p class="text-sm text-gray-500">
             {{ isEdit ? 'Perbarui informasi billing SWA di bawah ini.' : 'Isi informasi billing SWA di bawah ini.' }}
