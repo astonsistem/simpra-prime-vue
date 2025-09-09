@@ -602,6 +602,7 @@ const initFilters = () => {
     noBayar: { value: null, matchMode: FilterMatchMode.CONTAINS },
     tglBayar: { value: null, matchMode: FilterMatchMode.DATE_IS },
     pasien: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    pihak3: { value: null, matchMode: FilterMatchMode.CONTAINS },
     uraian: { value: null, matchMode: FilterMatchMode.CONTAINS },
     noDokumen: { value: null, matchMode: FilterMatchMode.CONTAINS },
     tglDokumen: { value: null, matchMode: FilterMatchMode.DATE_IS },
@@ -760,7 +761,7 @@ function setor(data) {
         @filter="onFilter"
         dataKey="id"
         filterDisplay="menu"
-        :globalFilterFields="['noBayar', 'pasien', 'uraian', 'noDokumen']"
+        :globalFilterFields="['noBayar', 'pasien', 'pihak3', 'uraian', 'noDokumen']"
         class="p-datatable-sm"
       >
         <template #header>

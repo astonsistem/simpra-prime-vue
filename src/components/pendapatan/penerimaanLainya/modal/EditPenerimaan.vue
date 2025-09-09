@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted, computed } from 'vue'
 import api from '@/services/http.js'
 import Dropdown from 'primevue/dropdown'
 import DatePicker from 'primevue/datepicker'
@@ -33,9 +33,20 @@ const form = reactive({
   piutang: 0,
   desc_piutang_pelayanan: '',
   desc_piutang_lain: '',
+  cara_bayar: null,
+  bank_tujuan: null,
+  biaya_admin_edc: 0,
+  biaya_admin_qris: 0,
+  selisih: 0,
+  pendapatan: 0,
+  pdd: 0,
 })
 
+const isEdit = computed(() => !!form.id)
+
 const akunOptions = ref([])
+const caraBayarOptions = ref([])
+const bankTujuanOptions = ref([])
 const loadingSubmit = ref(false)
 
 // Fetch akun options
@@ -50,6 +61,36 @@ async function fetchAkunOptions() {
     }
   } catch (error) {
     console.error('Gagal memuat data akun:', error)
+  }
+}
+
+// Fetch cara bayar options
+async function fetchCaraBayarOptions() {
+  try {
+    const res = await api.get('/carabayar')
+    if (res.data.items) {
+      caraBayarOptions.value = res.data.items.map((item) => ({
+        value: item.carabayar_id,
+        label: item.carabayar_nama,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data cara bayar:', error)
+  }
+}
+
+// Fetch bank tujuan options
+async function fetchBankTujuanOptions() {
+  try {
+    const res = await api.get('/bank/list')
+    if (res.data.data) {
+      bankTujuanOptions.value = res.data.data.map((item) => ({
+        value: item.bank_id,
+        label: item.bank_nama,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data bank tujuan:', error)
   }
 }
 
@@ -70,6 +111,13 @@ async function fetchDetail(id) {
     piutang: res.data.piutang,
     desc_piutang_pelayanan: res.data.desc_piutang_pelayanan,
     desc_piutang_lain: res.data.desc_piutang_lain,
+    cara_bayar: res.data.cara_bayar,
+    bank_tujuan: res.data.bank_tujuan,
+    biaya_admin_edc: res.data.biaya_admin_edc || 0,
+    biaya_admin_qris: res.data.biaya_admin_qris || 0,
+    selisih: res.data.selisih || 0,
+    pendapatan: res.data.pendapatan || 0,
+    pdd: res.data.pdd || 0,
   })
 }
 
@@ -88,6 +136,13 @@ function resetForm() {
     piutang: 0,
     desc_piutang_pelayanan: '',
     desc_piutang_lain: '',
+    cara_bayar: null,
+    bank_tujuan: null,
+    biaya_admin_edc: 0,
+    biaya_admin_qris: 0,
+    selisih: 0,
+    pendapatan: 0,
+    pdd: 0,
   })
 }
 
@@ -96,6 +151,8 @@ watch(
   async (val) => {
     if (val) {
       await fetchAkunOptions()
+      await fetchCaraBayarOptions()
+      await fetchBankTujuanOptions()
       if (props.item?.id) {
         await fetchDetail(props.item.id)
       } else {
@@ -112,7 +169,6 @@ function closeModal() {
 async function submitForm() {
   loadingSubmit.value = true
   const payload = {
-    id: form.id,
     akun_id: form.akun_id,
     tgl_bayar: form.tgl_bayar?.toISOString(),
     no_bayar: form.no_bayar,
@@ -125,14 +181,25 @@ async function submitForm() {
     piutang: form.piutang,
     desc_piutang_pelayanan: form.desc_piutang_pelayanan,
     desc_piutang_lain: form.desc_piutang_lain,
+    cara_bayar: form.cara_bayar,
+    bank_tujuan: form.bank_tujuan,
+    biaya_admin_edc: form.biaya_admin_edc,
+    biaya_admin_qris: form.biaya_admin_qris,
+    selisih: form.selisih,
+    pendapatan: form.pendapatan,
+    pdd: form.pdd,
   }
 
   try {
-    await api.put(`/penerimaan_lain/${form.id}`, payload)
+    if (isEdit.value) {
+      await api.put(`/penerimaan_lain/${form.id}`, payload)
+    } else {
+      await api.post('/penerimaan_lain', payload)
+    }
     emit('saved')
     closeModal()
   } catch (err) {
-    console.error('Gagal update data:', err)
+    console.error('Gagal menyimpan data:', err)
   } finally {
     loadingSubmit.value = false
   }
@@ -140,6 +207,8 @@ async function submitForm() {
 
 onMounted(() => {
   fetchAkunOptions()
+  fetchCaraBayarOptions()
+  fetchBankTujuanOptions()
 })
 </script>
 
@@ -149,27 +218,10 @@ onMounted(() => {
     @update:visible="(val) => emit('update:visible', val)"
     modal
     :closable="false"
-    :header="form.id ? 'Ubah Data Penerimaan #' + form.id : 'Tambah Data Penerimaan'"
+    :header="isEdit ? 'Ubah Data Penerimaan #' + form.id : 'Tambah Data Penerimaan'"
     style="width: 720px"
   >
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label class="block mb-1 font-medium text-sm">Jenis Penerimaan</label>
-        <Dropdown
-          v-model="form.akun_id"
-          :options="akunOptions"
-          optionLabel="akun_nama"
-          optionValue="akun_id"
-          placeholder="Pilih Akun"
-          class="w-full"
-        />
-      </div>
-
-      <div>
-        <label class="block mb-1 font-medium text-sm">Tgl Bayar</label>
-        <DatePicker v-model="form.tgl_bayar" dateFormat="dd-mm-yy" showIcon class="w-full" />
-      </div>
-
       <div>
         <label class="block mb-1 font-medium text-sm">No Bayar</label>
         <InputText v-model="form.no_bayar" class="w-full" />
@@ -196,9 +248,42 @@ onMounted(() => {
       </div>
 
       <div>
-        <label class="block mb-1 font-medium text-sm">Jumlah Bruto</label>
+        <label class="block mb-1 font-medium text-sm">Jumlah Bayar</label>
         <InputNumber
           v-model="form.total"
+          mode="currency"
+          currency="IDR"
+          locale="id-ID"
+          class="w-full"
+        />
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium text-sm">Biaya Admin EDC</label>
+        <InputNumber
+          v-model="form.biaya_admin_edc"
+          mode="currency"
+          currency="IDR"
+          locale="id-ID"
+          class="w-full"
+        />
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium text-sm">Biaya Admin QRIS</label>
+        <InputNumber
+          v-model="form.biaya_admin_qris"
+          mode="currency"
+          currency="IDR"
+          locale="id-ID"
+          class="w-full"
+        />
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium text-sm">Selisih</label>
+        <InputNumber
+          v-model="form.selisih"
           mode="currency"
           currency="IDR"
           locale="id-ID"
@@ -218,6 +303,52 @@ onMounted(() => {
       </div>
 
       <div>
+        <label class="block mb-1 font-medium text-sm">Cara Pembayaran</label>
+        <Dropdown
+          v-model="form.cara_bayar"
+          :options="caraBayarOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Pilih Cara Pembayaran"
+          class="w-full"
+        />
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium text-sm">Bank Tujuan</label>
+        <Dropdown
+          v-model="form.bank_tujuan"
+          :options="bankTujuanOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Pilih Bank Tujuan"
+          class="w-full"
+        />
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium text-sm">Pendapatan</label>
+        <InputNumber
+          v-model="form.pendapatan"
+          mode="currency"
+          currency="IDR"
+          locale="id-ID"
+          class="w-full"
+        />
+      </div>
+
+      <div>
+        <label class="block mb-1 font-medium text-sm">PDD</label>
+        <InputNumber
+          v-model="form.pdd"
+          mode="currency"
+          currency="IDR"
+          locale="id-ID"
+          class="w-full"
+        />
+      </div>
+
+      <div>
         <label class="block mb-1 font-medium text-sm">Piutang</label>
         <InputNumber
           v-model="form.piutang"
@@ -227,12 +358,12 @@ onMounted(() => {
           class="w-full"
         />
       </div>
-
+ 
       <div class="md:col-span-2">
         <label class="block mb-1 font-medium text-sm">Info Potensi Piutang Pelayanan</label>
         <Textarea v-model="form.desc_piutang_pelayanan" rows="3" class="w-full" />
       </div>
-
+ 
       <div class="md:col-span-2">
         <label class="block mb-1 font-medium text-sm">Info Potensi Piutang Lain</label>
         <Textarea v-model="form.desc_piutang_lain" rows="3" class="w-full" />
