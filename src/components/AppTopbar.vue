@@ -13,8 +13,8 @@ const items = ref([
   {
     label: 'Options',
     items: [
-      { label: 'Profile', icon: 'pi pi-user' },
-      { label: 'Ganti Password', icon: 'pi pi-pencil' },
+     
+      { label: 'Profil & Ganti Password', icon: 'pi pi-pencil' },
       // { label: 'Ganti Device', icon: 'pi pi-cog' },
       {
         label: 'Logout',
