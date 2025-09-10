@@ -13,7 +13,7 @@ const emit = defineEmits(['toggle-collapse', 'close-mobile'])
 
 const route = useRoute()
 
-const laporanMenus = ref([])
+const pelaporanMenus = ref([])
 
 // Menu Items Definition
 const menuItems = ref([
@@ -83,7 +83,6 @@ const menuItems = ref([
     label: 'Pelaporan',
     icon: 'pi pi-file',
 
-    children: [],
   },
 ])
 
@@ -104,14 +103,20 @@ const logout = async () => {
 
 onMounted(async () => {
   try {
-    // GET LAPORAN MENUS LIST
-    // get laporan list
-    const res = await api.get('/laporan-list')
-    laporanMenus.value = res.data.data
+    // GET PELAPORAN MENUS LIST
+    // get pelaporan list
+    const res = await api.get('/pelaporan-list')
+    pelaporanMenus.value = res.data.data
     // Inject into menu
+
     const laporanItem = menuItems.value.find((item) => item.label === 'Laporan')
     if (laporanItem) {
       laporanItem.children = laporanMenus.value
+=======
+    const pelaporanItem = menuItems.value.find(item => item.label === 'Pelaporan')
+    if (pelaporanItem) {
+      pelaporanItem.children = pelaporanMenus.value
+
     }
   } catch (error) {
     console.error('Failed to load menus:', error)

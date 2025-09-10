@@ -72,15 +72,26 @@ const router = createRouter({
         },
 
         
-{
-    path: 'kas/kurang-bayar',
-    name: 'kas-kurang-bayar',
-    component: () => import('../components/pendapatan/kurangbayar/DataKurangBayar.vue'),
-    meta: {
-        breadcrumb: ['Kas', 'Selisih Kurang Bayar/Setor'], // <-- Sudah diubah
-        // ...
-    }
-},
+        {
+          path: 'kas/kurang-bayar',
+          component: () => import('../views/pendapatan/KurangBayar.vue'),
+          meta: {
+            breadcrumb: ['Kas', 'Selisih Kurang Bayar/Setor'],
+          },
+          redirect: '/kas/kurang-bayar/data-transaksi',
+          children: [
+            {
+              path: 'data-transaksi',
+              name: 'kas-kurang-bayar-transaksi',
+              component: () => import('../components/pendapatan/kurangbayar/DataKurangBayar.vue'),
+            },
+            {
+              path: 'data-selisih',
+              name: 'kas-kurang-bayar-selisih',
+              component: () => import('../components/pendapatan/kurangbayar/DataKurangBayar.vue'),
+            },
+          ],
+        },
         
         {
           path: 'kas/rekening-koran',
@@ -100,12 +111,12 @@ const router = createRouter({
           },
         },
         {
-  path: 'acrual/potensi-pelayanan',
-  name: 'acrual-potensi-pelayanan',
-  // Ubah baris di bawah ini
-component: () => import('../components/pendapatan/potensiPelayanan/DataPotensiPelayanan.vue'),
-  meta: { roles: ['admin', 'accountant'], breadcrumb: ['Acrual', 'Potensi Pelayanan'] },
-},
+          path: 'acrual/potensi-pelayanan',
+          name: 'acrual-potensi-pelayanan',
+          // Ubah baris di bawah ini
+          component: () => import('../components/pendapatan/potensiPelayanan/DataPotensiPelayanan.vue'),
+          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Acrual', 'Potensi Pelayanan'] },
+        },
         {
           path: 'acrual/potensi-lainnya',
           name: 'acrual-potensi-lainnya',
@@ -178,18 +189,18 @@ component: () => import('../components/pendapatan/potensiPelayanan/DataPotensiPe
           component: () => import('../views/master/Penjamin.vue'),
           meta: { roles: ['admin'], breadcrumb: ['Master', 'Penjamin'] },
         },
-        // Laporan Routes
+        // Pelaporan Routes
         {
-          path: '/laporan/:slug',
-          name: 'laporan',
-          component: () => import('../views/Laporan.vue'),
+          path: '/pelaporan/:slug',
+          name: 'pelaporan',
+          component: () => import('../views/Pelaporan.vue'),
           props: true,
           meta: { 
             roles: ['admin'], 
             breadcrumb: (route) => {
               const slug = route.params.slug
               const label = slug.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-              return ['Laporan', label]
+              return ['Pelaporan', label]
             }
           },
         },

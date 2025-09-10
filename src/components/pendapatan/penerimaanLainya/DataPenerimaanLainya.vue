@@ -81,12 +81,18 @@ const formatDateToYYYYMMDD = (date) => {
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
-    size: 100,
+    size: pageSize,
   }
   if (formFilters.value.jenis_periode) q.periode = formFilters.value.jenis_periode
   if (formFilters.value.jenis_periode === 'BULANAN') {
     if (formFilters.value.tahunPeriode) {
       q.tahunPeriode = formFilters.value.tahunPeriode
+    }
+    if (formFilters.value.bulanAwal) {
+      q.bulanAwal = formFilters.value.bulanAwal
+    }
+    if (formFilters.value.bulanAkhir) {
+      q.bulanAkhir = formFilters.value.bulanAkhir
     }
     if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
       const startDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAwal - 1, 1)
@@ -97,15 +103,15 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
       q.tglAkhir = formatDateToYYYYMMDD(endDate)
     }
   } else if (formFilters.value.jenis_periode === 'TANGGAL') {
-    if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
-    if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
+    if (formFilters.value.tglAwal) q.tglAwal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
+    if (formFilters.value.tglAkhir) q.tglAkhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
   }
 
   if (filters.value) {
     Object.keys(filters.value).forEach((key) => {
       if (filters.value[key].value) {
         // Handle date filters specially
-        if (key === 'tglBayar' || key === 'tglDokumen') {
+        if (key === 'tgl_bayar' || key === 'tgl_dokumen') {
           q[key] = formatDateToYYYYMMDD(filters.value[key].value)
         } else {
           q[key] = filters.value[key].value
@@ -113,7 +119,6 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
       }
     })
   }
-
   return q
 }
 
@@ -122,11 +127,31 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   try {
     const query = buildQuery(page, pageSize)
     const response = await api.get('/penerimaan_lain', { params: query })
+    console.log('Response dari backend:', response.data) // Tambahkan ini untuk debug
+    
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
         ...item,
-        no: (page - 1) * pageSize + index + 1,
-        akun_nama: item.akun_data?.akun_nama || '',
+         no: (page - 1) * pageSize + index + 1,
+  // Mapping field names dari backend ke frontend
+  no_bayar: item.noBayar || '',
+  tgl_bayar: item.tglBayar || '',
+  pihak3: item.pihak3 || '',           // ← INI YANG DIPERBAIKI
+  uraian: item.uraian || '',
+  no_dokumen: item.noDokumen || '',
+  tgl_dokumen: item.tglDokumen || '',
+  sumber_transaksi: item.sumberTransaksi || '',
+  instalasi: item.instalasi || '',
+  metode_pembayaran: item.metodeBayar || '',
+  cara_pembayaran: item.caraBayar || '',
+  rekening_dpa: item.rekeningDpa || '',
+  bank_tujuan: item.bank || '',
+  total: parseInt(item.jumlahBruto) || 0,
+  admin_kredit: parseInt(item.biayaAdminEdc) || 0,
+  admin_debit: parseInt(item.biayaAdminQris) || 0,
+  selisih: parseInt(item.selisih) || 0,
+  jumlah_netto: parseInt(item.jumlahNetto) || 0,
+  akun_nama: item.akun_data?.akun_nama || '',
       }))
       totalRecords.value = response.data.total ?? 0
 
@@ -142,19 +167,15 @@ const loadData = async (page = 1, pageSize = rows.value) => {
     loading.value = false
   }
 }
-
 const onPageChange = (event) => {
+  let page = event.rows === 1000 ? 1 : event.page + 1
   first.value = event.first
-  rows.value = event.rows
-
-  // Handle "All" option (1000) - load all data in one page
-  if (event.rows === 1000) {
-    // This is the "All" option, load all data
-    loadData(1, totalRecords.value)
-  } else {
-    const page = event.page + 1
-    loadData(page, event.rows)
+  if (rows.value > event.rows) {
+    page = 1
+    first.value = 0
   }
+  rows.value = event.rows
+  loadData(page, event.rows)
 }
 
 const resetFilter = () => {
@@ -167,6 +188,7 @@ const resetFilter = () => {
     tglAkhir: null,
   }
   first.value = 0
+  rows.value = 10
   loadData(1, rows.value)
 }
 
@@ -181,7 +203,7 @@ const exportExcel = () => {
       'No',
       'No Bayar',
       'Tanggal Bayar',
-      'Pasien',
+      'Pihak3',
       'Uraian',
       'No Dokumen',
       'Tanggal Dokumen',
@@ -408,7 +430,7 @@ const handleSaved = () => {
   loadData(1, rows.value)
 }
 
-onMounted(() => {
+onMounted(async () => {
   loadData(1, rows.value)
 })
 
@@ -579,7 +601,10 @@ const clearFilter = () => {
         :loading="loading"
         responsiveLayout="scroll"
         paginator
+        lazy
+        :totalRecords="totalRecords"
         :rows="rows"
+        :first="first"
         :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
         @page="onPageChange"
         @filter="onFilter"
@@ -605,6 +630,12 @@ const clearFilter = () => {
             </IconField>
           </div>
         </template>
+        <template #empty>
+            <div class="flex items-center text-gray-500 min-h-24">
+              <i class="pi pi-info-circle mr-2" style="font-size: 1.5rem"></i>
+              <p>Data Kosong</p>
+            </div>
+          </template>
         <Column field="no" header="No" style="width: 5%" />
         <Column header="Action" style="width: 15%">
           <template #body="slotProps">
@@ -670,7 +701,7 @@ const clearFilter = () => {
         </Column>
         <Column
           field="pihak3"
-          header="Pasien"
+          header="Pihak3"
           :showFilterMatchModes="false"
           style="min-width: 12rem"
         >
@@ -678,7 +709,7 @@ const clearFilter = () => {
             {{ data.pihak3 }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Pasien" />
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Pihak3" />
           </template>
         </Column>
         <Column

@@ -36,7 +36,7 @@ const monthOptions = Array.from({ length: 12 }, (_, i) => ({
 const submitFormLaporan = async () => {
   const form = formLaporan.value
   const formData = new FormData(form)
-  const actionUrl = `/laporan-generate/${laporan.value.id}`
+  const actionUrl = `/pelaporan-generate/${laporan.value.id}`
 
   isDownloading.value = true
   toast.add({
@@ -53,7 +53,7 @@ const submitFormLaporan = async () => {
     if (data.success) {
         window.open(data.url, '_blank')
         setTimeout(() => {
-            api.delete(`/laporan-delete/${data.filename}`)
+            api.delete(`/pelaporan-delete/${data.filename}`)
         }, 3000)
     } else {
         console.error('Gagal download laporan:', data.error)
@@ -80,7 +80,7 @@ const submitFormLaporan = async () => {
 
 const fetchLaporan = async () => {
   try {
-    const res = await api.get(`/laporan/${laporanSlug.value}`)
+    const res = await api.get(`/pelaporan/${laporanSlug.value}`)
     if (res.data) {
         laporan.value = res.data.data
     }

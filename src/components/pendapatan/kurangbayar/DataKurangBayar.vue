@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { FilterMatchMode } from '@primevue/core/api'
 import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
@@ -23,6 +24,7 @@ import Dropdown from 'primevue/dropdown'
 import Calendar from 'primevue/calendar'
 
 const toast = useToast()
+const route = useRoute()
 
 const formFilters = ref({
   jenis_periode: 'BULANAN',
@@ -33,7 +35,6 @@ const formFilters = ref({
   tglAkhir: null,
 })
 
-const activeTab = ref('transaksi') // Menambahkan state untuk tab aktif
 
 const filters = ref()
 
@@ -125,17 +126,32 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   loading.value = true
   try {
     const query = buildQuery(page, pageSize)
-    const response = await api.get('/kurang_bayar', { params: query })
-    if (response.data && response.data.items) {
-      data.value = response.data.items.map((item, index) => ({
-        ...item,
-        no: (page - 1) * pageSize + index + 1,
-      }))
-      totalRecords.value = response.data.total ?? 0
+    const currentPath = route.path
 
-      if (pageSize === totalRecords.value && pageSize > 100) {
-        rows.value = 1000
+    let url = ''
+    if (currentPath.includes('data-selisih')) {
+      url = '/kurangbayar/data_selisih'
+    } else if (currentPath.includes('data-transaksi')) {
+      url = '/kurangbayar/penerimaan_transaksi'
+    }
+
+    if (url) {
+      const response = await api.get(url, { params: query })
+      if (response.data && response.data.items) {
+        data.value = response.data.items.map((item, index) => ({
+          ...item,
+          no: (page - 1) * pageSize + index + 1,
+        }))
+        totalRecords.value = response.data.total ?? 0
+
+        if (pageSize === totalRecords.value && pageSize > 100) {
+          rows.value = 1000
+        }
       }
+    } else {
+      console.warn('URL endpoint tidak valid untuk path:', currentPath)
+      data.value = []
+      totalRecords.value = 0
     }
   } catch (error) {
     console.error('Gagal memuat data:', error)
@@ -466,6 +482,14 @@ watch(selectedSync, (val) => {
   }
 })
 
+watch(
+  () => route.path,
+  () => {
+    loadData(1, rows.value)
+  },
+  { immediate: true }
+)
+
 const handleSyncSubmit = async () => {
   if (!selectedSync.value) {
     toast.add({
@@ -522,19 +546,23 @@ const handleSyncSubmit = async () => {
     <h1 class="text-2xl font-bold mb-4 text-[#17316E]">Kurang Bayar/Selisih</h1>
 
     <div class="flex gap-2 mb-4">
-      <Button
-        label="Data Transaksi"
-        @click="activeTab = 'transaksi'"
-        :class="{'p-button-info': activeTab === 'transaksi', 'p-button-secondary': activeTab !== 'transaksi'}"
-      />
-      <Button
-        label="Data Selisih Kurang Bayar/Setor"
-        @click="activeTab = 'selisih'"
-        :class="{'p-button-info': activeTab === 'selisih', 'p-button-secondary': activeTab !== 'selisih'}"
-      />
+      <router-link to="/kas/kurang-bayar/data-transaksi" v-slot="{ navigate, isActive }">
+        <Button
+          label="Data Transaksi"
+          @click="navigate"
+          :class="{'p-button-info': isActive, 'p-button-secondary': !isActive}"
+        />
+      </router-link>
+      <router-link to="/kas/kurang-bayar/data-selisih" v-slot="{ navigate, isActive }">
+        <Button
+          label="Data Selisih Kurang Bayar/Setor"
+          @click="navigate"
+          :class="{'p-button-info': isActive, 'p-button-secondary': !isActive}"
+        />
+      </router-link>
     </div>
 
-    <div v-if="activeTab === 'transaksi'">
+    <div>
       <div
         class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
       >
@@ -693,253 +721,10 @@ const handleSyncSubmit = async () => {
             </div>
           </template>
 
-          <Column field="noBukti" header="No Bukti" :showFilterMatchModes="false" style="min-width: 12rem">
-            <template #body="{ data }">
-              {{ data.noBukti }}
-            </template>
-            <template #filter="{ filterModel }">
-              <InputText v-model="filterModel.value" type="text" placeholder="Search by No Bukti" />
-            </template>
-          </Column>
-
-          <Column field="tglBukti" header="Tanggal Bukti" :showFilterMatchModes="false" style="min-width: 12rem">
-            <template #body="{ data }">
-              {{ data.tglBukti }}
-            </template>
-            <template #filter="{ filterModel }">
-              <DatePicker v-model="filterModel.value" dateFormat="dd/mm/yy" placeholder="dd/mm/yyyy" />
-            </template>
-          </Column>
-
-          <Column field="tglSetor" header="Tanggal Setor" :showFilterMatchModes="false" style="min-width: 12rem">
-            <template #body="{ data }">
-              {{ data.tglSetor }}
-            </template>
-            <template #filter="{ filterModel }">
-              <DatePicker v-model="filterModel.value" dateFormat="dd/mm/yy" placeholder="dd/mm/yyyy" />
-            </template>
-          </Column>
-
-          <Column field="noSetor" header="No Setor" :showFilterMatchModes="false" style="min-width: 12rem">
-            <template #body="{ data }">
-              {{ data.noSetor }}
-            </template>
-            <template #filter="{ filterModel }">
-              <InputText v-model="filterModel.value" type="text" placeholder="Search by No Setor" />
-            </template>
-          </Column>
-
-          <Column field="nominal" header="Nominal" style="text-align: right">
-            <template #body="slotProps">
-              {{ new Intl.NumberFormat('id-ID').format(slotProps.data.nominal || 0) }}
-            </template>
-          </Column>
-
-          <Column field="rekeningDpa" header="Rekening DPA" :showFilterMatchModes="false" style="min-width: 12rem">
-            <template #body="{ data }">
-              {{ data.rekeningDpa }}
-            </template>
-            <template #filter="{ filterModel }">
-              <InputText v-model="filterModel.value" type="text" placeholder="Search by Rekening DPA" />
-            </template>
-          </Column>
-
-          <Column field="loketKasir" header="Loket Kasir" :showFilterMatchModes="false" style="min-width: 12rem">
-            <template #body="{ data }">
-              {{ data.loketKasir }}
-            </template>
-            <template #filter="{ filterModel }">
-              <InputText v-model="filterModel.value" type="text" placeholder="Search by Loket Kasir" />
-            </template>
-          </Column>
-
-          <Column field="caraBayar" header="Cara Pembayaran" :showFilterMatchModes="false" style="min-width: 12rem">
-            <template #body="{ data }">
-              {{ data.caraBayar }}
-            </template>
-            <template #filter="{ filterModel }">
-              <InputText v-model="filterModel.value" type="text" placeholder="Search by Cara Pembayaran" />
-            </template>
-          </Column>
-
-          <Column field="bank" header="Bank" :showFilterMatchModes="false" style="min-width: 12rem">
-            <template #body="{ data }">
-              {{ data.bank }}
-            </template>
-            <template #filter="{ filterModel }">
-              <InputText v-model="filterModel.value" type="text" placeholder="Search by Bank" />
-            </template>
-          </Column>
-
-          <Column field="jenis" header="Jenis" :showFilterMatchModes="false" style="min-width: 12rem">
-            <template #body="{ data }">
-              {{ data.jenis }}
-            </template>
-            <template #filter="{ filterModel }">
-              <InputText v-model="filterModel.value" type="text" placeholder="Search by Jenis" />
-            </template>
-          </Column>
-        </DataTable>
-      </div>
-    </div>
-
-    <div v-if="activeTab === 'selisih'">
-      <div
-        class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
-      >
-        <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
-        <div class="grid grid-cols-4 gap-4">
-          <div>
-            <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
-            <Select
-              v-model="formFilters.jenis_periode"
-              :options="jenisPeriodeOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Jenis Periode"
-              class="w-full"
-            />
-          </div>
-
-          <template v-if="formFilters.jenis_periode === 'BULANAN'">
-            <div>
-              <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
-              <Select
-                v-model="formFilters.tahunPeriode"
-                :options="tahunPeriodeOptions"
-                placeholder="Tahun Periode"
-                class="w-full"
-              />
-            </div>
-            <div>
-              <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Awal</label>
-              <Select
-                v-model="formFilters.bulanAwal"
-                :options="bulanOptions"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Bulan Awal"
-                class="w-full"
-              />
-            </div>
-            <div>
-              <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Akhir</label>
-              <Select
-                v-model="formFilters.bulanAkhir"
-                :options="bulanOptions"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Bulan Akhir"
-                class="w-full"
-              />
-            </div>
-          </template>
-          <template v-if="formFilters.jenis_periode === 'TANGGAL'">
-            <div>
-              <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Awal</label>
-              <DatePicker
-                v-model="formFilters.tglAwal"
-                placeholder="Tanggal Awal"
-                showIcon
-                class="w-full"
-                dateFormat="dd/mm/yy"
-                :showTime="false"
-                :showSeconds="false"
-                :showMilliseconds="false"
-              />
-            </div>
-            <div>
-              <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Akhir</label>
-              <DatePicker
-                v-model="formFilters.tglAkhir"
-                placeholder="Tanggal Akhir"
-                showIcon
-                class="w-full"
-                dateFormat="dd/mm/yy"
-                :showTime="false"
-                :showSeconds="false"
-                :showMilliseconds="false"
-              />
-            </div>
-          </template>
-        </div>
-        <div class="mt-4 flex gap-2">
-          <Button label="Cari" icon="pi pi-search" class="p-button-info" @click="searchData" />
-          <Button
-            label="Reset Filter"
-            icon="pi pi-refresh"
-            class="p-button-secondary"
-            @click="resetFilter"
-          />
-          <Button
-            label="Tarik Data Kurang Bayar"
-            icon="pi pi-refresh"
-            class="p-button-warning"
-            style="background-color: #ffa500; border: none; color: #fff"
-            @click="openSyncDialog"
-          />
-        </div>
-      </div>
-
-      <div
-        class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
-      >
-      
-      
-        <div class="flex justify-between items-center mb-2">
-          <h3 class="text-xl font-semibold text-[#17316E]">Data Selisih Kurang Bayar</h3>
-          <div class="flex gap-2">
-            <Button
-              label="Tambah Data"
-              icon="pi pi-plus"
-              class="p-button-primary"
-              @click="handleAdd"
-            />
-            <Button
-              label="Export Excel"
-              icon="pi pi-file-excel"
-              class="p-button-success"
-              @click="exportExcel"
-            />
-          </div>
-        </div>
-        <DataTable
-          :filters="filters"
-          :value="data"
-          :loading="loading"
-          responsiveLayout="scroll"
-          paginator
-          lazy
-          :totalRecords="totalRecords"
-          :rows="rows"
-          :first="first"
-          :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
-          @page="onPageChange"
-          @filter="onFilter"
-          dataKey="id"
-          filterDisplay="menu"
-          :globalFilterFields="[
-            'noBukti',
-            'tglBukti',
-            'tglSetor',
-            'noSetor',
-            'rekeningDpa',
-            'loketKasir',
-            'caraBayar',
-            'bank',
-            'jenis',
-          ]"
-          class="p-datatable-sm"
-        >
-          <template #header>
-            <div class="flex justify-between">
-              <Button
-                type="button"
-                icon="pi pi-filter-slash"
-                label="Clear"
-                outlined
-                @click="clearFilter()"
-              />
+          <template #empty>
+            <div class="flex items-center text-gray-500 min-h-24">
+              <i class="pi pi-info-circle mr-2" style="font-size: 1.5rem"></i>
+              <p>Data Kosong</p>
             </div>
           </template>
 
@@ -1032,6 +817,7 @@ const handleSyncSubmit = async () => {
         </DataTable>
       </div>
     </div>
+
 
     <ModalSyncPenerimaan v-model="showModalSync" @sync="loadData" />
     <ModalEditKurangBayar v-model="showModalEdit" :item="selectedItem" @saved="handleSaved" />

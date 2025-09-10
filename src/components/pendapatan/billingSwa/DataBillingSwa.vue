@@ -12,6 +12,7 @@ import Menu from 'primevue/menu'
 import IconField from 'primevue/iconfield'
 import InputIcon from 'primevue/inputicon'
 import api from '@/services/http.js'
+import apiClient from '@/api/client.js'
 import { useToast } from 'primevue/usetoast'
 import ModalSyncPenerimaan from '@/components/ModalSyncPenerimaan.vue'
 import ModalEditBillingSwa from '@/components/pendapatan/billingSwa/ModalEditBillingSwa.vue'
@@ -21,6 +22,7 @@ import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import Calendar from 'primevue/calendar'
 import ModalValidasiBillingSwa from './ModalValidasiBillingSwa.vue'
+import ModalSetorBillingSwa from './ModalSetorBillingSwa.vue'
 
 const toast = useToast()
 
@@ -92,24 +94,26 @@ const formatDateToYYYYMMDD = (date) => {
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
-    size: 100,
+    size: pageSize,
   }
   if (formFilters.value.jenis_periode) q.periode = formFilters.value.jenis_periode
   if (formFilters.value.jenis_periode === 'BULANAN') {
     if (formFilters.value.tahunPeriode) {
       q.tahunPeriode = formFilters.value.tahunPeriode
     }
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
-      const startDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAwal - 1, 1)
+    if (formFilters.value.bulanAwal) {
+      const year = formFilters.value.tahunPeriode || new Date().getFullYear()
+      const startDate = new Date(year, formFilters.value.bulanAwal - 1, 1)
       q.tglAwal = formatDateToYYYYMMDD(startDate)
     }
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAkhir) {
-      const endDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAkhir, 0)
+    if (formFilters.value.bulanAkhir) {
+      const year = formFilters.value.tahunPeriode || new Date().getFullYear()
+      const endDate = new Date(year, formFilters.value.bulanAkhir, 0)
       q.tglAkhir = formatDateToYYYYMMDD(endDate)
     }
   } else if (formFilters.value.jenis_periode === 'TANGGAL') {
-    if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
-    if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
+    if (formFilters.value.tglAwal) q.tglAwal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
+    if (formFilters.value.tglAkhir) q.tglAkhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
   }
 
   if (filters.value) {
@@ -120,6 +124,10 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
           q[key] = formatDateToYYYYMMDD(filters.value[key].value)
         } else {
           q[key] = filters.value[key].value
+        }
+        // rekeningDpa filter
+        if( key === 'rekeningDpa' && typeof filters.value[key].value === 'object' && filters.value[key].value !== null) {
+          q['rekId'] = filters.value[key].value.rekId
         }
       }
     })
@@ -132,16 +140,11 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   loading.value = true
   try {
     const query = buildQuery(page, pageSize)
+
     const response = await api.get('/billing_swa', { params: query })
-    if (response.data && response.data.items) {
-      data.value = response.data.items.map((item, index) => ({
-        ...item,
-        no: (page - 1) * pageSize + index + 1,
-      }))
-      totalRecords.value = response.data.total ?? 0
-      if (pageSize === totalRecords.value && pageSize > 100) {
-        rows.value = 1000
-      }
+    if (response.data && response.data.data) {
+      data.value = response.data.data
+      totalRecords.value = response.data?.meta?.total ?? 0
     }
   } catch (error) {
     console.error('Gagal memuat data:', error)
@@ -152,15 +155,16 @@ const loadData = async (page = 1, pageSize = rows.value) => {
 }
 
 const onPageChange = (event) => {
+  let page = event.rows === 1000 ? 1 : event.page + 1
   first.value = event.first
-  rows.value = event.rows
-  if (event.rows === 1000) {
-    loadData(1, totalRecords.value)
-  } else {
-    const page = event.page + 1
-    loadData(page, event.rows)
+  if (rows.value > event.rows) {
+    page = 1
+    first.value = 0
   }
+  rows.value = event.rows
+  loadData(page, event.rows)
 }
+
 
 const resetFilter = () => {
   formFilters.value = {
@@ -180,13 +184,17 @@ const searchData = () => {
   loadData(1, rows.value)
 }
 
+const isValidated = (rowData) => {
+  return rowData.rcId && parseInt(rowData.rcId) > 0
+}
+
 const exportExcel = () => {
   try {
     const headers = [
       'No',
       'No Bayar',
       'Tanggal Bayar',
-      'Pasien',
+      'Penyetor',
       'Uraian',
       'No Dokumen',
       'Tanggal Dokumen',
@@ -206,7 +214,7 @@ const exportExcel = () => {
       item.no || index + 1,
       item.noBayar || '',
       item.tglBayar || '',
-      item.pasien || '',
+      item.pihak3 || '',
       item.uraian || '',
       item.noDokumen || '',
       item.tglDokumen || '',
@@ -433,9 +441,10 @@ const handleEdit = async (item) => {
   }
   try {
     loading.value = true
-    const response = await api.get(`/billing_swa/${item.id}`)
+    const response = await apiClient.get(`/billing_swa/${item.id}`)
+
     if (response.data) {
-      selectedItem.value = { ...response.data }
+      selectedItem.value = response.data.data
       showModalEdit.value = true
     } else {
       toast.add({
@@ -446,6 +455,7 @@ const handleEdit = async (item) => {
       })
     }
   } catch (error) {
+    console.error('Gagal memuat detail data:', error)
     toast.add({
       severity: 'error',
       summary: 'Gagal',
@@ -469,9 +479,9 @@ const handleValidasi = async (item) => {
   }
   try {
     loading.value = true
-    const response = await api.get(`/billing_swa/${item.id}`)
+    const response = await apiClient.get(`/billing_swa/${item.id}`)
     if (response.data) {
-      validasiItem.value = { ...response.data }
+      validasiItem.value = { ...response.data.data }
       showModalValidasi.value = true
     } else {
       toast.add({
@@ -493,8 +503,47 @@ const handleValidasi = async (item) => {
   }
 }
 
-const handleBuktiBayar = (item) => {
-  console.log('Bukti Bayar item:', item)
+const showModalCancelValidasi = ref(false)
+
+const confirmCancelValidasi = (item) => {
+  showModalCancelValidasi.value = true
+  selectedItem.value = item
+}
+
+const handleCancelValidasi = async () => {
+  try {
+    const item = selectedItem.value
+
+    if (!item.rcId) {
+      throw new Error("Data belum divalidasi");
+    }
+
+    await apiClient.post(`billing_swa/cancel_validasi/penerimaan_lain`, {
+      id: item.id,
+      rc_id: item.rcId,
+    })
+
+    toast.add({
+      severity: 'success',
+      summary: 'Berhasil',
+      detail: 'Validasi berhasil dibatalkan',
+      life: 3000,
+    })
+    selectedItem.value.value = null
+    showModalCancelValidasi.value = false
+    loadData(1, rows.value)
+  } catch (error) {
+    console.error('Gagal membatalkan validasi:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal',
+      detail: 'Gagal membatalkan validasi. Silakan coba lagi.',
+      life: 3000,
+    })
+  } finally {
+    showModalCancelValidasi.value = false
+    loading.value = false
+  }
 }
 
 const handleDelete = (item) => {
@@ -537,14 +586,8 @@ const onReject = () => {
 }
 
 const handleSaved = () => {
-  showModalEdit.value = false
-  toast.add({
-    severity: 'success',
-    summary: 'Berhasil',
-    detail: 'Data berhasil disimpan',
-    life: 3000,
-  })
   loadData(1, rows.value)
+  showModalEdit.value = false
 }
 
 const onFilter = (event) => {
@@ -559,6 +602,7 @@ const initFilters = () => {
     noBayar: { value: null, matchMode: FilterMatchMode.CONTAINS },
     tglBayar: { value: null, matchMode: FilterMatchMode.DATE_IS },
     pasien: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    pihak3: { value: null, matchMode: FilterMatchMode.CONTAINS },
     uraian: { value: null, matchMode: FilterMatchMode.CONTAINS },
     noDokumen: { value: null, matchMode: FilterMatchMode.CONTAINS },
     tglDokumen: { value: null, matchMode: FilterMatchMode.DATE_IS },
@@ -586,6 +630,12 @@ const clearFilter = () => {
 onMounted(() => {
   loadData(1, rows.value)
 })
+
+const showModalSetor = ref(false)
+function setor(data) {
+  selectedItem.value = data
+  showModalSetor.value = true
+}
 </script>
 
 <template>
@@ -707,17 +757,11 @@ onMounted(() => {
         :value="data"
         :loading="loading"
         responsiveLayout="scroll"
-        paginator
         lazy
-        :totalRecords="totalRecords"
-        :rows="rows"
-        :first="first"
-        :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
-        @page="onPageChange"
         @filter="onFilter"
         dataKey="id"
         filterDisplay="menu"
-        :globalFilterFields="['noBayar', 'pasien', 'uraian', 'noDokumen']"
+        :globalFilterFields="['noBayar', 'pasien', 'pihak3', 'uraian', 'noDokumen']"
         class="p-datatable-sm"
       >
         <template #header>
@@ -737,33 +781,60 @@ onMounted(() => {
             </IconField>
           </div>
         </template>
-        <Column field="no" header="No" style="width: 5%" />
+        <template #empty>
+          <div class="flex items-center text-gray-500 min-h-24">
+            <i class="pi pi-info-circle mr-2" style="font-size: 1.5rem"></i>
+            <p>Data Kosong</p>
+          </div>
+        </template>
+
+        <Column field="no" header="No" style="width: 5%">
+          <template #body="{ data, index }">{{ index + 1 + first }}</template>
+        </Column>
+        <Column field="rcId" header="#" style="width: 10%; text-align: center">
+          <template #body="{ data }">
+            <i class="pi pi-check-circle"
+              :class="[isValidated(data) ? 'text-green-500' : 'text-gray-300', 'cursor-pointer']"
+              v-if="isValidated(data)"></i>
+          </template>
+        </Column>
         <Column header="Action" style="width: 15%">
           <template #body="slotProps">
-            <SplitButton
-              label="Aksi"
-              icon="pi pi-ellipsis-v"
-              size="small"
-              severity="secondary"
-              :model="[
-                { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
-                // {
-                //   label: 'Bukti Bayar',
-                //   icon: 'pi pi-file',
-                //   command: () => handleBuktiBayar(slotProps.data),
-                // },
-                {
-                  label: 'Validasi',
-                  icon: 'pi pi-check',
-                  command: () => handleValidasi(slotProps.data),
-                },
-                {
-                  label: 'Hapus',
-                  icon: 'pi pi-trash',
-                  command: () => handleDelete(slotProps.data),
-                },
-              ]"
-            />
+            <SplitButton label="Aksi" size="small" severity="secondary" :model="[
+              {
+                label: 'Ubah',
+                icon: 'pi pi-pencil',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleEdit(slotProps.data)
+              },
+              {
+                label: 'Validasi',
+                icon: 'pi pi-check',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleValidasi(slotProps.data),
+              },
+              {
+                label: 'Bukti Bayar',
+                icon: 'pi pi-file',
+                style: 'color: green;',
+                visible: () => !!isValidated(slotProps.data),
+                command: () => setor(slotProps.data),
+              },
+              {
+                label: 'Batal Validasi',
+                icon: 'pi pi-times-circle',
+                style: 'color: red;',
+                visible: () => !!isValidated(slotProps.data),
+                command: () => confirmCancelValidasi(slotProps.data),
+              },
+              {
+                label: 'Hapus',
+                icon: 'pi pi-trash',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleDelete(slotProps.data),
+              },
+            ]" />
+
           </template>
         </Column>
         <Column
@@ -797,16 +868,16 @@ onMounted(() => {
           </template>
         </Column>
         <Column
-          field="pasien"
-          header="Pasien"
+          field="pihak3"
+          header="Penyetor"
           :showFilterMatchModes="false"
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.pasien }}
+            {{ data.pihak3 }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Pasien" />
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Penyetor" />
           </template>
         </Column>
         <Column
@@ -923,15 +994,15 @@ onMounted(() => {
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.rekeningDpa }}
+            {{ data.rekeningDpa?.rekNama }}
           </template>
-          <template #filter="{ filterModel }">
+          <!-- <template #filter="{ filterModel }">
             <InputText
               v-model="filterModel.value"
               type="text"
               placeholder="Search by Rekening DPA"
             />
-          </template>
+          </template> -->
         </Column>
         <Column field="bank" header="Bank" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
@@ -967,6 +1038,14 @@ onMounted(() => {
           </template>
         </Column>
       </DataTable>
+      <Paginator
+        :first="first"
+        :rows="rows"
+        :totalRecords="totalRecords"
+        :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
+        @page="onPageChange"
+        class="mt-4"
+      />
     </div>
     <Dialog
       :visible="showSyncDialog"
@@ -1045,6 +1124,8 @@ onMounted(() => {
       :item="validasiItem"
       @validated="loadData(1, rows)"
     />
+    <ModalSetorBillingSwa v-model="showModalSetor" :item="selectedItem" />
+
     <Toast />
     <Toast position="center" group="confirm">
       <template #message="slotProps">
@@ -1055,12 +1136,22 @@ onMounted(() => {
             <p>{{ slotProps.message.detail }}</p>
           </div>
           <div class="grid grid-cols-2 gap-4 mt-4">
-            <Button label="Tidak" @click="onReject()" />
-            <Button label="Ya" @click="onConfirmDelete(slotProps.message)" />
+            <Button label="Tidak" @click="onReject()" severity="secondary" />
+            <Button label="Ya" @click="onConfirmDelete(slotProps.message)" severity="danger" />
           </div>
         </div>
       </template>
     </Toast>
+    <Dialog :visible="showModalCancelValidasi" @update:visible="showModalCancelValidasi = $event" modal
+      header="Konfirmasi Batal Validasi" :closable="true" :style="{ width: '400px' }">
+      <div class="p-4">
+        <p>Apakah Anda yakin ingin membatalkan validasi data ini?</p>
+        <div class="flex justify-end gap-2 pt-4">
+          <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi" />
+          <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)" />
+        </div>
+      </div>
+    </Dialog>
   </div>
 </template>
 

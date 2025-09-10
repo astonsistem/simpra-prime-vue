@@ -9,6 +9,7 @@ import { useRouter } from 'vue-router'
 import { authService } from '../services/authService'
 import FingerprintJS from '@fingerprintjs/fingerprintjs'
 import Logo from '/logo.png'
+import { isCaptchaEnabled } from '../utils/utils'
 
 const toast = useToast()
 const router = useRouter()
@@ -94,7 +95,7 @@ onMounted(async () => {
 const login = async () => {
   loading.value = true
 
-  if (captchaInput.value.trim().toUpperCase() !== captchaCode.value) {
+  if (isCaptchaEnabled() && captchaInput.value.trim().toUpperCase() !== captchaCode.value) {
     toast.add({
       severity: 'error',
       summary: 'Captcha Salah',
@@ -108,15 +109,15 @@ const login = async () => {
 
   try {
     const response = await authService.login(loginData.value)
-
     const accessToken = response.token
     const refreshToken = response.refresh_token
-    const user = await authService.getCurrentUser(accessToken)
 
     localStorage.setItem('accessToken', accessToken)
     localStorage.setItem('refreshToken', refreshToken)
-    localStorage.setItem('user', JSON.stringify(user))
     localStorage.setItem('browserId', browserId.value)
+
+    const user = await authService.getCurrentUser()
+    localStorage.setItem('user', JSON.stringify(user))
 
     toast.add({
       severity: 'success',
@@ -146,97 +147,51 @@ const login = async () => {
       <div class="text-center mb-8">
         <img class="logo mx-auto" width="120" height="120" :src="Logo" alt="SIMPRA" />
         <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mt-4">SIMPRA</div>
-           <p class="system-description">Sistem Manajemen Pendapatan</p> 
-           <p class="hospital-name">RSUD dr. Soetomo Surabaya</p><br></br>
-            <h4 class="font-bold">Silahkan login untuk mengakses dashboard SIMPRA</h4>
-
-
-
+        <p class="system-description">Sistem Manajemen Pendapatan</p>
+        <p class="hospital-name">RSUD dr. Soetomo Surabaya</p><br></br>
+        <h4 class="font-bold">Silahkan login untuk mengakses dashboard SIMPRA</h4>
       </div>
-
-      <div>
-       <label for="username" class="text-surface-900 dark:text-surface-0 font-medium mb-2 block">Email</label>
-<div class="input-with-icon-wrapper">
-    <InputText
-      id="username"
-      type="text"
-      v-model="loginData.username"
-      placeholder="Alamat Email"
-      class="w-full"
-    />
-    <span class="input-icon">@</span>
-</div>
-        
-
+      <form @submit.prevent="login">
+        <label for="username" class="text-surface-900 dark:text-surface-0 font-medium mb-2 block">Email</label>
+        <div class="input-with-icon-wrapper">
+          <InputText id="username" type="text" v-model="loginData.username" placeholder="Alamat Email" class="w-full" />
+          <span class="input-icon">@</span>
+        </div>
         <label for="password" class="text-surface-900 dark:text-surface-0 font-medium mb-2 block">Password</label>
-<div class="input-with-icon-wrapper">
-    <div class="input-with-icon-wrapper">
-  <InputText
-    id="password"
-    ref="passwordInput"
-    :type="showPassword ? 'text' : 'password'"
-    v-model="loginData.password"
-    placeholder="Kata Sandi"
-    class="w-full"
-  />
-  <span
-    class="input-icon password-icon"
-    @click="showPassword = !showPassword"
-    style="cursor:pointer"
-  >
-    <i :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
-  </span>
-</div>
-
-
-</div>
-       
-          <div class="mb-7"></div>
-
-        <div class="mb-6">
+        <div class="input-with-icon-wrapper">
+          <div class="input-with-icon-wrapper">
+            <InputText id="password" ref="passwordInput" :type="showPassword ? 'text' : 'password'"
+              v-model="loginData.password" placeholder="Kata Sandi" class="w-full" />
+            <span class="input-icon password-icon" @click="showPassword = !showPassword" style="cursor:pointer">
+              <i :class="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+            </span>
+          </div>
+        </div>
+        <div class="mb-7"></div>
+        <div v-if="isCaptchaEnabled()" class="mb-6">
           <label class="text-surface-900 dark:text-surface-0 font-medium mb-2 block">Captcha</label>
           <div class="flex items-center gap-2">
             <InputText placeholder="Masukkan kode captcha" v-model="captchaInput" class="flex-1" />
             <div class="flex items-center gap-2">
-              <canvas
-                ref="captchaCanvas"
-                width="100"
-                height="40"
-                class="rounded border border-gray-300 bg-white"
-              ></canvas>
-              <button @click="refreshCaptcha" class="text-gray-500 hover:text-black">
+              <canvas ref="captchaCanvas" width="100" height="40"
+                class="rounded border border-gray-300 bg-white"></canvas>
+              <button @click="refreshCaptcha" type="button" class="text-gray-500 hover:text-black">
                 <i class="pi pi-refresh"></i>
               </button>
             </div>
           </div>
         </div>
-      <div class="mb-15">
-        
-</div>
+        <div class="mb-15">
 
-
-       
-
+        </div>
         <!-- <div class="text-xs text-gray-400 mb-" v-if="browserId">Browser ID: {{ browserId }}</div> -->
-
-        <Button
-          label="Masuk"
-          icon=" !text-xl !leading-none"
-          class="w-full !bg-blue-600 !py-4 !text-xl "
-          @click="login"
-          :loading="loading"
-      
-        />
-        
-       
-
+        <Button type="submit" label="Masuk" icon=" !text-xl !leading-none" class="w-full !bg-blue-600 !py-4 !text-xl"
+          :loading="loading" />
         <div class="footer py-4 text-center text-sm text-gray-500 mt-auto border-t border-gray-200">
-      &copy; 2024 RSUD dr. Soetomo Surabaya. All rights reserved.
+          &copy; 2024 RSUD dr. Soetomo Surabaya. All rights reserved.
+        </div>
+      </form>
     </div>
-      </div>
-    </div>
-    
-
     <Toast />
   </div>
 </template>
@@ -268,9 +223,10 @@ const login = async () => {
 .input-with-icon-wrapper input {
   padding-right: 40px;
 }
+
 .footer {
   margin-top: 20px;
-  padding: 10px; 
+  padding: 10px;
   border-top: 1px solid #bbb6b6;
   border-right: 1px solid #bbb6b6;
   border-bottom: 1px solid #bbb6b6;
@@ -279,9 +235,4 @@ const login = async () => {
   color: #0a0a0a;
   text-align: center;
 }
-
 </style>
-
-
-
- 
