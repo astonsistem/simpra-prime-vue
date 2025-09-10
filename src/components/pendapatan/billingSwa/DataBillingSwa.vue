@@ -165,7 +165,6 @@ const onPageChange = (event) => {
   loadData(page, event.rows)
 }
 
-
 const resetFilter = () => {
   formFilters.value = {
     jenis_periode: 'BULANAN',

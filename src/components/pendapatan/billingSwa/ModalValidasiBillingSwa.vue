@@ -116,10 +116,6 @@ function closeModal() {
   emit('update:modelValue', false)
 }
 
-function formatNumber(val) {
-  return new Intl.NumberFormat('id-ID').format(val || 0)
-}
-
 async function doValidasi() {
   loading.value = true
   try {

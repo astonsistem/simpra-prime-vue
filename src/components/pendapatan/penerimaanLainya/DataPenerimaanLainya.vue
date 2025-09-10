@@ -1,21 +1,10 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { FilterMatchMode } from '@primevue/core/api'
-import DatePicker from 'primevue/datepicker'
-import Select from 'primevue/select'
-import Button from 'primevue/button'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import InputText from 'primevue/inputtext'
-import SplitButton from 'primevue/splitbutton'
-import Menu from 'primevue/menu'
-import IconField from 'primevue/iconfield'
-import InputIcon from 'primevue/inputicon'
 import { useToast } from 'primevue/usetoast'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 import ModalSyncPenerimaan from './modal/TarikDataPenerimaanLainya.vue'
 import ModalEditPenerimaan from './modal/EditPenerimaan.vue'
-import Toast from 'primevue/toast'
 import * as XLSX from 'xlsx'
 import ModalValidasiPenerimaan from './modal/ModalValidasiPenerimaan.vue'
 import ModalSetorPenerimaan from './modal/ModalSetorPenerimaan.vue'
@@ -65,7 +54,6 @@ const showModalSync = ref(false)
 const showModalEdit = ref(false)
 const selectedItem = ref(null)
 const showModalValidasi = ref(false)
-const validasiItem = ref(null)
 const showModalSetor = ref(false)
 const setorItem = ref(null)
 
@@ -127,7 +115,6 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   try {
     const query = buildQuery(page, pageSize)
     const response = await api.get('/penerimaan_lain', { params: query })
-    console.log('Response dari backend:', response.data) // Tambahkan ini untuk debug
     
     if (response.data && response.data.items) {
       data.value = response.data.items
@@ -173,6 +160,10 @@ const resetFilter = () => {
 const searchData = () => {
   first.value = 0
   loadData(1, rows.value)
+}
+
+const isValidated = (rowData) => {
+  return rowData.rc_id && parseInt(rowData.rc_id) > 0
 }
 
 const exportExcel = () => {
@@ -294,7 +285,7 @@ const handleEdit = async (item) => {
 }
 
 const handleValidasi = async (item) => {
-  if (item.tgl_validasi) {
+  if (item.rc_id) {
     toast.add({
       severity: 'warn',
       summary: 'Peringatan',
@@ -307,7 +298,7 @@ const handleValidasi = async (item) => {
     loading.value = true
     const response = await api.get(`/penerimaan_lain/${item.id}`)
     if (response.data) {
-      validasiItem.value = { ...response.data }
+      selectedItem.value = response.data.data
       showModalValidasi.value = true
     } else {
       toast.add({
@@ -332,10 +323,11 @@ const handleValidasi = async (item) => {
 const handleSetor = async (item) => {
   try {
     loading.value = true
-    // Ambil data setor dari backend (endpoint sama seperti validasi, bisa disesuaikan jika berbeda)
+    console.log('item', item)
     const response = await api.get(`/penerimaan_lain/${item.id}`)
+    console.log('data', response.data)
     if (response.data) {
-      setorItem.value = { ...response.data }
+      selectedItem.value = response.data.data
       showModalSetor.value = true
     } else {
       toast.add({
@@ -356,9 +348,47 @@ const handleSetor = async (item) => {
     loading.value = false
   }
 }
+const showModalCancelValidasi = ref(false)
 
-const handleBuktiBayar = (item) => {
-  console.log('Bukti Bayar item:', item)
+const confirmCancelValidasi = (item) => {
+  showModalCancelValidasi.value = true
+  selectedItem.value = item
+}
+
+const handleCancelValidasi = async () => {
+  try {
+    const item = selectedItem.value
+
+    if (!item.rc_id) {
+      throw new Error("Data belum divalidasi");
+    }
+
+    await api.post(`penerimaan_lain/cancel_validasi/penerimaan_lain`, {
+      id: item.id,
+      rc_id: item.rc_id,
+    })
+
+    toast.add({
+      severity: 'success',
+      summary: 'Berhasil',
+      detail: 'Validasi berhasil dibatalkan',
+      life: 3000,
+    })
+    selectedItem.value.value = null
+    showModalCancelValidasi.value = false
+    loadData(1, rows.value)
+  } catch (error) {
+    console.error('Gagal membatalkan validasi:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal',
+      detail: error.response.data.message || 'Gagal membatalkan validasi. Silakan coba lagi.',
+      life: 3000,
+    })
+  } finally {
+    showModalCancelValidasi.value = false
+    loading.value = false
+  }
 }
 
 const handleDelete = (item) => {
@@ -613,36 +643,50 @@ const clearFilter = () => {
             {{ slotProps.index + 1 + first }}
           </template>
         </Column>
+        <Column field="rcId" header="#" style="width: 10%; text-align: center">
+          <template #body="{ data }">
+            <i class="pi pi-check-circle"
+              :class="[isValidated(data) ? 'text-green-500' : 'text-gray-300', 'cursor-pointer']"
+              v-if="isValidated(data)"></i>
+          </template>
+        </Column>
         <Column header="Action" style="width: 15%">
           <template #body="slotProps">
-            <SplitButton
-              label="Aksi"
-              icon="pi pi-ellipsis-v"
-              size="small"
-              severity="secondary"
-              :model="[
-                {
-                  label: 'Ubah',
-                  icon: 'pi pi-pencil',
-                  command: () => handleEdit(slotProps.data),
-                },
-                {
-                  label: 'Setor',
-                  icon: 'pi pi-dollar',
-                  command: () => handleSetor(slotProps.data),
-                },
-                {
-                  label: 'Validasi',
-                  icon: 'pi pi-check',
-                  command: () => handleValidasi(slotProps.data),
-                },
-                {
-                  label: 'Hapus',
-                  icon: 'pi pi-trash',
-                  command: () => handleDelete(slotProps.data),
-                },
-              ]"
-            />
+            <SplitButton label="Aksi" size="small" severity="secondary" :model="[
+              {
+                label: 'Ubah',
+                icon: 'pi pi-pencil',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleEdit(slotProps.data)
+              },
+              {
+                label: 'Validasi',
+                icon: 'pi pi-check',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleValidasi(slotProps.data),
+              },
+              {
+                label: 'Setor',
+                icon: 'pi pi-dollar',
+                visible: () => !!isValidated(slotProps.data),
+                command: () => handleSetor(slotProps.data),
+              },
+              {
+                label: 'Batal Validasi',
+                icon: 'pi pi-times-circle',
+                style: 'color: red;',
+                visible: () => !!isValidated(slotProps.data),
+                command: () => confirmCancelValidasi(slotProps.data),
+              },
+              {
+                label: 'Hapus',
+                icon: 'pi pi-trash',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleDelete(slotProps.data),
+              },
+              
+            ]" />
+
           </template>
         </Column>
         <Column
@@ -832,19 +876,34 @@ const clearFilter = () => {
     />
     <ModalValidasiPenerimaan
       v-model="showModalValidasi"
-      :item="validasiItem"
+      :item="selectedItem"
       @validated="
         () => {
           showModalValidasi = false
-          loadData(1, rows.value)
+          selectedItem = null
+          loadData(1, rows)
         }
       "
     />
     <ModalSetorPenerimaan
       v-model="showModalSetor"
-      :item="setorItem"
-      @setor="() => loadData(1, rows.value)"
+      :item="selectedItem"
+      @update:modelValue="() => {
+        showModalSetor = false
+        selectedItem = null
+        loadData(1, rows)
+      }"
     />
+    <Dialog :visible="showModalCancelValidasi" @update:visible="showModalCancelValidasi = $event" modal
+      header="Konfirmasi Batal Validasi" :closable="true" :style="{ width: '400px' }">
+      <div class="p-4">
+        <p>Apakah Anda yakin ingin membatalkan validasi data no. bayar: <strong>{{ selectedItem.no_bayar }}</strong> ?</p>
+        <div class="flex justify-end gap-2 pt-4">
+          <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi" />
+          <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)" />
+        </div>
+      </div>
+    </Dialog>
     <Toast position="center" group="confirm">
       <template #message="slotProps">
         <div class="flex flex-col items-center" style="flex: 1">
