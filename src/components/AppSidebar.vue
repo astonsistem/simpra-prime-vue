@@ -31,7 +31,7 @@ const menuItems = ref([
       { label: 'Billing Kasir', to: '/Kas/billing-kasir' },
       { label: 'Billing 118', to: '/Kas/billing-swa' },
       { label: 'Penerimaan Lainnya', to: '/Kas/penerimaan-lainnya' },
-     { label: 'Selisih Kurang Bayar/Setor', to: '/kas/kurang-bayar' },
+      { label: 'Selisih Kurang Bayar/Setor', to: '/kas/kurang-bayar' },
       { label: 'Rekening Koran', to: '/Kas/rekening-koran' },
       // { label: 'Pelaporan', to: '/pendapatan/pelaporan' },
     ],
@@ -82,16 +82,7 @@ const menuItems = ref([
   {
     label: 'Pelaporan',
     icon: 'pi pi-file',
-    children: [],
-  },
-  {
-    label: 'Laporan Rekap',
-    icon: 'pi pi-chart-bar',
-    isOpen: false,
-    children: [
-      { label: 'Pasien Rawat Jalan BPJS', to: '/laporan-rekap/pasien-rawat-jalan-bpjs' },
-      { label: 'Pasien Rawat Inap BPJS', to: '/laporan-rekap/pasien-rawat-inap-bpjs' },
-    ],
+
   },
 ])
 
@@ -117,9 +108,15 @@ onMounted(async () => {
     const res = await api.get('/pelaporan-list')
     pelaporanMenus.value = res.data.data
     // Inject into menu
+
+    const laporanItem = menuItems.value.find((item) => item.label === 'Laporan')
+    if (laporanItem) {
+      laporanItem.children = laporanMenus.value
+=======
     const pelaporanItem = menuItems.value.find(item => item.label === 'Pelaporan')
     if (pelaporanItem) {
       pelaporanItem.children = pelaporanMenus.value
+
     }
   } catch (error) {
     console.error('Failed to load menus:', error)
