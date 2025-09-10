@@ -320,7 +320,6 @@ watch(
       fetchRekeningDpa()
       fetchBankTujuan()
       fetchSumberTransaksi()
-      fetchMetodeBayar()
     }
   }
 )

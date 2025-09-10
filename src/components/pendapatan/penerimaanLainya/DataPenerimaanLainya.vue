@@ -130,29 +130,7 @@ const loadData = async (page = 1, pageSize = rows.value) => {
     console.log('Response dari backend:', response.data) // Tambahkan ini untuk debug
     
     if (response.data && response.data.items) {
-      data.value = response.data.items.map((item, index) => ({
-        ...item,
-         no: (page - 1) * pageSize + index + 1,
-  // Mapping field names dari backend ke frontend
-  no_bayar: item.noBayar || '',
-  tgl_bayar: item.tglBayar || '',
-  pihak3: item.pihak3 || '',           // ← INI YANG DIPERBAIKI
-  uraian: item.uraian || '',
-  no_dokumen: item.noDokumen || '',
-  tgl_dokumen: item.tglDokumen || '',
-  sumber_transaksi: item.sumberTransaksi || '',
-  instalasi: item.instalasi || '',
-  metode_pembayaran: item.metodeBayar || '',
-  cara_pembayaran: item.caraBayar || '',
-  rekening_dpa: item.rekeningDpa || '',
-  bank_tujuan: item.bank || '',
-  total: parseInt(item.jumlahBruto) || 0,
-  admin_kredit: parseInt(item.biayaAdminEdc) || 0,
-  admin_debit: parseInt(item.biayaAdminQris) || 0,
-  selisih: parseInt(item.selisih) || 0,
-  jumlah_netto: parseInt(item.jumlahNetto) || 0,
-  akun_nama: item.akun_data?.akun_nama || '',
-      }))
+      data.value = response.data.items
       totalRecords.value = response.data.total ?? 0
 
       // If "All" is selected, update rows to show total records
@@ -293,7 +271,7 @@ const handleEdit = async (item) => {
     loading.value = true
     const response = await api.get(`/penerimaan_lain/${item.id}`)
     if (response.data) {
-      selectedItem.value = { ...response.data }
+      selectedItem.value = response.data.data
       showModalEdit.value = true
     } else {
       toast.add({
@@ -421,12 +399,6 @@ const onReject = () => {
 
 const handleSaved = () => {
   showModalEdit.value = false
-  toast.add({
-    severity: 'success',
-    summary: 'Berhasil',
-    detail: 'Data berhasil disimpan',
-    life: 3000,
-  })
   loadData(1, rows.value)
 }
 
@@ -636,7 +608,11 @@ const clearFilter = () => {
               <p>Data Kosong</p>
             </div>
           </template>
-        <Column field="no" header="No" style="width: 5%" />
+        <Column field="no" header="No" style="width: 5%">
+          <template #body="slotProps">
+            {{ slotProps.index + 1 + first }}
+          </template>
+        </Column>
         <Column header="Action" style="width: 15%">
           <template #body="slotProps">
             <SplitButton
@@ -755,36 +731,7 @@ const clearFilter = () => {
             />
           </template>
         </Column>
-        <Column
-          field="sumber_transaksi"
-          header="Sumber Transaksi"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.sumber_transaksi }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by Sumber Transaksi"
-            />
-          </template>
-        </Column>
-        <Column
-          field="instalasi"
-          header="Instalasi"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.instalasi }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Instalasi" />
-          </template>
-        </Column>
+  
         <Column
           field="metode_pembayaran"
           header="Metode Bayar"
