@@ -100,29 +100,29 @@ const logout = async () => {
     console.error('Logout failed:', error)
   }
 }
-
 onMounted(async () => {
   try {
     // GET PELAPORAN MENUS LIST
-    // get pelaporan list
     const res = await api.get('/pelaporan-list')
     pelaporanMenus.value = res.data.data
-    // Inject into menu
 
+    // Inject into menu
     const laporanItem = menuItems.value.find((item) => item.label === 'Laporan')
     if (laporanItem) {
       laporanItem.children = laporanMenus.value
-=======
+    }
+
     const pelaporanItem = menuItems.value.find(item => item.label === 'Pelaporan')
     if (pelaporanItem) {
       pelaporanItem.children = pelaporanMenus.value
-
     }
+
   } catch (error) {
     console.error('Failed to load menus:', error)
   }
 })
 </script>
+
 
 <template>
   <aside
