@@ -223,6 +223,12 @@ const router = createRouter({
           component: () => import('../views/admin/Sinkronisasi.vue'),
           meta: { roles: ['admin'], breadcrumb: ['Admin', 'Sinkronisasi'] },
         },
+        {
+          path: 'profile',
+          name: 'profile',
+          component: () => import('../views/Profile.vue'),
+          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Profil'] },
+        },
       ],
     },
   ],
