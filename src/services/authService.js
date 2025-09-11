@@ -21,6 +21,24 @@ export const authService = {
     return await api.get(`${BASE_URL}/auth/user/me`)
   },
 
+  async getProfile() {
+    try {
+      const token = this.getAccessToken()
+      const response = await axios.get(
+        `${BASE_URL}/auth/profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error('Get profile failed:', error)
+      throw error
+    }
+  },
+
   decodeJWT(token) {
     try {
       const payload = token.split('.')[1]
@@ -72,4 +90,28 @@ export const authService = {
       window.location.href = '/login'
     }
   },
+
+  async changePassword(currentPassword, newPassword, newPasswordConfirmation) {
+    try {
+      const token = this.getAccessToken()
+      const response = await axios.put(
+        `${BASE_URL}/auth/profile/change-password`,
+        {
+          current_password: currentPassword,
+          new_password: newPassword,
+          new_password_confirmation: newPasswordConfirmation
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error('Change password failed:', error)
+      throw error
+    }
+  },
 }
+
