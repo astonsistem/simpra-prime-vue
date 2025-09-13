@@ -40,7 +40,6 @@
         </Column>
         <Column field="no_rc" sortable header="No. Rekening" filterField="no_rc" dataType="string">
           <template #filter="{ filterCallback, filterModel }">
-            <div>{{ filterModel.value }}</div>
             <InputText v-model="filters['no_rc'].value" placeholder="Search by No. Rekening" class="p-inputtext-sm" />
           </template>
         </Column>
@@ -84,24 +83,24 @@
 import { useAttrs, ref, computed, onMounted } from 'vue';
 import { formatCurrency } from '@/utils/utils.js';
 import api from '@/api/client.js';
-import { get, template } from 'lodash';
 
 const emits = defineEmits(['update:modelValue', 'row-select'])
 const attrs = useAttrs();
-const selection = defineModel('selection', {'default': {foo: 'FOO'}, 'required': false})
 const visible = ref(false)
 const items = ref([])
 const selectedItem = ref(null)
 const loading = ref(false)
 const params = ref({})
 const filters = ref({})
+const bank = defineModel('bank', { type: [String, null], default: null })
+const tgl_rc = defineModel('tgl_rc', { type: [String, null], default: null })
 
 onMounted(() => {
   initFilters()
   initParams()
   if (!items.value.length) {
     loadData().then(() => {
-      if(attrs.modelValue) {
+      if(attrs.modelValue && attrs.modelValue > 0) {
         getSelection(attrs.modelValue)
       }
     })
@@ -139,7 +138,13 @@ function initParams() {
 function loadData() {
   loading.value = true
   return new Promise((resolve, reject) => {
-    api.get('/rekening_koran/list', { params: params.value })
+
+    const _params = params.value
+
+    _params['bank'] = bank.value || null
+    _params['tgl_rc'] = tgl_rc.value || null
+
+    api.get('/rekening_koran/list', { params: _params })
       .then((response) => {
         const data = response.data
         items.value = data.data

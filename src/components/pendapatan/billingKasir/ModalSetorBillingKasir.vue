@@ -1,6 +1,6 @@
 <template>
   <Dialog :visible="model" @update:visible="closeModal" modal
-    :style="{ width: '90vw' }" :breakpoints="{ '1199px': '75vw', '575px': '90vw' }">
+    :style="{ width: '95%' }" :breakpoints="{ '1199px': '75vw', '575px': '95%' }">
     <template #header>
       <div class="flex items-center justify-between w-full">
         <div>

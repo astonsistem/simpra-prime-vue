@@ -19,6 +19,9 @@
 
           <div>Jumlah Netto</div>
           <div>: <span class="font-bold">{{ formatCurrency(jumlahNetto) }}</span></div>
+
+          <div>Bank</div>
+          <div>: <span class="font-bold">{{ item?.bank || '-' }}</span></div>
       
         </div>
       </Fieldset>
@@ -28,6 +31,8 @@
         <FormRekeningKoran 
           v-model="form.rc_id" 
           v-model:selection="selectedRc"
+          v-model:bank="props.item.bank" 
+          v-model:tgl_rc="props.item.tglBayar"
           placeholder="Rekening Koran" 
           class="w-full" 
           :errorMessage="errors?.rc_id?.length ? errors?.rc_id[0] : ''" 
