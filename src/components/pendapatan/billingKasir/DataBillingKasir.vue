@@ -219,7 +219,7 @@ const exportExcel = () => {
       item.instalasi || '',
       item.metodeBayar || '',
       item.caraBayar || '',
-      item.rekeningDpa || '',
+      item.rekeningDpa?.rekNama || '',
       item.bank || '',
       item.jumlahBruto || 0,
       item.biayaAdminEdc || 0,
@@ -503,6 +503,8 @@ const initFilters = () => {
     selisih: { value: null, matchMode: FilterMatchMode.EQUALS },
     jumlahNetto: { value: null, matchMode: FilterMatchMode.EQUALS },
     validated: { value: null, matchMode: FilterMatchMode.EQUALS },
+    noClosingKasir: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    rekeningDpa: { value: null, matchMode: FilterMatchMode.CONTAINS },
   }
 }
 
@@ -763,7 +765,7 @@ function setor(data) {
 
         <Column field="noBayar" header="No Bayar" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
-            <span>{{ data.noBayar }}</span> - {{ data.rcId }}
+            <span>{{ data.noBayar }}</span>
           </template>
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search by No Bayar" />
@@ -856,7 +858,7 @@ function setor(data) {
 
         <Column field="rekeningDpa" header="Rekening DPA" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
-            {{ data.rekeningDpa }}
+            {{ data.rekeningDpa?.rekNama }}
           </template>
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search by Rekening DPA" />
