@@ -219,7 +219,7 @@ const exportExcel = () => {
       item.instalasi || '',
       item.metodeBayar || '',
       item.caraBayar || '',
-      item.rekeningDpa || '',
+      item.rekeningDpa?.rekNama || '',
       item.bank || '',
       item.jumlahBruto || 0,
       item.biayaAdminEdc || 0,
@@ -502,6 +502,9 @@ const initFilters = () => {
     biayaAdminQris: { value: null, matchMode: FilterMatchMode.EQUALS },
     selisih: { value: null, matchMode: FilterMatchMode.EQUALS },
     jumlahNetto: { value: null, matchMode: FilterMatchMode.EQUALS },
+    validated: { value: null, matchMode: FilterMatchMode.EQUALS },
+    noClosingKasir: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    rekeningDpa: { value: null, matchMode: FilterMatchMode.CONTAINS },
   }
 }
 
@@ -676,6 +679,7 @@ function setor(data) {
       <DataTable :filters="filters" :value="data" responsiveLayout="scroll" paginator lazy :totalRecords="totalRecords"
         :rows="rows" :first="first" :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]" @page="onPageChange" :loading="loading"
         @filter="onFilter" dataKey="id" filterDisplay="menu" :globalFilterFields="[
+          'validated',
           'noBayar',
           'pasien',
           'uraian',
@@ -705,11 +709,18 @@ function setor(data) {
           <template #body="{ index }">{{ first + index + 1}}</template>
         </Column>
 
-        <Column field="rcId" header="#" style="width: 10%; text-align: center">
+        <Column field="validated" style="width: 10%; text-align: center" :showFilterMatchModes="false">
+          <template #header>
+            <i class="pi pi-check-circle" style="font-size: 1rem"></i>
+          </template>
           <template #body="{ data }">
             <i class="pi pi-check-circle"
               :class="[isValidated(data) ? 'text-green-500' : 'text-gray-300', 'cursor-pointer']"
               v-if="isValidated(data)"></i>
+          </template>
+          <template #filter="{ filterModel }">
+            <Dropdown optionValue="value" optionLabel="label" v-model="filterModel.value" :options="[{ label: 'Tervalidasi', value: '1' }, { label: 'Belum Tervalidasi', value: '0' }]"
+              placeholder="Filter Validasi" class="w-full" />
           </template>
         </Column>
 
@@ -847,7 +858,7 @@ function setor(data) {
 
         <Column field="rekeningDpa" header="Rekening DPA" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
-            {{ data.rekeningDpa }}
+            {{ data.rekeningDpa?.rekNama }}
           </template>
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search by Rekening DPA" />

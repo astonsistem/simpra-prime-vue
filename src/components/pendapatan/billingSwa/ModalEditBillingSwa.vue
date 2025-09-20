@@ -10,10 +10,15 @@
       <div class="flex items-center justify-between w-full">
         <div>
           <h2 class="text-lg font-semibold">
-            {{ isEdit ? 'Ubah Billing 118' : 'Tambah Billing SWA' }} ID: {{ props.item?.no_buktibayar }}
+            {{ isEdit ? 'Ubah Billing 118' : 'Tambah Billing SWA' }} ID:
+            {{ props.item?.no_buktibayar }}
           </h2>
           <p class="text-sm text-gray-500">
-            {{ isEdit ? 'Perbarui informasi billing SWA di bawah ini.' : 'Isi informasi billing SWA di bawah ini.' }}
+            {{
+              isEdit
+                ? 'Perbarui informasi billing SWA di bawah ini.'
+                : 'Isi informasi billing SWA di bawah ini.'
+            }}
           </p>
         </div>
       </div>
@@ -21,27 +26,36 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 text-sm">
       <Fieldset legend="Informasi Billing">
-        <!-- No Dokumen -->
+        <!-- Tgl. Bayar (dropdown) -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">No Dokumen</label>
-          <InputText v-model="formData.no_dokumen" placeholder="Nomor Dokumen" class="w-full" :invalid="errors?.no_dokumen?.length" />
-          <Message v-if="errors.no_dokumen" severity="error" size="small" variant="simple">{{ errors?.no_dokumen[0] }}</Message>
-        </div>
-        
-        <!-- Tgl Dokumen (dropdown) -->
-        <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Tgl Dokumen</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Tgl. Bayar</label>
           <DatePicker
-              v-model="formData.tgl_dokumen"
-              showIcon
-              date-format="dd/mm/yy"
-              placeholder="Tgl. Dokumen"
-              class="w-full"
-              :invalid="errors?.tgl_dokumen?.length"
-            />
-          <Message v-if="errors.tgl_dokumen" severity="error" size="small" variant="simple">{{ errors?.tgl_dokumen[0] }}</Message>
+            v-model="formData.tgl_bayar"
+            showIcon
+            date-format="dd/mm/yy"
+            placeholder="Tgl. Bayar"
+            class="w-full"
+            :invalid="errors?.tgl_bayar?.length"
+          />
+          <div v-if="errors.tgl_bayar" class="text-red-500 text-sm mt-1">
+            {{ errors?.tgl_bayar[0] }}
+          </div>
         </div>
-        
+
+        <!-- No. Bayar -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">No. Bayar</label>
+          <InputText
+            v-model="formData.no_bayar"
+            placeholder="Nomor Bayar"
+            class="w-full"
+            :invalid="errors?.no_bayar?.length"
+          />
+          <Message v-if="errors.no_bayar" severity="error" size="small" variant="simple">{{
+            errors?.no_bayar[0]
+          }}</Message>
+        </div>
+
         <!-- Jumlah Bruto -->
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Jumlah Bruto</label>
@@ -52,11 +66,14 @@
             mode="currency"
             currency="IDR"
             locale="id-ID"
+            show-buttons
+            step="1000"
+            min="0"
             :invalid="errors?.total?.length"
           />
           <div v-if="errors.total" class="text-red-500 text-sm mt-1">{{ errors?.total[0] }}</div>
         </div>
-        
+
         <!-- Biaya Admin EDC -->
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Biaya Admin EDC</label>
@@ -67,11 +84,16 @@
             mode="currency"
             currency="IDR"
             locale="id-ID"
+            show-buttons
+            step="1000"
+            min="0"
             :invalid="errors?.admin_kredit?.length"
           />
         </div>
-        <Message v-if="errors.admin_kredit" severity="error" size="small" variant="simple">{{ errors?.admin_kredit[0] }}</Message>
-        
+        <Message v-if="errors.admin_kredit" severity="error" size="small" variant="simple">{{
+          errors?.admin_kredit[0]
+        }}</Message>
+
         <!-- Biaya Admin QRIS -->
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Biaya Admin QRIS</label>
@@ -82,11 +104,16 @@
             mode="currency"
             currency="IDR"
             locale="id-ID"
+            show-buttons
+            step="1000"
+            min="0"
             :invalid="errors?.admin_debit?.length"
           />
-          <Message v-if="errors.admin_debit" severity="error" size="small" variant="simple">{{ errors?.admin_debit[0] }}</Message>
+          <Message v-if="errors.admin_debit" severity="error" size="small" variant="simple">{{
+            errors?.admin_debit[0]
+          }}</Message>
         </div>
-        
+
         <!-- Selisih -->
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Selisih</label>
@@ -97,11 +124,15 @@
             mode="currency"
             currency="IDR"
             locale="id-ID"
+            show-buttons
+            step="1000"
             :invalid="errors?.selisih?.length"
           />
-          <Message v-if="errors.selisih" severity="error" size="small" variant="simple">{{ errors?.selisih[0] }}</Message>
+          <Message v-if="errors.selisih" severity="error" size="small" variant="simple">{{
+            errors?.selisih[0]
+          }}</Message>
         </div>
-        
+
         <!-- Jumlah Netto -->
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Jumlah Netto</label>
@@ -115,9 +146,11 @@
             readonly
             disabled
           />
-          <Message v-if="errors.jumlah_netto" severity="error" size="small" variant="simple">{{ errors?.jumlah_netto[0] }}</Message>
+          <Message v-if="errors.jumlah_netto" severity="error" size="small" variant="simple">{{
+            errors?.jumlah_netto[0]
+          }}</Message>
         </div>
-        
+
         <!-- Cara Pembayaran (dropdown) -->
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Cara Pembayaran</label>
@@ -129,23 +162,27 @@
             placeholder="Pilih Cara Pembayaran"
             class="w-full"
           />
-          <Message v-if="errors.cara_pembayaran" severity="error" size="small" variant="simple">{{ errors?.cara_pembayaran[0] }}</Message>
+          <Message v-if="errors.cara_pembayaran" severity="error" size="small" variant="simple">{{
+            errors?.cara_pembayaran[0]
+          }}</Message>
         </div>
-        
+
         <!-- Bank Tujuan (dropdown) -->
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Bank Tujuan</label>
           <Dropdown
             v-model="formData.bank_tujuan"
-            :options="optionsBankTujuan" 
+            :options="optionsBankTujuan"
             optionLabel="label"
             optionValue="value"
             placeholder="Pilih Bank Tujuan"
             class="w-full"
           />
-          <Message v-if="errors.bank_tujuan" severity="error" size="small" variant="simple">{{ errors?.bank_tujuan[0] }}</Message>
+          <Message v-if="errors.bank_tujuan" severity="error" size="small" variant="simple">{{
+            errors?.bank_tujuan[0]
+          }}</Message>
         </div>
-        
+
         <!-- Pendapatan -->
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Pendapatan</label>
@@ -157,9 +194,11 @@
             currency="IDR"
             locale="id-ID"
           />
-          <Message v-if="errors.pendapatan" severity="error" size="small" variant="simple">{{ errors?.pendapatan[0] }}</Message>
+          <Message v-if="errors.pendapatan" severity="error" size="small" variant="simple">{{
+            errors?.pendapatan[0]
+          }}</Message>
         </div>
-        
+
         <!-- PDD -->
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">PDD</label>
@@ -171,9 +210,11 @@
             currency="IDR"
             locale="id-ID"
           />
-          <Message v-if="errors.pdd" severity="error" size="small" variant="simple">{{ errors?.pdd[0] }}</Message>
+          <Message v-if="errors.pdd" severity="error" size="small" variant="simple">{{
+            errors?.pdd[0]
+          }}</Message>
         </div>
-        
+
         <!-- Piutang -->
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Piutang</label>
@@ -185,80 +226,113 @@
             currency="IDR"
             locale="id-ID"
           />
-          <Message v-if="errors.piutang" severity="error" size="small" variant="simple">{{ errors?.piutang[0] }}</Message>
+          <Message v-if="errors.piutang" severity="error" size="small" variant="simple">{{
+            errors?.piutang[0]
+          }}</Message>
         </div>
       </Fieldset>
       <Fieldset legend="Informasi Detail">
         <!-- Jenis Penerimaan (dropdown) -->
-          <div class="mb-4">
-            <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Penerimaan</label>
-            <FormJenisPenerimaan v-model="formData.akun_id" dataKey="akun_id" :invalid="errors?.akun_id?.length" class="w-full" />
-            <Message v-if="errors.akun_id" severity="error" size="small" variant="simple">{{ errors?.akun_id[0] }}</Message>
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Penerimaan</label>
+          <FormJenisPenerimaan
+            v-model="formData.akun_id"
+            dataKey="akun_id"
+            :invalid="errors?.akun_id?.length"
+            class="w-full"
+          />
+          <Message v-if="errors.akun_id" severity="error" size="small" variant="simple">{{
+            errors?.akun_id[0]
+          }}</Message>
+        </div>
+
+        <!-- Sumber Transaksi (dropdown) -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Sumber Transaksi</label>
+          <Dropdown
+            v-model="formData.sumber_transaksi"
+            :options="optionsSumberTransaksi"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Pilih Sumber Transaksi"
+            class="w-full"
+            :invalid="errors?.sumber_transaksi?.length"
+          />
+          <div v-if="errors.sumber_transaksi" class="text-red-500 text-sm mt-1">
+            {{ errors?.sumber_transaksi[0] }}
           </div>
-          
-          <!-- Sumber Transaksi (dropdown) -->
-          <div class="mb-4">
-            <label class="block mb-1 text-sm font-medium text-gray-700">Sumber Transaksi</label>
-            <Dropdown
-              v-model="formData.sumber_transaksi"
-              :options="optionsSumberTransaksi"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Pilih Sumber Transaksi"
-              class="w-full"
-              :invalid="errors?.sumber_transaksi?.length"
-            />
-            <div v-if="errors.sumber_transaksi" class="text-red-500 text-sm mt-1">{{ errors?.sumber_transaksi[0] }}</div>
-          </div>
-          
-          <!-- Tgl. Bayar (dropdown) -->
-          <div class="mb-4">
-            <label class="block mb-1 text-sm font-medium text-gray-700">Tgl. Bayar</label>
-            <DatePicker
-              v-model="formData.tgl_bayar"
-              showIcon
-              date-format="dd/mm/yy"
-              placeholder="Tgl. Bayar"
-              class="w-full"
-              :invalid="errors?.tgl_bayar?.length"
-            />
-            <div v-if="errors.tgl_bayar" class="text-red-500 text-sm mt-1">{{ errors?.tgl_bayar[0] }}</div>
-          </div>
-          
-          <!-- No. Bayar -->
-          <div class="mb-4">
-            <label class="block mb-1 text-sm font-medium text-gray-700">No. Bayar</label>
-            <InputText v-model="formData.no_bayar" placeholder="Nomor Bayar" class="w-full" :invalid="errors?.no_bayar?.length" />
-            <Message v-if="errors.no_bayar" severity="error" size="small" variant="simple">{{ errors?.no_bayar[0] }}</Message>
-          </div>
-          
-          <!-- pihak3 -->
-          <div class="mb-4">
-            <label class="block mb-1 text-sm font-medium text-gray-700">Penyetor</label>
-            <InputText v-model="formData.pihak3" placeholder="Penyetor" class="w-full" :invalid="errors?.pihak3?.length" />
-            <div v-if="errors.pihak3" class="text-red-500 text-sm mt-1">{{ errors?.pihak3[0] }}</div>
-          </div>
-          
-          <!-- Uraian -->
-          <div class="lg:col-span-3 mb-4">
-            <label class="block mb-1 text-sm font-medium text-gray-700">Uraian</label>
-            <Textarea v-model="formData.uraian" placeholder="Uraian" rows="3" class="w-full" :invalid="errors?.uraian?.length" />
-            <div v-if="errors.uraian" class="text-red-500 text-sm mt-1">{{ errors?.uraian[0] }}</div>
-          </div>
-          <!-- rekening dpa -->
-          <div class="mb-4">
-            <label class="block mb-1 text-sm font-medium text-gray-700">Rekening DPA</label>
-            <Dropdown
-              v-model="formData.rek_id"
-              :options="optionsRekeningDpa"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Pilih Rekening DPA"
-              class="w-full"
-              :invalid="errors?.rek_id?.length"
-            />
-            <Message v-if="errors.rek_id" severity="error" size="small" variant="simple">{{ errors?.rek_id[0] }}</Message>
-          </div>
+        </div>
+
+        <!-- No Dokumen -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">No Dokumen</label>
+          <InputText
+            v-model="formData.no_dokumen"
+            placeholder="Nomor Dokumen"
+            class="w-full"
+            :invalid="errors?.no_dokumen?.length"
+          />
+          <Message v-if="errors.no_dokumen" severity="error" size="small" variant="simple">{{
+            errors?.no_dokumen[0]
+          }}</Message>
+        </div>
+
+        <!-- Tgl Dokumen (dropdown) -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Tgl Dokumen</label>
+          <DatePicker
+            v-model="formData.tgl_dokumen"
+            showIcon
+            date-format="dd/mm/yy"
+            placeholder="Tgl. Dokumen"
+            class="w-full"
+            :invalid="errors?.tgl_dokumen?.length"
+          />
+          <Message v-if="errors.tgl_dokumen" severity="error" size="small" variant="simple">{{
+            errors?.tgl_dokumen[0]
+          }}</Message>
+        </div>
+
+        <!-- pihak3 -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Penyetor</label>
+          <InputText
+            v-model="formData.pihak3"
+            placeholder="Penyetor"
+            class="w-full"
+            :invalid="errors?.pihak3?.length"
+          />
+          <div v-if="errors.pihak3" class="text-red-500 text-sm mt-1">{{ errors?.pihak3[0] }}</div>
+        </div>
+
+        <!-- Uraian -->
+        <div class="lg:col-span-3 mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Uraian</label>
+          <Textarea
+            v-model="formData.uraian"
+            placeholder="Uraian"
+            rows="3"
+            class="w-full"
+            :invalid="errors?.uraian?.length"
+          />
+          <div v-if="errors.uraian" class="text-red-500 text-sm mt-1">{{ errors?.uraian[0] }}</div>
+        </div>
+        <!-- rekening dpa -->
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Rekening DPA</label>
+          <Dropdown
+            v-model="formData.rek_id"
+            :options="optionsRekeningDpa"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Pilih Rekening DPA"
+            class="w-full"
+            :invalid="errors?.rek_id?.length"
+          />
+          <Message v-if="errors.rek_id" severity="error" size="small" variant="simple">{{
+            errors?.rek_id[0]
+          }}</Message>
+        </div>
       </Fieldset>
     </div>
 
@@ -355,9 +429,9 @@ watch(
 
 const jumlahNetto = computed(() => {
   return (
-    parseInt(formData.value.total || 0) -
+    (parseInt(formData.value.total || 0) -
     parseInt(formData.value.admin_kredit || 0) -
-    parseInt(formData.value.admin_debit || 0) -
+    parseInt(formData.value.admin_debit || 0)) +
     parseInt(formData.value.selisih || 0)
   )
 })
@@ -369,7 +443,7 @@ watch(jumlahNetto, (newVal) => {
 // bank tujuan
 const optionsBankTujuan = ref([])
 const fetchBankTujuan = async () => {
-  if (optionsBankTujuan.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  if (optionsBankTujuan.value.length) return // Cek jika sudah ada data, tidak perlu fetch ulang
   try {
     const response = await apiClient.get('/bank/list')
     if (response.data.data) {
@@ -390,7 +464,7 @@ const fetchBankTujuan = async () => {
 
 const optionsSumberTransaksi = ref([])
 const fetchSumberTransaksi = async () => {
-  if (optionsSumberTransaksi.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  if (optionsSumberTransaksi.value.length) return // Cek jika sudah ada data, tidak perlu fetch ulang
   try {
     const response = await apiClient.get('/sumbertransaksi/list?sumber-transaksi')
 
@@ -412,7 +486,7 @@ const fetchSumberTransaksi = async () => {
 
 const optionsRekeningDpa = ref([])
 const fetchRekeningDpa = async () => {
-  if (optionsRekeningDpa.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
+  if (optionsRekeningDpa.value.length) return // Cek jika sudah ada data, tidak perlu fetch ulang
   try {
     const response = await apiClient.get('/akun/list/pendapatan')
 
@@ -437,7 +511,7 @@ const saveData = async () => {
   errors.value = {}
   try {
     const payload = formData.value
-    
+
     if (isEdit.value) {
       await apiClient.put(`/billing_swa/${formData.value.id}`, payload)
     } else {
@@ -463,7 +537,7 @@ const saveData = async () => {
     })
 
     if (error.errors) {
-      errors.value = error.errors; // Simpan pesan error validasi
+      errors.value = error.errors // Simpan pesan error validasi
     }
   } finally {
     loading.value = false
