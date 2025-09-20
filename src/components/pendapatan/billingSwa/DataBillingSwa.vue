@@ -22,7 +22,7 @@ import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import Calendar from 'primevue/calendar'
 import ModalValidasiBillingSwa from './ModalValidasiBillingSwa.vue'
-import ModalSetorBillingSwa from './ModalSetorBillingSwa.vue'
+import ModalSetorBillingKasir from '../billingKasir/ModalSetorBillingKasir.vue'
 
 const toast = useToast()
 
@@ -1192,7 +1192,7 @@ function setor(data) {
       :item="validasiItem"
       @validated="loadData(1, rows)"
     />
-    <ModalSetorBillingSwa v-model="showModalSetor" :item="selectedItem" />
+    <ModalSetorBillingKasir v-model="showModalSetor" :item="selectedItem" />
 
     <Toast />
     <Toast position="center" group="confirm">
