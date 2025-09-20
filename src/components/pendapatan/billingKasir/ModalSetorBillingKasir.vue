@@ -154,14 +154,13 @@
                   <p>Data Kosong</p>
                 </div>
               </template>
-              <Column header="No. Kwitansi" field="no_buktibayar"></Column>
-              <Column header="Tgl. Kwitansi" field="tgl_buktibayar"></Column>
-              <Column header="No Closing" field="no_closingkasir"></Column>
-              <Column header="Nama Pasien" field="pasien_nama" style="width: 120px"></Column>
-              <Column header="No. Pendaftaran" field="no_pendaftaran"></Column>
-              <Column header="Tgl. Pelayanan" field="tgl_pelayanan"></Column>
-              <Column header="Jenis Tagihan" field="jenis_tagihan"></Column>
-              <Column header="Metode Bayar" field="carabayar_nama"></Column>
+              <Column header="No. Bayar" field="no_bayar"></Column>
+              <Column header="Tgl. Bayar" field="tgl_bayar"></Column>
+              <Column header="Penyetor" field="pihak3" style="width: 120px"></Column>
+              <Column header="Uraian" field="uraian"></Column>
+              <Column header="No. Dokumen" field="no_dokumen"></Column>
+              <Column header="Tgl. Dokumen" field="tgl_dokumen"></Column>
+              <Column header="Sumber Transaksi" field="sumber.sumber_nama"></Column>
               <Column header="Cara Pembayaran" field="cara_pembayaran"></Column>
               <Column header="Bank" field="bank_tujuan"></Column>
               <Column header="Jumlah Bruto" field="total" class="text-end">

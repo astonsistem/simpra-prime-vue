@@ -402,18 +402,6 @@ watch(visible, (newValue) => {
   emit('update:modelValue', newValue)
 })
 
-const resetForm = () => {
-  Object.keys(formData.value).forEach((key) => {
-    if (typeof formData.value[key] === 'string') {
-      formData.value[key] = ''
-    } else if (typeof formData.value[key] === 'number') {
-      formData.value[key] = 0
-    } else {
-      formData.value[key] = null
-    }
-  })
-}
-
 watch(
   () => props.item,
   (newItem) => {
@@ -427,6 +415,13 @@ watch(
   { immediate: true }
 )
 
+watch(() => formData.value.cara_pembayaran, (newValue) => {
+  // Default bank tujuan jika kosong dan cara pembayaran tunai, maka diisi bank JATIM
+  if (newValue && newValue.toUpperCase() === 'TUNAI' && (!formData.value.bank_tujuan || formData.value.bank_tujuan === '')) {
+    formData.value.bank_tujuan = 'JATIM'
+  }
+})
+
 const jumlahNetto = computed(() => {
   return (
     (parseInt(formData.value.total || 0) -
@@ -439,6 +434,19 @@ const jumlahNetto = computed(() => {
 watch(jumlahNetto, (newVal) => {
   formData.value.jumlah_netto = newVal
 })
+
+
+function resetForm() {
+  Object.keys(formData.value).forEach((key) => {
+    if (typeof formData.value[key] === 'string') {
+      formData.value[key] = ''
+    } else if (typeof formData.value[key] === 'number') {
+      formData.value[key] = 0
+    } else {
+      formData.value[key] = null
+    }
+  })
+}
 
 // bank tujuan
 const optionsBankTujuan = ref([])
