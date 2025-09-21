@@ -84,15 +84,6 @@ const menuItems = ref([
     icon: 'pi pi-file',
     children: [],
   },
-  {
-    label: 'Laporan Rekap',
-    icon: 'pi pi-chart-bar',
-    isOpen: false,
-    children: [
-      { label: 'Pasien Rawat Jalan BPJS', to: '/laporan-rekap/pasien-rawat-jalan-bpjs' },
-      { label: 'Pasien Rawat Inap BPJS', to: '/laporan-rekap/pasien-rawat-inap-bpjs' },
-    ],
-  },
 ])
 
 const isActive = (item) => {

@@ -41,6 +41,7 @@
             <label class="block mt-2 text-sm font-medium text-gray-700">Tanggal Pendaftaran</label>
             <DatePicker
                 v-model="formData.tgl_pendaftaran"
+                date-format="dd/mm/yy"
                 placeholder="Tanggal Pendaftaran"
                 showIcon
                 class="w-full"
@@ -51,6 +52,7 @@
             <label class="block mt-2 text-sm font-medium text-gray-700">Tanggal KRS</label>
             <DatePicker
                 v-model="formData.tgl_krs"
+                date-format="dd/mm/yy"
                 placeholder="Tanggal KRS"
                 showIcon
                 class="w-full"
@@ -61,6 +63,7 @@
             <label class="block mt-2 text-sm font-medium text-gray-700">Tanggal Pelayanan</label>
             <DatePicker
                 v-model="formData.tgl_pelayanan"
+                date-format="dd/mm/yy"
                 placeholder="Tanggal Pelayanan"
                 showIcon
                 class="w-full"
@@ -254,6 +257,14 @@ const normalizeStr = (val) => {
 const resetForm = () => {
   formData.value = { ...defaultForm }
 }
+const formatDateToYYYYMMDD = (date) => {
+  if (!date) return null
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 watch(
   () => props.modelValue,
@@ -292,7 +303,6 @@ watch(
 
 
 const saveData = async () => {
-  console.log(formData.value)
   loading.value = true
   try {
     const payload = formData.value
@@ -300,7 +310,11 @@ const saveData = async () => {
     // Clean payload from null or undefined value
     const cleanedPayload = Object.entries(payload).reduce((acc, [key, value]) => {
       if (value !== null && value !== undefined) {
-        acc[key] = value
+        if (key.startsWith('tgl_') && value) {
+          acc[key] = formatDateToYYYYMMDD(value)
+        } else {
+          acc[key] = value
+        }
       }
       return acc
     }, {})

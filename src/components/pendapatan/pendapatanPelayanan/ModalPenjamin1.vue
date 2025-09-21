@@ -2,7 +2,7 @@
   <Dialog
     v-model:visible="visible"
     modal
-    header="Data Penjamin"
+    header="Rincian Penjamin Tagihan Pasien Penjaminan lebih dari 1 Penjamin"
     :style="{ width: '60rem' }"
     :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
   >
@@ -37,6 +37,7 @@
             <label class="block mt-2 text-sm font-medium text-gray-700">Tanggal Pendaftaran</label>
             <DatePicker
               v-model="formData.tgl_pendaftaran"
+              date-format="dd/mm/yy"
               placeholder="Tanggal Pendaftaran"
               showIcon
               class="w-full"
@@ -47,6 +48,7 @@
             <label class="block mt-2 text-sm font-medium text-gray-700">Tanggal KRS</label>
             <DatePicker
               v-model="formData.tgl_krs"
+              date-format="dd/mm/yy"
               placeholder="Tanggal KRS"
               showIcon
               class="w-full"
@@ -85,6 +87,7 @@
             <label class="block mt-2 text-sm font-medium text-gray-700">Tanggal Pelayanan</label>
             <DatePicker
               v-model="formData.tgl_pelayanan"
+              date-format="dd/mm/yy"
               placeholder="Tanggal Pelayanan"
               showIcon
               class="w-full"
@@ -106,7 +109,7 @@
         </div>
         <div>
           <div>
-            <label class="block mt-2 text-sm font-medium text-gray-700">Instalasi</label>
+            <label class="block text-sm font-medium text-gray-700">Instalasi</label>
             <Dropdown
               v-model="formData.instalasi_id"
               :options="options.instalasi"
@@ -158,7 +161,7 @@
       />
       <TablePenjamin1
         ref="tablePenjamin1"
-        :pelayananId="formData.pelayanan_id"
+        :pelayananId="formData.id"
         :inModal="true"
         :options="props.options"
       />

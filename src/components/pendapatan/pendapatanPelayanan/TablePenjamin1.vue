@@ -44,7 +44,7 @@
             style="min-width: 8rem"
         >
             <template #body="{ data }">
-                {{ data.tgl_pendaftaran }}
+                {{ formatDateID(data.tgl_pendaftaran) }}
             </template>
         </Column>
         <Column 
@@ -86,20 +86,12 @@
                 <InputText v-model="filterModel.value" type="text" placeholder="Search Nama" />
             </template>
         </Column>
-        <Column
-            field="tgl_pelayanan"
-            header="Tgl Selesai"
-            style="min-width: 8rem"
-        >
+        <Column field="tgl_pelayanan" header="Tgl Selesai" style="min-width: 8rem">
             <template #body="{ data }">
-                {{ data.tgl_pelayanan }}
+                {{ formatDateID(data.tgl_pelayanan) }}
             </template>
         </Column>
-        <Column
-            field="jenis_tagihan"
-            header="Jenis Pelayanan"
-            style="min-width: 8rem"
-        >
+        <Column field="jenis_tagihan" header="Jenis Pelayanan" style="min-width: 8rem">
             <template #body="{ data }">
                 {{ data.jenis_tagihan }}
             </template>
@@ -242,32 +234,53 @@ const statusOptions = [
     { label: 'Bayar', value: 'Bayar' },
 ]
 
-const buildQuery = (page = 1, pageSize = rows.value, pelId = null) => {
+const buildQuery = (page = 1, pageSize = rows.value) => {
     const q = {
         page,
-        size: 50,
+        size: pageSize,
     }
+    if (props.tableFilters.jenisPeriode) q.periode = props.tableFilters.jenisPeriode
     if (props.tableFilters.jenisPeriode === 'BULANAN') {
-        if (props.tableFilters.tahunPeriode && props.tableFilters.bulanAwal) {
-        const startDate = new Date(props.tableFilters.tahunPeriode, props.tableFilters.bulanAwal - 1, 1)
-        q.tgl_awal = formatDateToYYYYMMDD(startDate)
+        if (props.tableFilters.tahunPeriode) {
+            q.tahun_periode = props.tableFilters.tahunPeriode
         }
-        if (props.tableFilters.tahunPeriode && props.tableFilters.bulanAkhir) {
-        const endDate = new Date(props.tableFilters.tahunPeriode, props.tableFilters.bulanAkhir, 0)
-        q.tgl_akhir = formatDateToYYYYMMDD(endDate)
+        if (props.tableFilters.bulanAwal && props.tableFilters.bulanAkhir) {
+            const year = props.tableFilters.tahunPeriode || new Date().getFullYear()
+            const startDate = new Date(year, props.tableFilters.bulanAwal - 1, 1)
+            const endDate = new Date(year, props.tableFilters.bulanAkhir, 0)
+            q.tgl_awal = formatDateToYYYYMMDD(startDate)
+            q.tgl_akhir = formatDateToYYYYMMDD(endDate)
+        } else if (props.tableFilters.bulanAwal || props.tableFilters.bulanAkhir) {
+            toast.add({
+                severity: 'warn',
+                summary: 'Peringatan',
+                detail: 'Filter Bulan Awal dan Bulan Akhir harus terisi semua ketika salah satu terisi.',
+                life: 3000,
+            })
+            return null
         }
     } else if (props.tableFilters.jenisPeriode === 'TANGGAL') {
-        if (props.tableFilters.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(props.tableFilters.tglAwal)
-        if (props.tableFilters.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(props.tableFilters.tglAkhir)
+        if (props.tableFilters.tglAwal && props.tableFilters.tglAkhir) {
+            q.tgl_awal = formatDateToYYYYMMDD(props.tableFilters.tglAwal)
+            q.tgl_akhir = formatDateToYYYYMMDD(props.tableFilters.tglAkhir)
+        } else if (props.tableFilters.tglAwal || props.tableFilters.tglAkhir) {
+            toast.add({
+                severity: 'warn',
+                summary: 'Peringatan',
+                detail: 'Filter Tanggal Awal dan Tanggal Akhir harus terisi semua ketika salah satu terisi.',
+                life: 3000,
+            })
+            return null
+        }
     }
 
     if (props.tableFilters.jenisPelayanan) q.jenis_pelayanan = props.tableFilters.jenisPelayanan
 
     if (filters.value) {
         Object.keys(filters.value).forEach((key) => {
-        if (filters.value[key].value) {
-            q[key] = filters.value[key].value
-        }
+            if (filters.value[key].value) {
+                q[key] = filters.value[key].value
+            }
         })
     }
 
@@ -276,24 +289,28 @@ const buildQuery = (page = 1, pageSize = rows.value, pelId = null) => {
         q.sortOrder = sortOrder.value === 1 ? 'asc' : 'desc'
     }
 
-    if (pelId) q.pelayanan_id = pelId
+    if (props.pelayananId) q.pelayanan_id = props.pelayananId
 
     return q
 }
-const loadData = async (page = 1, pageSize = rows.value, pelId = null) => {
+const loadData = async (page = 1, pageSize = rows.value) => {
     loading.value = true
     try {
-        const query = buildQuery(page, pageSize, pelId)
+        const query = buildQuery(page, pageSize)
+        if (!query) {
+            loading.value = false
+            return
+        }
         const response = await api.get('/pendapatan_penjamin1', { params: query })
         if (response.data && response.data.items) {
-        data.value = response.data.items.map((item, index) => ({
-            ...item,
-            no: (page - 1) * pageSize + index + 1,
-        }))
-        totalRecords.value = response.data.total ?? 0
-        if (pageSize === totalRecords.value && pageSize > 100) {
-            rows.value = 1000
-        }
+            data.value = response.data.items.map((item, index) => ({
+                ...item,
+                no: (page - 1) * pageSize + index + 1,
+            }))
+            totalRecords.value = response.data.total ?? 0
+            if (pageSize === totalRecords.value && pageSize > 100) {
+                rows.value = 1000
+            }
         }
     } catch (error) {
         console.error('Gagal memuat data:', error)
@@ -320,25 +337,42 @@ const onPageChange = (event) => {
     first.value = event.first
     rows.value = event.rows
     if (event.rows === 1000) {
-        loadData(1, totalRecords.value, props.pelayananId)
-        loadData(event.page + 1, event.rows,)
+        loadData(1, totalRecords.value)
     } else {
         const page = event.page + 1
-        loadData(page, event.rows, props.pelayananId)
+        loadData(page, event.rows)
     }
 }
 const onSort = (event) => {
     sortField.value = event.sortField
     sortOrder.value = event.sortOrder
-    loadData(1, rows.value, props.pelayananId)
+    loadData(1, rows.value)
 }
 const onFilter = (event) => {
     filters.value = event.filters
     first.value = 0
-    loadData(1, rows.value, props.pelayananId)
+    loadData(1, rows.value)
+}
+const clearTableFilters = () => {
+    initFilters()
+    first.value = 0
+    loadData(1, rows.value)
 }
 const rowStyle = (rowData) => {
     if (rowData.status.toLowerCase() === 'terbayar') return { backgroundColor: '#d4edda', color: '#155724' }
+}
+const formatDateToYYYYMMDD = (date) => {
+  if (!date) return null
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+function formatDateID(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('id-ID')
 }
 
 const handleEdit = async (item) => {
@@ -375,6 +409,18 @@ const handleEdit = async (item) => {
     } finally {
         loading.value = false
     }
+}
+const handleSinkron = (item) => {
+    toast.add({
+        severity: 'warn',
+        summary: 'Konfirmasi',
+        detail: 'Apakah Anda yakin ingin sinkron data ini?',
+        group: 'confirm',
+        data: {
+            url: `/pendapatan_penjamin1/sinkron/${item.id}`,
+            title: 'sinkron'
+        }
+    })
 }
 const handleDelete = (item) => {
     if (item.status.toLowerCase() != 'piutang') {
@@ -459,6 +505,7 @@ watch(
 defineExpose({
     data,
     loadData,
+    clearTableFilters,
 })
 
 </script>
