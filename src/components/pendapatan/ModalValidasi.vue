@@ -1,14 +1,13 @@
 <template>
-  <Dialog
-    :visible="modelValue"
-    @update:visible="closeModal"
-    modal
-    header="Validasi Penerimaan Lainnya"
-    :style="{ width: '40rem' }"
-  >
+  <Dialog :visible="modelValue" @update:visible="closeModal" modal
+    :style="{ width: '35rem' }">
+    <template #header>
+      <div class="flex items-center justify-between w-full">
+        <div>Validasi {{ header }}</div>
+      </div>
+    </template>
     <div class="p-4 space-y-4">
-      <Fieldset legend="Data Billing Kasir">
-        <!-- <pre>{{ item }}</pre> -->
+      <Fieldset :legend="`Data ${header}`">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mb-2 ml-4">
           <!-- grid 2 column -->
           <div>No. Bayar</div>
@@ -17,31 +16,28 @@
           <div>Tanggal Bayar</div>
           <div>: <span class="font-bold">{{ item?.tgl_bayar || '-' }}</span></div>
 
-          <div>Penyetor</div>
-          <div>: <span class="font-bold">{{ item?.akun_nama || '-' }}</span></div>
+          <div>Pasien</div>
+          <div>: <span class="font-bold">{{ item?.pihak3 || '-' }}</span></div>
 
           <div>Jumlah Bruto</div>
-          <div>: <span class="font-bold">{{ formatCurrency(item?.total) }}</span></div>
-
-          <div>Biaya Admin EDC</div>
-          <div>: <span class="font-bold">{{ formatCurrency(item?.admin_kredit) }}</span></div>
-
-          <div>Biaya Admin QRIS</div>
-          <div>: <span class="font-bold">{{ formatCurrency(item?.admin_debit) }}</span></div>
-
-          <div>Selisih</div>
-          <div>: <span class="font-bold">{{ formatCurrency(item?.selisih) }}</span></div>
+          <div>: <span class="font-bold">{{ formatCurrency(item?.jumlah_bruto) }}</span></div>
 
           <div>Jumlah Netto</div>
           <div>: <span class="font-bold">{{ formatCurrency(jumlahNetto) }}</span></div>
+
+          <div>Bank</div>
+          <div>: <span class="font-bold">{{ bankTujuan }}</span></div>
       
         </div>
       </Fieldset>
+      <!-- Search -->
       <div class="my-0">&nbsp;</div>
       <Fieldset legend="Pilih Rekening Koran (RC)">
         <FormRekeningKoran 
           v-model="form.rc_id" 
           v-model:selection="selectedRc"
+          v-model:bank="bankTujuan" 
+          v-model:tgl_rc="props.item.tglBayar"
           placeholder="Rekening Koran" 
           class="w-full" 
           :errorMessage="errors?.rc_id?.length ? errors?.rc_id[0] : ''" 
@@ -67,29 +63,31 @@
       
         </div>
       </Fieldset>
+
     </div>
     <template #footer>
       <Button label="Batal" class="p-button-secondary" @click="closeModal" />
-      <Button
-        label="Validasi"
-        class="p-button-success"
-        :disabled="!selectedRc"
-        @click="doValidasi"
-        :loading="loading"
-      />
+      <Button label="Validasi" class="p-button-success" :disabled="!form.rc_id || loading" @click="doValidasi"
+        :loading="loading" />
     </template>
   </Dialog>
 </template>
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import Dialog from 'primevue/dialog'
+import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/api/client.js'
-import { formatCurrency } from '@/utils/utils.js'
-import FormRekeningKoran from '../../../form/RekeningKoran.vue'
+import { formatCurrency } from '@/utils/utils'
+import FormRekeningKoran from '@/components/form/RekeningKoran.vue'
 
 const props = defineProps({
   modelValue: Boolean,
   item: Object,
+  header: {
+    type: String,
+    default: 'Penerimaan',
+  }
 })
 const emit = defineEmits(['update:modelValue', 'validated'])
 const toast = useToast()
@@ -104,8 +102,8 @@ watch(
   () => props.modelValue,
   async (val) => {
     selectedRc.value = null
-    if(val && props.item && props.item.rcId) {
-      form.value.rc_id = props.item.rcId
+    if(val) {
+      form.value.rc_id = getRcId()
     }
   }
 )
@@ -114,12 +112,24 @@ const jumlahNetto = computed(() => {
   if (!props.item) return 0
 
   return (
-    parseInt(props.item.total || 0) -
+    parseInt(props.item.jumlah_bruto || 0) -
     parseInt(props.item.admin_kredit || 0) -
     parseInt(props.item.admin_debit || 0) -
     parseInt(props.item.selisih || 0)
   )
 })
+
+const bankTujuan = computed(() => {
+  return props.item.bank 
+    ? props.item.bank : props.item.bank_tujuan
+    ? props.item.bank_tujuan : null
+})
+
+function getRcId() {
+  return props.item.rc_id 
+    ? props.item.rc_id : props.item.rcId
+    ? props.item.rcId : null
+}
 
 function closeModal() {
   emit('update:modelValue', false)
@@ -128,6 +138,16 @@ function closeModal() {
 async function doValidasi() {
   loading.value = true
   try {
+    // Call validasi API here, using props.item.id and selectedRc.value
+    // TODO: Backend needs to be updated to handle this POST request.
+    // The endpoint should be `/billing_kasir/validasi` and it should accept a JSON payload
+    // with `id` and `rc_id`.
+    if (!selectedRc.value || !selectedRc.value.rc_id) {
+      toast.add({ severity: 'error', summary: 'Gagal', detail: 'Pilih Rekening Koran terlebih dahulu', life: 3000 })
+      loading.value = false
+      return
+    }
+
     await api.post(`/penerimaan_lain/validasi/penerimaan_lain`, {
       id: props.item.id,
       rc_id: selectedRc.value.rc_id,
@@ -140,8 +160,7 @@ async function doValidasi() {
     })
     emit('validated')
     closeModal()
-  } catch (error) {
-    console.error('Error validasi:', error)
+  } catch (e) {
     toast.add({ severity: 'error', summary: 'Gagal', detail: 'Validasi gagal', life: 3000 })
   } finally {
     loading.value = false

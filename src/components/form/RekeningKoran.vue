@@ -109,7 +109,7 @@ onMounted(() => {
 
 const inputValue = computed(() => {
   if (selectedItem.value) {
-    return `${selectedItem.value.no_rc} - ${selectedItem.value.uraian}` || selectedItem.value.no_rc
+    return `${selectedItem.value.uraian} - ${selectedItem.value.nominal}` || selectedItem.value.uraian
   }
   return ''
 })
