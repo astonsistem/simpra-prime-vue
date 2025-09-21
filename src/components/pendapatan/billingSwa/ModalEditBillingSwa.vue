@@ -474,7 +474,9 @@ const optionsSumberTransaksi = ref([])
 const fetchSumberTransaksi = async () => {
   if (optionsSumberTransaksi.value.length) return // Cek jika sudah ada data, tidak perlu fetch ulang
   try {
-    const response = await apiClient.get('/sumbertransaksi/list?sumber-transaksi')
+    const response = await apiClient.get('/sumbertransaksi/list?sumber-transaksi', {
+      params: {  sumber_jenis: 'Billing 118' },
+    })
 
     if (response.data.data) {
       optionsSumberTransaksi.value = response.data.data.map((item) => ({

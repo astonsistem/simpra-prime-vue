@@ -1,5 +1,6 @@
 import axios from 'axios'
 import api from '../api/client'
+import { set } from 'lodash'
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:8000/api'
 
@@ -64,8 +65,20 @@ export const authService = {
     return user?.role || null
   },
 
+  setAccessToken(token) {
+    localStorage.setItem('accessToken', token)
+  },
+
   getAccessToken() {
     return localStorage.getItem('accessToken')
+  },
+
+  setRefreshToken(token) {
+    localStorage.setItem('refreshToken', token)
+  },
+
+  getRefreshToken() {
+    return localStorage.getItem('refreshToken')
   },
 
   async logout() {

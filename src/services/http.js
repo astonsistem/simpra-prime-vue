@@ -18,41 +18,60 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-import router from '../router';
+import router from '../router'
 // Response interceptor
 api.interceptors.response.use(
-    response => response,
-    error => {
-        const status = error.response?.status;
-        if (status === 401) {
-            // Handle 401 Unauthorized - token expired or invalid
-            console.log('API Error 401: Unauthorized. Logging out.');
-            authService.logout(); // Clear token and role from localStorage
-            // Optionally redirect to login page here if you have access to router
-            // (You might need to import router or use window.location.href for redirect)
-            // Example redirect (if you can access router here -  be careful of circular dependencies):
-            router.push('/login');
-            // For a simpler approach without router in interceptor, you can just reload the page:
-            // window.location.reload(); // Reload to effectively redirect to login page due to route guard
-            return Promise.reject({ type: 'auth', status: status, message: 'Unauthorized. Please log in again.' });
-        }
+  (response) => response,
+  async (error) => {
+    const status = error.response?.status
 
-        if (status === 422) {
-            // Handle 422 Unprocessable Entity - validation errors
-            return Promise.reject({
-                type: 'validation',
-                status: status,
-                message: error.response?.data?.message || 'Validation Error',
-                errors: error.response?.data?.errors || null // Include validation errors if available
-            });
-        }
-        
+    if (error.response?.status === 401 && !error.config._retry) {
+      error.config._retry = true
+      try {
+        const { data } = await api.post('/auth/refresh', null, {
+          headers: {
+            Authorization: `Bearer ${authService.getAccessToken()}`,
+          },
+        })
+        console.log('refresh', data)
+        authService.setAccessToken(data.access_token)
+        error.config.headers.Authorization = `Bearer ${data.access_token}`
+        return api(error.config)
+      } catch (e) {
+        console.log('API Error 401: Unauthorized. Logging out.')
+        authService.logout()
+
+        // rediirect to login beserta info halaman terakhir diakses
+        router.push('/login', {
+          query: {
+            redirect: router.currentRoute.value.fullPath,
+          },
+        })
+
         return Promise.reject({
-            type: 'general',
-            status: status,
-            message: error.response?.data?.message || error.response?.data || error.message 
-        }); // Reject with error data or message
+          type: 'auth',
+          status: status,
+          message: 'Unauthorized. Please log in again.',
+        })
+      }
     }
-);
+
+    if (status === 422) {
+      // Handle 422 Unprocessable Entity - validation errors
+      return Promise.reject({
+        type: 'validation',
+        status: status,
+        message: error.response?.data?.message || 'Validation Error',
+        errors: error.response?.data?.errors || null, // Include validation errors if available
+      })
+    }
+
+    return Promise.reject({
+      type: 'general',
+      status: status,
+      message: error.response?.data?.message || error.response?.data || error.message,
+    }) // Reject with error data or message
+  }
+)
 
 export default api
