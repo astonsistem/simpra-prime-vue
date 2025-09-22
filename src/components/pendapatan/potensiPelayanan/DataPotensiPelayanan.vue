@@ -13,15 +13,43 @@ import api from '@/services/http.js'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
 import * as XLSX from 'xlsx'
-import ModalSyncPenerimaan from '@/components/ModalSyncPenerimaan.vue'
-import EditPotensiPelayanan from './modal/EditPotensiPelayanan.vue'
-import TambahPotensiPelayanan from './modal/TambahPotensiPelayanan.vue'
+import ModalPotensiPelayanan from '@/components/pendapatan/potensiPelayanan/ModalPotensiPelayanan.vue'
+import ModalTarikPotensiPelayanan from '@/components/pendapatan/potensiPelayanan/ModalTarikPotensiPelayanan.vue'
+import ModalTerimaPotensi from '@/components/pendapatan/ModalTerimaPotensi.vue'
+import ModalRincianPotensiPelayanan from '@/components/pendapatan/potensiPelayanan/ModalRincianPotensiPelayanan.vue'
 
-
-const toast = useToast()
+const formatDateToYYYYMMDD = (date) => {
+  if (!date) return null
+  const d = new Date(date)
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+function formatDateID(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('id-ID')
+}
 
 // Filter state
-const tahunPeriodeOptions = ref([])
+const toast = useToast()
+const formFilters = ref({
+  jenisPeriode: 'BULANAN',
+  tahunPeriode: null,
+  bulanAwal: null,
+  bulanAkhir: null,
+  tglAwal: null,
+  tglAkhir: null,
+})
+const filters = ref()
+const tahunPeriodeOptions = Array.from(
+  { length: 10 },
+  (_, i) => {
+    const year = new Date().getFullYear() - 5 + i
+    return { label: `${year}`, value: year }
+  }
+)
 const jenisPeriodeOptions = ref([
   { label: 'Bulanan', value: 'BULANAN' },
   { label: 'Tanggal', value: 'TANGGAL' },
@@ -41,72 +69,114 @@ const bulanOptions = ref([
     { label: 'Desember', value: 12 },
 ])
 const caraBayarOptions = ref([])
-
-
-const formFilters = ref({
-  jenis_periode: 'BULANAN',
-  tahunPeriode: new Date().getFullYear().toString(),
-  bulanAwal: null,
-  bulanAkhir: null,
-  tglAwal: null,
-  tglAkhir: null,
-})
-
+const penjaminOptions = ref([])
+const akunOptions = ref([])
+const instalasiOptions = ref([])
+const caraPembayaranOptions = ref([])
+const bankOptions = ref([])
+const jenisTagihanOptions = ref([])
 const data = ref([])
 const totalRecords = ref(0)
 const rows = ref(10)
 const first = ref(0)
 const loading = ref(false)
 const selectedItem = ref(null)
-const showModalEdit = ref(false)
-const showModalAdd = ref(false)
-const showModalSync = ref(false)
-const filters = ref(null)
-
-const formatDateToYYYYMMDD = (date) => {
-  if (!date) return null
-  const d = new Date(date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
+const showModal = ref(false)
+const showModalTarik = ref(false)
+const showModalTerima = ref(false)
+const showModalRincian = ref(false)
+const sortField = ref(null)
+const sortOrder = ref(null)
 
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
     size: pageSize,
   }
-  if (formFilters.value.jenis_periode === 'BULANAN') {
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
-      const startDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAwal - 1, 1)
+  if (formFilters.value.jenisPeriode) q.periode = formFilters.value.jenisPeriode
+  if (formFilters.value.jenisPeriode === 'BULANAN') {
+    if (formFilters.value.tahunPeriode) {
+      q.tahun_periode = formFilters.value.tahunPeriode
+    }
+    if (formFilters.value.bulanAwal && formFilters.value.bulanAkhir) {
+      if (!formFilters.value.tahunPeriode) {
+        toast.add({
+          severity: 'warn',
+          summary: 'Peringatan',
+          detail: 'Filter Tahun Periode harus terisi ketika Bulan Awal atau Bulan Akhir terisi.',
+          life: 3000,
+        })
+        return null
+      }
+      const year = formFilters.value.tahunPeriode || new Date().getFullYear()
+      const startDate = new Date(year, formFilters.value.bulanAwal - 1, 1)
+      const endDate = new Date(year, formFilters.value.bulanAkhir, 0)
       q.tgl_awal = formatDateToYYYYMMDD(startDate)
-    }
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAkhir) {
-      const endDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAkhir, 0)
       q.tgl_akhir = formatDateToYYYYMMDD(endDate)
+    } else if (formFilters.value.bulanAwal || formFilters.value.bulanAkhir) {
+      if (!formFilters.value.tahunPeriode) {
+        toast.add({
+          severity: 'warn',
+          summary: 'Peringatan',
+          detail: 'Filter Tahun Periode harus terisi ketika Bulan Awal atau Bulan Akhir terisi.',
+          life: 3000,
+        })
+        return null
+      }
+      toast.add({
+        severity: 'warn',
+        summary: 'Peringatan',
+        detail: 'Filter Bulan Awal dan Bulan Akhir harus terisi semua ketika salah satu terisi.',
+        life: 3000,
+      })
+      return null
     }
-  } else if (formFilters.value.jenis_periode === 'TANGGAL') {
-    if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
-    if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
+  } else if (formFilters.value.jenisPeriode === 'TANGGAL') {
+    if (formFilters.value.tglAwal && formFilters.value.tglAkhir) {
+      q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
+      q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
+    } else if (formFilters.value.tglAwal || formFilters.value.tglAkhir) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Peringatan',
+        detail: 'Filter Tanggal Awal dan Tanggal Akhir harus terisi semua ketika salah satu terisi.',
+        life: 3000,
+      })
+      return null
+    }
   }
-
 
   if (filters.value) {
     Object.keys(filters.value).forEach((key) => {
-      if (filters.value[key].value) {
-        q[key] = filters.value[key].value
+      if (filters.value[key].value !== null && filters.value[key].value !== undefined) {
+        if (key === "sisa_potensi") {
+          q[key] = {
+            value: filters.value[key].value,
+            matchMode: filters.value[key].matchMode
+          }
+        } else {
+          q[key] = filters.value[key].value
+        }
       }
     })
   }
+
+  if (sortField.value) {
+    q.sortField = sortField.value
+    q.sortOrder = sortOrder.value === 1 ? 'asc' : 'desc'
+  }
+
   return q
 }
-
 const loadData = async (page = 1, pageSize = rows.value) => {
   loading.value = true
   try {
     const query = buildQuery(page, pageSize)
-    const response = await api.get('/pendapatan_pelayanan', { params: query })
+    if (!query) {
+      loading.value = false
+      return
+    }
+    const response = await api.get('/potensi_pelayanan', { params: query })
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
         ...item,
@@ -124,8 +194,6 @@ const loadData = async (page = 1, pageSize = rows.value) => {
     loading.value = false
   }
 }
-
-
 const onPageChange = (event) => {
   first.value = event.first
   rows.value = event.rows
@@ -139,8 +207,8 @@ const onPageChange = (event) => {
 
 const resetFilter = () => {
   formFilters.value = {
-    jenis_periode: 'BULANAN',
-    tahunPeriode: new Date().getFullYear().toString(),
+    jenisPeriode: 'BULANAN',
+    tahunPeriode: null,
     bulanAwal: null,
     bulanAkhir: null,
     tglAwal: null,
@@ -148,105 +216,287 @@ const resetFilter = () => {
 
   }
   first.value = 0
-  loadData(1, rows.value)
+  data.value = []
+  totalRecords.value = 0 
 }
-
 const searchData = () => {
   first.value = 0
   loadData(1, rows.value)
 }
 
 const handleAdd = () => {
-  showModalAdd.value = true
+  selectedItem.value = null
+  showModal.value = true
 }
-
-const handleEdit = (item) => {
-  selectedItem.value = { ...item }
-  showModalEdit.value = true
-}
-
-const handleDelete = async (item) => {
-  if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return
+const handleEdit = async (item) => {
   try {
-    await api.delete(`/pendapatan_pelayanan/${item.id}`)
-    toast.add({
-      severity: 'success',
-      summary: 'Berhasil',
-      detail: 'Data berhasil dihapus',
-      life: 3000,
-    })
-    loadData(1, rows.value)
+    loading.value = true
+    const response = await api.get(`/potensi_pelayanan/${item.id}`)
+    if (response.data) {
+      selectedItem.value = { ...response.data }
+      showModal.value = true
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Gagal',
+        detail: 'Gagal memuat detail data',
+        life: 3000,
+      })
+    }
   } catch (error) {
-    console.error('Gagal menghapus data:', error)
     toast.add({
       severity: 'error',
       summary: 'Gagal',
-      detail: 'Gagal menghapus data. Silakan coba lagi.',
+      detail: 'Gagal memuat detail data',
       life: 3000,
     })
+  } finally {
+    loading.value = false
   }
 }
-
-const handleSaved = () => {
-  showModalEdit.value = false
-  showModalAdd.value = false
+const handleTerima = async (item) => {
+  if (item.sisa_potensi == 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Peringatan',
+      detail: 'Data yang sudah lunas tidak dapat melakukan aksi terima.',
+      life: 3000,
+    })
+    return
+  }
+  try {
+    loading.value = true
+    const response = await api.get(`/potensi_pelayanan/${item.id}`)
+    if (response.data) {
+      selectedItem.value = { ...response.data }
+      showModalTerima.value = true
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Gagal',
+        detail: 'Gagal memuat detail data',
+        life: 3000,
+      })
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal',
+      detail: 'Gagal memuat detail data',
+      life: 3000,
+    })
+  } finally {
+    loading.value = false
+  }
+}
+const handleRincian = async (item) => {
+  if ([1, 15].includes(item.carabayar_id)) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Peringatan',
+      detail: 'Data Cara Bayar UMUM / GL tidak dapat membuat rincian.',
+      life: 3000,
+    })
+    return
+  }
+  try {
+    loading.value = true
+    const response = await api.get(`/potensi_pelayanan/${item.id}`)
+    if (response.data) {
+      selectedItem.value = { ...response.data }
+      showModalRincian.value = true
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Gagal',
+        detail: 'Gagal memuat detail data',
+        life: 3000,
+      })
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal',
+      detail: 'Gagal memuat detail data',
+      life: 3000,
+    })
+  } finally {
+    loading.value = false
+  }
+}
+const handleDelete = (item) => {
+  if (item.terbayar != 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Peringatan',
+      detail: 'Data yang sudah terbayar tidak dapat dihapus.',
+      life: 3000,
+    })
+    return
+  }
   toast.add({
-    severity: 'success',
-    summary: 'Berhasil',
-    detail: 'Data berhasil disimpan',
-    life: 3000,
+      severity: 'warn',
+      summary: 'Konfirmasi',
+      detail: 'Apakah Anda yakin ingin menghapus data ini?',
+      group: 'confirm',
+      data: {
+          url: `/potensi_pelayanan/${item.id}`,
+          title: 'hapus'
+      }
   })
+}
+const onConfirmAction = async (event) => {
+    toast.removeGroup('confirm')
+    const { url, title } = event.data
+    try {
+        if (title === 'hapus') {
+            await api.delete(url)
+        } else {
+            await api.get(url)
+        }
+        toast.add({
+            severity: 'success',
+            summary: 'Berhasil',
+            detail: `Aksi ${title} berhasil dijalankan`,
+            life: 3000,
+        })
+        loadData(1, rows.value)
+    } catch (error) {
+        console.error(`Gagal ${title}:`, error)
+        toast.add({
+            severity: 'error',
+            summary: 'Gagal',
+            detail: `Aksi ${title} gagal. Silakan coba lagi.`,
+            life: 3000,
+        })
+    }
+}
+const onReject = () => {
+    toast.removeGroup('confirm')
+}
+const handleSaved = () => {
+  showModal.value = false
+  showModalTarik.value = false
+  showModalTerima.value = false
   loadData(1, rows.value)
 }
 
 const fetchCaraBayar = async () => {
   try {
-    const response = await api.get('/carabayar')
-    if (response.data && response.data.items) {
-      caraBayarOptions.value = response.data.items.map((item) => ({
+    const response = await api.get('/carabayar/list')
+    if (response.data && response.data.data) {
+      caraBayarOptions.value = response.data.data.map((item) => ({
         label: item.carabayar_nama,
-        value: item.carabayar_id,
+        value: item.carabayar_nama,
+        id: item.carabayar_id,
       }))
     }
   } catch (error) {
     console.error('Gagal memuat data cara bayar:', error)
   }
 }
-
-
-
-const generateTahunPeriodeOptions = () => {
-  const currentYear = new Date().getFullYear()
-  const years = []
-  for (let year = currentYear - 5; year <= currentYear + 1; year++) {
-    years.push({ label: year.toString(), value: year.toString() })
+const fetchPenjamin = async () => {
+  try {
+    const response = await api.get('/penjamin/list')
+    if (response.data && response.data.data) {
+      penjaminOptions.value = response.data.data.map((item) => ({
+        label: item.penjamin_nama,
+        value: item.penjamin_nama,
+        id: item.penjamin_id,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data penjamin:', error)
   }
-  tahunPeriodeOptions.value = years
+}
+const fetchAkun = async () => {
+  try {
+    const response = await api.get('/akun/list')
+    if (response.data && response.data.data) {
+      akunOptions.value = response.data.data.map((item) => ({
+        label: item.akun_nama,
+        value: item.akun_id,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data penjamin:', error)
+  }
+}
+const fetchInstalasi = async () => {
+  try {
+    const response = await api.get('/instalasi/list')
+    if (response.data && response.data.data) {
+      instalasiOptions.value = response.data.data.map((item) => ({
+        label: item.instalasi_nama,
+        value: item.instalasi_id,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data instalasi:', error)
+  }
+}
+const fetchJenisTagihan = async () => {
+  try {
+    const response = await api.get('/sumbertransaksi/list')
+    if (response.data && response.data.data) {
+      jenisTagihanOptions.value = response.data.data.map((item) => ({
+        label: item.sumber_nama,
+        value: item.sumber_nama,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data jenis pelayanan:', error)
+  }
+}
+const fetchCaraPembayaran = async () => {
+  try {
+    const response = await api.get('/carapembayaran/list')
+    if (response.data && response.data.data) {
+      caraPembayaranOptions.value = response.data.data.map((item) => ({
+        label: item.bayar_nama,
+        value: item.bayar_nama,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data cara pembayaran:', error)
+  }
+}
+const fetchBank = async () => {
+  try {
+    const response = await api.get('/bank/list')
+    if (response.data && response.data.data) {
+      bankOptions.value = response.data.data.map((item) => ({
+        label: item.bank_nama,
+        value: item.bank_nama,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data bank:', error)
+  }
 }
 
 onMounted(async () => {
-  generateTahunPeriodeOptions()
   await fetchCaraBayar()
-  loadData(1, rows.value)
-  initFilters()
+  await fetchPenjamin()
+  await fetchAkun()
+  await fetchInstalasi()
+  await fetchJenisTagihan()
+  await fetchCaraPembayaran()
+  await fetchBank()
 })
 
-const onFilter = (event) => {
-  filters.value = event.filters
-  first.value = 0
-  loadData(1, rows.value)
-}
+
 const exportExcel = () => {
   try {
     // Prepare headers for Excel (excluding Action column)
     const headers = [
       'No',
       'No Dokumen',
-      'Tanggal Dokumen',
+      'Tgl Dokumen',
       'Cara Bayar',
       'Penjamin',
       'Uraian',
-      'Tanggal Pendaftaran',
+      'Tgl Pendaftaran',
       'No Pendaftaran',
       'Nama Pasien',
       'Jumlah',
@@ -255,32 +505,36 @@ const exportExcel = () => {
     ]
 
     // Prepare data for Excel
-    const excelData = data.value.map((item, index) => ({
-      No: item.no || index + 1,
-      'No Dokumen': item.no_dokumen || '',
-      'Tanggal Dokumen': item.tgl_dokumen || '',
-      'Cara Bayar': item.cara_bayar || '',
-      Penjamin: item.penjamin || '',
-      Uraian: item.uraian || '',
-      'Tanggal Pendaftaran': item.tgl_pendaftaran || '',
-      'No Pendaftaran': item.no_pendaftaran || '',
-      'Nama Pasien': item.nama || '',
-      Jumlah: item.jumlah || 0,
-      Terbayar: item.terbayar || 0,
-      'Sisa Potensi': item.sisa_potensi || 0,
-    }))
+    const excelData = data.value.map((item, index) => [
+      item.no || index + 1,
+      item.no_dokumen || '',
+      item.tgl_dokumen || '',
+      item.carabayar_nama || '',
+      item.penjamin_nama || '',
+      item.uraian || '',
+      item.tgl_pendaftaran || '',
+      item.no_pendaftaran || '',
+      item.pasien_nama || '',
+      item.total ?? 0,
+      item.terbayar ?? 0,
+      item.sisa_potensi ?? 0,
+    ])
 
-    const worksheet = XLSX.utils.json_to_sheet(excelData)
 
     // Create workbook and worksheet
     const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pendapatan Pelayanan')
-
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...excelData])
     // Auto-fit columns
-    const columnWidths = Object.keys(excelData[0] || {}).map((key) => ({
-      wch: Math.max(key.length, ...excelData.map((row) => (row[key] ? row[key].toString().length : 0))) + 2,
+    worksheet['!cols'] = headers.map((header, i) => ({
+      wch: Math.max(
+        header.length,
+        ...excelData.map(row =>
+          row[i] ? row[i].toString().length : 0
+        )
+      ) + 2,
     }))
-    worksheet['!cols'] = columnWidths
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Potensi Pelayanan')
+
 
     const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
     const blob = new Blob([excelBuffer], {
@@ -291,7 +545,7 @@ const exportExcel = () => {
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     link.setAttribute('href', url)
-    link.setAttribute('download', `pendapatan_pelayanan_${new Date().toISOString().split('T')[0]}.xlsx`)
+    link.setAttribute('download', `potensi_pelayanan_${new Date().toISOString().split('T')[0]}.xlsx`)
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
@@ -318,21 +572,28 @@ const initFilters = () => {
   filters.value = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     no_dokumen: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    tgl_dokumen: { value: null, matchMode: FilterMatchMode.DATE_IS },
-    cara_bayar: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    penjamin: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    carabayar_nama: { value: null, matchMode: FilterMatchMode.EQUALS },
+    penjamin_nama: { value: null, matchMode: FilterMatchMode.EQUALS },
     uraian: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    tgl_pendaftaran: { value: null, matchMode: FilterMatchMode.DATE_IS },
-    no_pendaftaran: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    nama: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    jumlah: { value: null, matchMode: FilterMatchMode.EQUALS },
-    terbayar: { value: null, matchMode: FilterMatchMode.EQUALS },
+    pasien_nama: { value: null, matchMode: FilterMatchMode.CONTAINS },
     sisa_potensi: { value: null, matchMode: FilterMatchMode.EQUALS },
   }
 }
+initFilters()
 
-const clearFilter = () => {
+const onFilter = (event) => {
+  filters.value = event.filters
+  first.value = 0
+  loadData(1, rows.value)
+}
+const clearTableFilters = () => {
   initFilters()
+  loadData(1, rows.value)
+}
+
+const onSort = (event) => {
+  sortField.value = event.sortField
+  sortOrder.value = event.sortOrder
   loadData(1, rows.value)
 }
 </script>
@@ -347,7 +608,7 @@ const clearFilter = () => {
         <div>
           <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
           <Select
-            v-model="formFilters.jenis_periode"
+            v-model="formFilters.jenisPeriode"
             :options="jenisPeriodeOptions"
             optionLabel="label"
             optionValue="value"
@@ -355,7 +616,7 @@ const clearFilter = () => {
             class="w-full"
           />
         </div>
-        <template v-if="formFilters.jenis_periode === 'BULANAN'">
+        <template v-if="formFilters.jenisPeriode === 'BULANAN'">
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
             <Select
@@ -390,7 +651,7 @@ const clearFilter = () => {
             />
           </div>
         </template>
-        <template v-if="formFilters.jenis_periode === 'TANGGAL'">
+        <template v-if="formFilters.jenisPeriode === 'TANGGAL'">
           <div>
             <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Awal</label>
             <DatePicker
@@ -432,23 +693,13 @@ const clearFilter = () => {
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-xl font-semibold text-[#17316E]">Data Potensi Pelayanan</h3>
         <div class="flex gap-2">
-          <Button
-            label="Tambah Data"
-            icon="pi pi-plus"
-            class="p-button-primary"
-            @click="handleAdd"
-          />
-          <Button
-            label="Tarik Data"
-            icon="pi pi-download"
-            class="p-button-success"
-            @click="showModalSync = true"
-          />
+          <Button label="Tambah Data" icon="pi pi-plus" class="p-button-success" @click="handleAdd" />
+          <Button label="Tarik Data" icon="pi pi-download" class="p-button-success"  @click="showModalTarik = true" />
+          <Button label="Clear Column Filters" icon="pi pi-filter-slash" class="p-button-success" @click="clearTableFilters" />
           <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel"/>
         </div>
       </div>
       <DataTable
-        v-if="filters"
         :filters="filters"
         :value="data"
         :loading="loading"
@@ -461,108 +712,139 @@ const clearFilter = () => {
         :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
         @page="onPageChange"
         @filter="onFilter"
+        @sort="onSort"
+        sortMode="single"
         dataKey="id"
         filterDisplay="menu"
-        :globalFilterFields="['no_dokumen', 'tgl_dokumen', 'cara_bayar', 'penjamin', 'uraian', 'tgl_pendaftaran', 'no_pendaftaran', 'nama']"
         class="p-datatable-sm"
       >
         <template #header>
-          <div class="flex justify-between">
-            <Button
-              type="button"
-              icon="pi pi-filter-slash"
-              label="Clear"
-              outlined
-              @click="clearFilter"
-              />
-            <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
-          </div>
         </template>
         <Column field="no" header="No" style="width: 5%" />
         <Column header="Action" style="width: 10%">
           <template #body="slotProps">
             <SplitButton
+              label="Action" 
               icon="pi pi-ellipsis-v"
               size="small"
               severity="secondary"
               :model="[
                 { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
-                {
-                  label: 'Hapus',
-                  icon: 'pi pi-trash',
-                  command: () => handleDelete(slotProps.data),
-                },
+                { label: 'Terima', icon: 'pi pi-check', command: () => handleTerima(slotProps.data) },
+                { label: 'Rincian', icon: 'pi pi-book', command: () => handleRincian(slotProps.data) },
+                { label: 'Hapus', icon: 'pi pi-trash', command: () => handleDelete(slotProps.data) },
               ]"
             />
           </template>
         </Column>
-        <Column field="no_dokumen" header="No Dokumen" filterField="no_dokumen" :showFilterMatchModes="false">
+        <Column 
+          field="no_dokumen" 
+          header="No Dokumen" 
+          :showFilterMatchModes="false" 
+          style="min-width: 12rem"
+        >
             <template #body="{ data }">
                 {{ data.no_dokumen }}
             </template>
             <template #filter="{ filterModel }">
-                <InputText v-model="filterModel.value" type="text" placeholder="Search by No Dokumen" />
+              <InputText v-model="filterModel.value" type="text" placeholder="Search No Dokumen" />
             </template>
         </Column>
-        <Column field="tgl_dokumen" header="Tanggal Dokumen" filterField="tgl_dokumen" dataType="date">
+        <Column 
+          field="tgl_dokumen" 
+          header="Tgl Dokumen" 
+          sortable 
+          style="min-width: 8rem"
+        >
+          <template #body="{ data }">
+            {{ formatDateID(data.tgl_dokumen) }}
+          </template>
+        </Column>
+        <Column 
+          field="carabayar_nama" 
+          header="Cara Bayar" 
+          :showFilterMatchModes="false"
+        >
             <template #body="{ data }">
-                {{ data.tgl_dokumen }}
+                {{ data.carabayar_nama }}
             </template>
             <template #filter="{ filterModel }">
-                <DatePicker v-model="filterModel.value" dateFormat="dd/mm/yy" placeholder="dd/mm/yyyy" />
+              <Dropdown 
+                v-model="filterModel.value" 
+                :options="caraBayarOptions" 
+                optionLabel="label" 
+                optionValue="value" 
+                placeholder="Select Cara Bayar" 
+                class="p-column-filter" 
+                showClear 
+              />
             </template>
         </Column>
-        <Column field="cara_bayar" header="Cara Bayar" filterField="cara_bayar" :showFilterMatchModes="false">
+        <Column 
+          field="penjamin_nama" 
+          header="Penjamin" 
+          :showFilterMatchModes="false"
+        >
             <template #body="{ data }">
-                {{ data.cara_bayar }}
+                {{ data.penjamin_nama }}
             </template>
             <template #filter="{ filterModel }">
-                <Select v-model="filterModel.value" :options="caraBayarOptions" optionLabel="label" optionValue="value" placeholder="Any" />
+              <Dropdown
+                v-model="filterModel.value"
+                :options="penjaminOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select Penjamin"
+                class="p-column-filter"
+                showClear
+                filter
+                filterPlaceholder="Search Penjamin"
+              />
             </template>
         </Column>
-        <Column field="penjamin" header="Penjamin" filterField="penjamin" :showFilterMatchModes="false">
-            <template #body="{ data }">
-                {{ data.penjamin }}
-            </template>
-            <template #filter="{ filterModel }">
-                <InputText v-model="filterModel.value" type="text" placeholder="Search by Penjamin" />
-            </template>
-        </Column>
-        <Column field="uraian" header="Uraian" filterField="uraian" :showFilterMatchModes="false">
+        <Column 
+          field="uraian" 
+          header="Uraian" 
+          :showFilterMatchModes="false" 
+          style="min-width: 30rem"
+        >
             <template #body="{ data }">
                 {{ data.uraian }}
             </template>
             <template #filter="{ filterModel }">
-                <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
+                <InputText v-model="filterModel.value" type="text" placeholder="Search Uraian" />
             </template>
         </Column>
-        <Column field="tgl_pendaftaran" header="Tgl Pendaftaran" filterField="tgl_pendaftaran" dataType="date">
-            <template #body="{ data }">
-                {{ data.tgl_pendaftaran }}
-            </template>
-            <template #filter="{ filterModel }">
-                <DatePicker v-model="filterModel.value" dateFormat="dd/mm/yy" placeholder="dd/mm/yyyy" />
-            </template>
+        <Column 
+          field="tgl_pendaftaran" 
+          header="Tgl Pendaftaran" 
+          sortable 
+          style="min-width: 8rem"
+        >
+          <template #body="{ data }">
+            {{ formatDateID(data.tgl_pendaftaran) }}
+          </template>
         </Column>
-        <Column field="no_pendaftaran" header="No Pendaftaran" filterField="no_pendaftaran" :showFilterMatchModes="false">
+        <Column field="no_pendaftaran" header="No Pendaftaran">
             <template #body="{ data }">
                 {{ data.no_pendaftaran }}
             </template>
-            <template #filter="{ filterModel }">
-                <InputText v-model="filterModel.value" type="text" placeholder="Search by No Pendaftaran" />
-            </template>
         </Column>
-        <Column field="nama" header="Nama Pasien" filterField="nama" :showFilterMatchModes="false">
+        <Column 
+          field="pasien_nama" 
+          header="Nama Pasien"
+          :showFilterMatchModes="false" 
+        >
             <template #body="{ data }">
-                {{ data.nama }}
+                {{ data.pasien_nama }}
             </template>
             <template #filter="{ filterModel }">
-                <InputText v-model="filterModel.value" type="text" placeholder="Search by Nama" />
+                <InputText v-model="filterModel.value" type="text" placeholder="Search Nama Pasien" />
             </template>
         </Column>
-        <Column field="jumlah" header="Jumlah" style="text-align: right">
+        <Column field="total" header="Jumlah" style="text-align: right">
             <template #body="slotProps">
-                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlah || 0) }}
+                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.total || 0) }}
             </template>
         </Column>
         <Column field="terbayar" header="Terbayar" style="text-align: right">
@@ -570,25 +852,97 @@ const clearFilter = () => {
                 {{ new Intl.NumberFormat('id-ID').format(slotProps.data.terbayar || 0) }}
             </template>
         </Column>
-        <Column field="sisa_potensi" header="Sisa Potensi" style="text-align: right">
+        <Column 
+          field="sisa_potensi" 
+          header="Sisa Potensi" 
+          :showFilterMatchModes="false" 
+          :showFilterMenu="true"
+          style="text-align: right"
+        >
             <template #body="slotProps">
                 {{ new Intl.NumberFormat('id-ID').format(slotProps.data.sisa_potensi || 0) }}
+            </template>
+            <template #filter="{ filterModel }">
+              <Dropdown
+                v-model="filterModel.matchMode"
+                :options="[
+                  { label: 'Kurang dari', value: FilterMatchMode.LESS_THAN },
+                  { label: 'Lebih dari', value: FilterMatchMode.GREATER_THAN },
+                  { label: 'Kurang dari sama dengan', value: FilterMatchMode.LESS_THAN_OR_EQUAL_TO },
+                  { label: 'Lebih dari sama dengan', value: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
+                  { label: 'Sama dengan', value: FilterMatchMode.EQUALS },
+                  { label: 'Tidak sama dengan', value: FilterMatchMode.NOT_EQUALS }
+                ]"
+                optionLabel="label"
+                optionValue="value"
+                class="w-full mb-2"
+              />
+              <InputNumber 
+                v-model="filterModel.value" 
+                class="w-full"
+                placeholder="Masukkan angka" 
+                mode="currency"
+                currency="IDR"
+                locale="id-ID"
+              />
             </template>
         </Column>
       </DataTable>
     </div>
-    <ModalSyncPenerimaan v-model:visible="showModalSync" @sync="loadData" />
-    <EditPotensiPelayanan
-      :id="selectedItem?.id"
-      v-model:visible="showModalEdit"
-      :item="selectedItem"
+    <ModalPotensiPelayanan 
+      v-model="showModal" 
+      :item="selectedItem" 
+      :options="{
+        carabayar: caraBayarOptions,
+        penjamin: penjaminOptions,
+        akun: akunOptions,
+        instalasi: instalasiOptions,
+        jenisTagihan: jenisTagihanOptions,
+      }"
+      @saved="handleSaved" 
+    />
+    <ModalTarikPotensiPelayanan
+      v-model="showModalTarik" 
       @saved="handleSaved"
     />
-    <TambahPotensiPelayanan
-        v-model:visible="showModalAdd"
-        @saved="handleSaved"
+    <ModalTerimaPotensi
+      v-model="showModalTerima" 
+      :item="selectedItem"
+      jenisPotensi="pelayanan"
+      :options="{
+        akun: akunOptions,
+        caraPembayaran: caraPembayaranOptions,
+        bank: bankOptions,
+      }"
+      @saved="handleSaved"
+    />
+    <ModalRincianPotensiPelayanan 
+      v-model="showModalRincian" 
+      :item="selectedItem" 
+      :options="{
+        carabayar: caraBayarOptions,
+        penjamin: penjaminOptions,
+        akun: akunOptions,
+        bulan: bulanOptions,
+        tahun: tahunPeriodeOptions,
+      }"
     />
     <Toast />
+    <Toast position="center" group="confirm">
+      <template #message="slotProps">
+        <div class="flex flex-col items-center" style="flex: 1">
+          <div class="text-center">
+            <i class="pi pi-exclamation-triangle" style="font-size: 3rem"></i>
+            <h4>{{ slotProps.message.summary }}</h4>
+            <p>{{ slotProps.message.detail }}</p>
+          </div>
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <Button label="Tidak" @click="onReject()" />
+            <Button label="Ya" @click="onConfirmAction(slotProps.message)" />
+          </div>
+        </div>
+      </template>
+    </Toast>
   </div>
 </template>
 

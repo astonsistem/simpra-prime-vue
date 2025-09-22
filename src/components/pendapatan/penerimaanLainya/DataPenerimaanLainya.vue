@@ -7,7 +7,7 @@ import ModalEditPenerimaan from './modal/EditPenerimaan.vue'
 import { usePenerimaanLain } from '@/composables/usePenerimaanLain'
 import { FilterMatchMode } from '@primevue/core/api'
 import ModalValidasi from '../ModalValidasi.vue'
-import ModalSetor from '../ModalSetor.vue'
+import ModalSetor from '../CommonModalSetor.vue'
 
 const toast = useToast()
 const { 

@@ -30,10 +30,14 @@ const formatDateToYYYYMMDD = (date) => {
   const day = String(d.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
+function formatDateID(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('id-ID')
+}
 
 const activeIndex = ref(0) 
 const toast = useToast()
-const now = new Date()
 const formFilters = ref({
   jenisPelayanan: '',
   jenisPeriode: '',
@@ -104,28 +108,74 @@ const tablePenjamin1 = ref(null)
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
-    size: 50,
+    size: pageSize,
   }
+  if (formFilters.value.jenisPeriode) q.periode = formFilters.value.jenisPeriode
   if (formFilters.value.jenisPeriode === 'BULANAN') {
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
-      const startDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAwal - 1, 1)
-      q.tgl_awal = formatDateToYYYYMMDD(startDate)
+    if (formFilters.value.tahunPeriode) {
+      q.tahun_periode = formFilters.value.tahunPeriode
     }
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAkhir) {
-      const endDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAkhir, 0)
+    if (formFilters.value.bulanAwal && formFilters.value.bulanAkhir) {
+      if (!formFilters.value.tahunPeriode) {
+        toast.add({
+          severity: 'warn',
+          summary: 'Peringatan',
+          detail: 'Filter Tahun Periode harus terisi ketika Bulan Awal atau Bulan Akhir terisi.',
+          life: 3000,
+        })
+        return null
+      }
+      const year = formFilters.value.tahunPeriode || new Date().getFullYear()
+      const startDate = new Date(year, formFilters.value.bulanAwal - 1, 1)
+      const endDate = new Date(year, formFilters.value.bulanAkhir, 0)
+      q.tgl_awal = formatDateToYYYYMMDD(startDate)
       q.tgl_akhir = formatDateToYYYYMMDD(endDate)
+    } else if (formFilters.value.bulanAwal || formFilters.value.bulanAkhir) {
+      if (!formFilters.value.tahunPeriode) {
+        toast.add({
+          severity: 'warn',
+          summary: 'Peringatan',
+          detail: 'Filter Tahun Periode harus terisi ketika Bulan Awal atau Bulan Akhir terisi.',
+          life: 3000,
+        })
+        return null
+      }
+      toast.add({
+        severity: 'warn',
+        summary: 'Peringatan',
+        detail: 'Filter Bulan Awal dan Bulan Akhir harus terisi semua ketika salah satu terisi.',
+        life: 3000,
+      })
+      return null
     }
   } else if (formFilters.value.jenisPeriode === 'TANGGAL') {
-    if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
-    if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
+    if (formFilters.value.tglAwal && formFilters.value.tglAkhir) {
+      q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
+      q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
+    } else if (formFilters.value.tglAwal || formFilters.value.tglAkhir) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Peringatan',
+        detail: 'Filter Tanggal Awal dan Tanggal Akhir harus terisi semua ketika salah satu terisi.',
+        life: 3000,
+      })
+      return null
+    }
   }
 
   if (formFilters.value.jenisPelayanan) q.jenis_pelayanan = formFilters.value.jenisPelayanan
 
   if (filters.value) {
     Object.keys(filters.value).forEach((key) => {
-      if (filters.value[key].value) {
-        q[key] = filters.value[key].value
+      if (filters.value[key].value !== null && filters.value[key].value !== undefined) {
+        if (key === "total") {
+          q[key] = {
+            value: filters.value[key].value,
+            matchMode: filters.value[key].matchMode
+          }
+        } else {
+          q[key] = filters.value[key].value
+        }
       }
     })
   }
@@ -141,6 +191,10 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   loading.value = true
   try {
     const query = buildQuery(page, pageSize)
+    if (!query) {
+      loading.value = false
+      return
+    }
     const response = await api.get('/pendapatan_pelayanan', { params: query })
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
@@ -240,15 +294,6 @@ const handleEdit = async (item) => {
   }
 }
 const handlePenjamin1 = async (item) => {
-  if (!item.is_valid) {
-    toast.add({
-      severity: 'warn',
-      summary: 'Peringatan',
-      detail: 'Data yang belum tervalidasi tidak dapat ditambahkan penjamin.',
-      life: 3000,
-    })
-    return
-  }
   try {
     loading.value = true
     const response = await api.get(`/pendapatan_pelayanan/${item.id}`)
@@ -338,6 +383,15 @@ const handleSync2 = (item) => {
   })
 }
 const handleValidasi = (item) => {
+  if (item.is_valid) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Peringatan',
+      detail: 'Data yang sudah tervalidasi.',
+      life: 3000,
+    })
+    return
+  }
   toast.add({
     severity: 'warn',
     summary: 'Konfirmasi',
@@ -345,6 +399,27 @@ const handleValidasi = (item) => {
     group: 'confirm',
     data: {
       url: `/pendapatan_pelayanan/validasi/${item.id}`,
+      title: 'validasi'
+    }
+  })
+}
+const handleBatalValidasi = (item) => {
+  if (!item.is_valid) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Peringatan',
+      detail: 'Data yang belum tervalidasi tidak dapat dibatalkan validasinya.',
+      life: 3000,
+    })
+    return
+  }
+  toast.add({
+    severity: 'warn',
+    summary: 'Konfirmasi',
+    detail: 'Apakah Anda yakin ingin membatalkan validasi data ini?',
+    group: 'confirm',
+    data: {
+      url: `/pendapatan_pelayanan/cancel_validasi/${item.id}`,
       title: 'validasi'
     }
   })
@@ -460,17 +535,7 @@ const fetchKasir = async () => {
   }
 }
 
-const generateTahunPeriodeOptions = () => {
-  const currentYear = new Date().getFullYear()
-  const years = []
-  for (let year = currentYear - 5; year <= currentYear + 1; year++) {
-    years.push({ label: year.toString(), value: year.toString() })
-  }
-  tahunPeriodeOptions.value = years
-}
-
 onMounted(async () => {
-  generateTahunPeriodeOptions()
   await fetchJenisPelayanan()
   await fetchCaraBayar()
   await fetchPenjamin()
@@ -478,12 +543,6 @@ onMounted(async () => {
   await fetchLoket()
   await fetchKasir()
 })
-
-const onFilter = (event) => {
-  filters.value = event.filters
-  first.value = 0
-  loadData(1, rows.value)
-}
 
 const exportExcel = () => {
   try {
@@ -666,11 +725,27 @@ const initFilters = () => {
     pasien_nama: { value: null, matchMode: FilterMatchMode.CONTAINS },
     carabayar_nama: { value: null, matchMode: FilterMatchMode.EQUALS },
     penjamin_nama: { value: null, matchMode: FilterMatchMode.EQUALS },
+    total: { value: null, matchMode: FilterMatchMode.EQUALS },
     is_valid: { value: null, matchMode: FilterMatchMode.EQUALS },
     is_penjaminlebih1: { value: null, matchMode: FilterMatchMode.EQUALS },
   }
 }
 initFilters()
+
+const onFilter = (event) => {
+  filters.value = event.filters
+  first.value = 0
+  loadData(1, rows.value)
+}
+const clearTableFilters = () => {
+  initFilters()
+  first.value = 0
+  loadData(1, rows.value)
+}
+
+const clearTableFiltersP1 = () => {
+  tablePenjamin1.value.clearTableFilters()
+}
 
 const onSort = (event) => {
   sortField.value = event.sortField
@@ -790,6 +865,7 @@ watch(showModalPenjamin1, (newVal, oldVal) => {
               <div class="flex justify-between items-center mb-2">
                 <h3 class="text-xl font-semibold text-[#17316E]">Data Pendapatan Pelayanan</h3>
                 <div class="flex gap-2">
+                  <Button label="Clear Column Filters" icon="pi pi-filter-slash" class="p-button-success" @click="clearTableFilters" />
                   <Button label="Export Excel" icon="pi pi-download" class="p-button-success" @click="exportExcel" />
                 </div>
               </div>
@@ -818,10 +894,10 @@ watch(showModalPenjamin1, (newVal, oldVal) => {
                 <Column field="no" header="No" style="width: 5%" />
                 <Column header="Action" style="width: 10%">
                   <template #body="slotProps">
-                    <SplitButton
-                      label="Action"
-                      icon="pi pi-ellipsis-v"
-                      size="small"
+                    <SplitButton 
+                      label="Action" 
+                      icon="pi pi-ellipsis-v" 
+                      size="small" 
                       severity="secondary"
                       :model="[
                         { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
@@ -830,6 +906,7 @@ watch(showModalPenjamin1, (newVal, oldVal) => {
                         { label: 'Sinkron Fase 2', icon: 'pi pi-sync', command: () => handleSync2(slotProps.data), },
                         { label: 'Penjamin > 1', icon: 'pi pi-users', command: () => handlePenjamin1(slotProps.data), },
                         { label: 'Validasi', icon: 'pi pi-check', command: () => handleValidasi(slotProps.data), },
+                        { label: 'Batal Validasi', icon: 'pi pi-times', command: () => handleBatalValidasi(slotProps.data), },
                       ]"
                     />
                   </template>
@@ -837,17 +914,17 @@ watch(showModalPenjamin1, (newVal, oldVal) => {
                 <Column 
                   field="tgl_pendaftaran" 
                   header="Tgl Pendaftaran" 
-                  sortable
+                  sortable 
                   style="min-width: 8rem"
                 >
                   <template #body="{ data }">
-                    {{ data.tgl_pendaftaran }}
+                    {{ formatDateID(data.tgl_pendaftaran) }}
                   </template>
                 </Column>
                 <Column 
-                  field="no_pendaftaran"
+                  field="no_pendaftaran" 
                   header="No Pendaftaran" 
-                  :showFilterMatchModes="false"
+                  :showFilterMatchModes="false" 
                   style="width: 15%"
                 >
                   <template #body="{ data }">
@@ -857,10 +934,10 @@ watch(showModalPenjamin1, (newVal, oldVal) => {
                     <InputText v-model="filterModel.value" type="text" placeholder="Search No Pendaftaran" />
                   </template>
                 </Column>
-                <Column
-                  field="no_rekam_medik"
-                  header="No RM"
-                  :showFilterMatchModes="false"
+                <Column 
+                  field="no_rekam_medik" 
+                  header="No RM" 
+                  :showFilterMatchModes="false" 
                   style="min-width: 8rem"
                 >
                   <template #body="{ data }">
@@ -870,10 +947,10 @@ watch(showModalPenjamin1, (newVal, oldVal) => {
                     <InputText v-model="filterModel.value" type="text" placeholder="Search No RM" />
                   </template>
                 </Column>
-                <Column
-                  field="pasien_nama"
-                  header="Nama"
-                  :showFilterMatchModes="false"
+                <Column 
+                  field="pasien_nama" 
+                  header="Nama" 
+                  :showFilterMatchModes="false" 
                   style="min-width: 12rem"
                 >
                   <template #body="{ data }">
@@ -883,21 +960,12 @@ watch(showModalPenjamin1, (newVal, oldVal) => {
                     <InputText v-model="filterModel.value" type="text" placeholder="Search Nama" />
                   </template>
                 </Column>
-                <Column
-                  field="tgl_pelayanan"
-                  header="Tgl Selesai"
-                  sortable
-                  style="min-width: 8rem"
-                >
+                <Column field="tgl_pelayanan" header="Tgl Selesai" sortable style="min-width: 8rem">
                   <template #body="{ data }">
-                    {{ data.tgl_pelayanan }}
+                    {{ formatDateID(data.tgl_pelayanan) }}
                   </template>
                 </Column>
-                <Column
-                  field="jenis_tagihan"
-                  header="Jenis Pelayanan"
-                  style="min-width: 8rem"
-                >
+                <Column field="jenis_tagihan" header="Jenis Pelayanan" style="min-width: 8rem">
                   <template #body="{ data }">
                     {{ data.jenis_tagihan }}
                   </template>
@@ -946,9 +1014,39 @@ watch(showModalPenjamin1, (newVal, oldVal) => {
                     />
                   </template>
                 </Column>
-                <Column field="total" header="Tagihan RS" style="text-align: right">
-                  <template #body="{ data }">
-                    {{ new Intl.NumberFormat('id-ID').format(data.total || 0) }}
+                <Column 
+                  field="total" 
+                  header="Tagihan RS" 
+                  :showFilterMatchModes="false" 
+                  :showFilterMenu="true"
+                  style="text-align: right"
+                >
+                  <template #body="slotProps">
+                      {{ new Intl.NumberFormat('id-ID').format(slotProps.data.total || 0) }}
+                  </template>
+                  <template #filter="{ filterModel }">
+                    <Dropdown
+                      v-model="filterModel.matchMode"
+                      :options="[
+                        { label: 'Kurang dari', value: FilterMatchMode.LESS_THAN },
+                        { label: 'Lebih dari', value: FilterMatchMode.GREATER_THAN },
+                        { label: 'Kurang dari sama dengan', value: FilterMatchMode.LESS_THAN_OR_EQUAL_TO },
+                        { label: 'Lebih dari sama dengan', value: FilterMatchMode.GREATER_THAN_OR_EQUAL_TO },
+                        { label: 'Sama dengan', value: FilterMatchMode.EQUALS },
+                        { label: 'Tidak sama dengan', value: FilterMatchMode.NOT_EQUALS }
+                      ]"
+                      optionLabel="label"
+                      optionValue="value"
+                      class="w-full mb-2"
+                    />
+                    <InputNumber 
+                      v-model="filterModel.value" 
+                      class="w-full"
+                      placeholder="Masukkan angka" 
+                      mode="currency"
+                      currency="IDR"
+                      locale="id-ID"
+                    />
                   </template>
                 </Column>
                 <Column field="tagihan_dijamin" header="Tagihan Dijamin" style="text-align: right">
@@ -1125,6 +1223,7 @@ watch(showModalPenjamin1, (newVal, oldVal) => {
               <div class="flex justify-between items-center mb-2">
                 <h3 class="text-xl font-semibold text-[#17316E]">Data Penjamin</h3>
                 <div class="flex gap-2">
+                  <Button label="Clear Column Filters" icon="pi pi-filter-slash" class="p-button-success" @click="clearTableFiltersP1" />
                   <Button label="Export Excel" icon="pi pi-download" class="p-button-success" @click="exportExcelP1" />
                 </div>
               </div>

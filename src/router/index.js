@@ -125,8 +125,8 @@ const router = createRouter({
         {
           path: 'acrual/potensi-lainnya',
           name: 'acrual-potensi-lainnya',
-          component: () => import('../views/pendapatan/PotensiLainya.vue'),
-          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Acrual', 'Potensi Lainya'] },
+          component: () => import('../components/pendapatan/potensiLainnya/DataPotensiLainnya.vue'),
+          meta: { roles: ['admin', 'accountant'], breadcrumb: ['Acrual', 'Potensi Lainnya'] },
         },
 
         // Pertanggung Jawaban Routes
