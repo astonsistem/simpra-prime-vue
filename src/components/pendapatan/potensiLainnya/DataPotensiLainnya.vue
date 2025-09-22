@@ -12,7 +12,10 @@ import SplitButton from 'primevue/splitbutton'
 import api from '@/services/http.js'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
-import ModalSetor from '@/components/pendapatan/buktiSetor/ModalSetor.vue'
+import * as XLSX from 'xlsx'
+import ModalPotensiLainnya from '@/components/pendapatan/potensiLainnya/ModalPotensiLainnya.vue'
+import ModalTerimaPotensi from '@/components/pendapatan/ModalTerimaPotensi.vue'
+import ModalRincianPotensiLainnya from '@/components/pendapatan/potensiLainnya/ModalRincianPotensiLainnya.vue'
 
 const formatDateToYYYYMMDD = (date) => {
   if (!date) return null
@@ -64,6 +67,12 @@ const bulanOptions = ref([
     { label: 'November', value: 11 },
     { label: 'Desember', value: 12 },
 ])
+const buktiTagihanOptions = [
+  { label: 'True', value: true },
+  { label: 'False', value: false },
+]
+const akunOptions = ref([])
+const caraPembayaranOptions = ref([])
 const bankOptions = ref([])
 const data = ref([])
 const totalRecords = ref(0)
@@ -71,10 +80,11 @@ const rows = ref(10)
 const first = ref(0)
 const loading = ref(false)
 const selectedItem = ref(null)
-const showModalSetor = ref(false)
+const showModal = ref(false)
+const showModalTerima = ref(false)
+const showModalRincian = ref(false)
 const sortField = ref(null)
 const sortOrder = ref(null)
-const modalSetor = ref(null)
 
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
@@ -137,7 +147,7 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
   if (filters.value) {
     Object.keys(filters.value).forEach((key) => {
       if (filters.value[key].value !== null && filters.value[key].value !== undefined) {
-        if (key === "total_setor") {
+        if (key === "sisa_potensi") {
           q[key] = {
             value: filters.value[key].value,
             matchMode: filters.value[key].matchMode
@@ -164,7 +174,7 @@ const loadData = async (page = 1, pageSize = rows.value) => {
       loading.value = false
       return
     }
-    const response = await api.get('/bukti_setor', { params: query })
+    const response = await api.get('/potensi_lainnya', { params: query })
     if (response.data && response.data.items) {
       data.value = response.data.items.map((item, index) => ({
         ...item,
@@ -212,13 +222,17 @@ const searchData = () => {
   loadData(1, rows.value)
 }
 
-const handleSetor = async (item) => {
+const handleAdd = () => {
+  selectedItem.value = null
+  showModal.value = true
+}
+const handleEdit = async (item) => {
   try {
     loading.value = true
-    const response = await api.get(`/bukti_setor/${item.rc_id}`)
+    const response = await api.get(`/potensi_lainnya/${item.id}`)
     if (response.data) {
       selectedItem.value = { ...response.data }
-      showModalSetor.value = true
+      showModal.value = true
     } else {
       toast.add({
         severity: 'error',
@@ -238,36 +252,165 @@ const handleSetor = async (item) => {
     loading.value = false
   }
 }
-const handleCetak = async (item) => {
+const handleTerima = async (item) => {
+  if (item.sisa_potensi == 0 || item.is_buktitagihan) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Peringatan',
+      detail: 'Data yang sudah lunas atau memiliki bukti tagihan tidak dapat melakukan aksi terima.',
+      life: 3000,
+    })
+    return
+  }
   try {
     loading.value = true
-    const response = await api.get(`/bukti_setor/${item.rc_id}`)
-    if (!response.data) {
-      throw new Error("Gagal memuat detail data")
+    const response = await api.get(`/potensi_lainnya/${item.id}`)
+    if (response.data) {
+      selectedItem.value = { ...response.data }
+      showModalTerima.value = true
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Gagal',
+        detail: 'Gagal memuat detail data',
+        life: 3000,
+      })
     }
-    selectedItem.value = { ...response.data }
-
-    await modalSetor.value.exportPDF()
   } catch (error) {
-    console.error("Aksi Cetak gagal:", error)
     toast.add({
-      severity: "error",
-      summary: "Gagal",
-      detail: "Aksi Cetak gagal. Silakan coba lagi.",
+      severity: 'error',
+      summary: 'Gagal',
+      detail: 'Gagal memuat detail data',
       life: 3000,
     })
   } finally {
     loading.value = false
   }
 }
+const handleRincian = async (item) => {
+  if (item.is_buktitagihan) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Peringatan',
+      detail: 'Data yang memiliki bukti tagihan tidak dapat membuat rincian.',
+      life: 3000,
+    })
+    return
+  }
+  try {
+    loading.value = true
+    const response = await api.get(`/potensi_lainnya/${item.id}`)
+    if (response.data) {
+      selectedItem.value = { ...response.data }
+      showModalRincian.value = true
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Gagal',
+        detail: 'Gagal memuat detail data',
+        life: 3000,
+      })
+    }
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal',
+      detail: 'Gagal memuat detail data',
+      life: 3000,
+    })
+  } finally {
+    loading.value = false
+  }
+}
+const handleDelete = (item) => {
+  if (item.terbayar != 0) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Peringatan',
+      detail: 'Data yang sudah terbayar tidak dapat dihapus.',
+      life: 3000,
+    })
+    return
+  }
+  toast.add({
+      severity: 'warn',
+      summary: 'Konfirmasi',
+      detail: 'Apakah Anda yakin ingin menghapus data ini?',
+      group: 'confirm',
+      data: {
+          url: `/potensi_lainnya/${item.id}`,
+          title: 'hapus'
+      }
+  })
+}
+const onConfirmAction = async (event) => {
+    toast.removeGroup('confirm')
+    const { url, title } = event.data
+    try {
+        if (title === 'hapus') {
+            await api.delete(url)
+        } else {
+            await api.get(url)
+        }
+        toast.add({
+            severity: 'success',
+            summary: 'Berhasil',
+            detail: `Aksi ${title} berhasil dijalankan`,
+            life: 3000,
+        })
+        loadData(1, rows.value)
+    } catch (error) {
+        console.error(`Gagal ${title}:`, error)
+        toast.add({
+            severity: 'error',
+            summary: 'Gagal',
+            detail: `Aksi ${title} gagal. Silakan coba lagi.`,
+            life: 3000,
+        })
+    }
+}
+const onReject = () => {
+    toast.removeGroup('confirm')
+}
+const handleSaved = () => {
+  showModal.value = false
+  showModalTerima.value = false
+  loadData(1, rows.value)
+}
 
+const fetchAkun = async () => {
+  try {
+    const response = await api.get('/akun/list/akunpotensilain')
+    if (response.data && response.data.data) {
+      akunOptions.value = response.data.data.map((item) => ({
+        label: item.akun_nama,
+        value: item.akun_id,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data penjamin:', error)
+  }
+}
+const fetchCaraPembayaran = async () => {
+  try {
+    const response = await api.get('/carapembayaran/list')
+    if (response.data && response.data.data) {
+      caraPembayaranOptions.value = response.data.data.map((item) => ({
+        label: item.bayar_nama,
+        value: item.bayar_nama,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data cara pembayaran:', error)
+  }
+}
 const fetchBank = async () => {
   try {
     const response = await api.get('/bank/list')
     if (response.data && response.data.data) {
       bankOptions.value = response.data.data.map((item) => ({
         label: item.bank_nama,
-        value: item.bank_id,
+        value: item.bank_nama,
       }))
     }
   } catch (error) {
@@ -276,15 +419,100 @@ const fetchBank = async () => {
 }
 
 onMounted(async () => {
+  await fetchAkun()
+  await fetchCaraPembayaran()
   await fetchBank()
 })
+
+
+const exportExcel = () => {
+  try {
+    // Prepare headers for Excel (excluding Action column)
+    const headers = [
+      'No',
+      'No Dokumen',
+      'Tgl Dokumen',
+      'Pihak ke-3',
+      'Uraian',
+      'Tgl Berlaku',
+      'Tgl Berakhir',
+      'Jumlah',
+      'Terbayar',
+      'Sisa Potensi',
+      'Bukti Tagihan',
+    ]
+
+    // Prepare data for Excel
+    const excelData = data.value.map((item, index) => [
+      item.no || index + 1,
+      item.no_dokumen || '',
+      item.tgl_dokumen || '',
+      item.pihak3 || '',
+      item.uraian || '',
+      item.tgl_berlaku || '',
+      item.tgl_akhir || '',
+      item.total ?? 0,
+      item.terbayar ?? 0,
+      item.sisa_potensi ?? 0,
+      item.is_buktitagihan ?? false,
+    ])
+
+
+    // Create workbook and worksheet
+    const workbook = XLSX.utils.book_new()
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...excelData])
+    // Auto-fit columns
+    worksheet['!cols'] = headers.map((header, i) => ({
+      wch: Math.max(
+        header.length,
+        ...excelData.map(row =>
+          row[i] ? row[i].toString().length : 0
+        )
+      ) + 2,
+    }))
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Potensi Lainnya')
+
+
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    })
+
+    // Download file
+    const link = document.createElement('a')
+    const url = URL.createObjectURL(blob)
+    link.setAttribute('href', url)
+    link.setAttribute('download', `potensi_lainnya_${new Date().toISOString().split('T')[0]}.xlsx`)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    toast.add({
+      severity: 'success',
+      summary: 'Export Berhasil',
+      detail: 'Data berhasil diekspor ke Excel',
+      life: 3000,
+    })
+  } catch (error) {
+    console.error('Gagal export Excel:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Export Gagal',
+      detail: 'Gagal mengekspor data ke Excel',
+      life: 3000,
+    })
+  }
+}
 
 const initFilters = () => {
   filters.value = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    no_dokumen: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    pihak3: { value: null, matchMode: FilterMatchMode.CONTAINS },
     uraian: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    bank: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    total_setor: { value: null, matchMode: FilterMatchMode.EQUALS },
+    sisa_potensi: { value: null, matchMode: FilterMatchMode.EQUALS },
+    is_buktitagihan: { value: null, matchMode: FilterMatchMode.EQUALS },
   }
 }
 initFilters()
@@ -399,9 +627,11 @@ const onSort = (event) => {
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full"
     >
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xl font-semibold text-[#17316E]">Data Bukti Setor</h3>
+        <h3 class="text-xl font-semibold text-[#17316E]">Data Potensi Lainnya</h3>
         <div class="flex gap-2">
+          <Button label="Tambah Data" icon="pi pi-plus" class="p-button-success" @click="handleAdd" />
           <Button label="Clear Column Filters" icon="pi pi-filter-slash" class="p-button-success" @click="clearTableFilters" />
+          <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel"/>
         </div>
       </div>
       <DataTable
@@ -434,21 +664,49 @@ const onSort = (event) => {
               size="small"
               severity="secondary"
               :model="[
-                { label: 'Setor', icon: 'pi pi-money-bill', command: () => handleSetor(slotProps.data) },
-                { label: 'Cetak', icon: 'pi pi-download', command: () => handleCetak(slotProps.data) },
+                { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
+                { label: 'Terima', icon: 'pi pi-check', command: () => handleTerima(slotProps.data) },
+                { label: 'Rincian', icon: 'pi pi-book', command: () => handleRincian(slotProps.data) },
+                { label: 'Hapus', icon: 'pi pi-trash', command: () => handleDelete(slotProps.data) },
               ]"
             />
           </template>
         </Column>
         <Column 
-          field="tgl_rc" 
-          header="Tgl Setor (Tgl RC)" 
+          field="no_dokumen" 
+          header="No Dokumen" 
+          :showFilterMatchModes="false" 
+          style="min-width: 12rem"
+        >
+            <template #body="{ data }">
+                {{ data.no_dokumen }}
+            </template>
+            <template #filter="{ filterModel }">
+              <InputText v-model="filterModel.value" type="text" placeholder="Search No Dokumen" />
+            </template>
+        </Column>
+        <Column 
+          field="tgl_dokumen" 
+          header="Tgl Dokumen" 
           sortable 
           style="min-width: 8rem"
         >
           <template #body="{ data }">
-            {{ formatDateID(data.tgl_rc) }}
+            {{ formatDateID(data.tgl_dokumen) }}
           </template>
+        </Column>
+        <Column 
+          field="pihak3" 
+          header="Pihak ke-3" 
+          :showFilterMatchModes="false" 
+          style="min-width: 12rem"
+        >
+            <template #body="{ data }">
+                {{ data.pihak3 }}
+            </template>
+            <template #filter="{ filterModel }">
+              <InputText v-model="filterModel.value" type="text" placeholder="Search Pihak ke-3" />
+            </template>
         </Column>
         <Column 
           field="uraian" 
@@ -463,61 +721,45 @@ const onSort = (event) => {
                 <InputText v-model="filterModel.value" type="text" placeholder="Search Uraian" />
             </template>
         </Column>
-        <Column
-          field="bank"
-          header="Bank"
-          :showFilterMatchModes="false"
+        <Column 
+          field="tgl_berlaku" 
+          header="Tgl Berlaku" 
+          sortable 
           style="min-width: 8rem"
         >
           <template #body="{ data }">
-            {{ data.bank }}
-          </template>
-          <template #filter="{ filterModel }">
-            <Dropdown
-              v-model="filterModel.value"
-              :options="bankOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Select Bank"
-              class="p-column-filter"
-              showClear
-            />
+            {{ formatDateID(data.tgl_berlaku) }}
           </template>
         </Column>
-        <Column field="kredit" header="Nilai RC" style="text-align: right">
+        <Column 
+          field="tgl_akhir" 
+          header="Tgl Berakhir" 
+          sortable 
+          style="min-width: 8rem"
+        >
+          <template #body="{ data }">
+            {{ formatDateID(data.tgl_akhir) }}
+          </template>
+        </Column>
+        <Column field="total" header="Jumlah" style="text-align: right">
             <template #body="slotProps">
-                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.kredit || 0) }}
+                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.total || 0) }}
             </template>
         </Column>
-        <Column field="volume" header="Jumlah Kwitansi" style="text-align: right">
+        <Column field="terbayar" header="Terbayar" style="text-align: right">
             <template #body="slotProps">
-                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.volume || 0) }}
-            </template>
-        </Column>
-        <Column field="total_kwitansi" header="Total Kwitansi" style="text-align: right">
-            <template #body="slotProps">
-                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.total_kwitansi || 0) }}
-            </template>
-        </Column>
-        <Column field="admin_kredit" header="Admin EDC" style="text-align: right">
-            <template #body="slotProps">
-                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.admin_kredit || 0) }}
-            </template>
-        </Column>
-        <Column field="admin_debit" header="Admin QRIS" style="text-align: right">
-            <template #body="slotProps">
-                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.admin_debit || 0) }}
+                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.terbayar || 0) }}
             </template>
         </Column>
         <Column 
-          field="total_setor" 
-          header="Total Setor" 
+          field="sisa_potensi" 
+          header="Sisa Potensi" 
           :showFilterMatchModes="false" 
           :showFilterMenu="true"
           style="text-align: right"
         >
             <template #body="slotProps">
-                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.total_setor || 0) }}
+                {{ new Intl.NumberFormat('id-ID').format(slotProps.data.sisa_potensi || 0) }}
             </template>
             <template #filter="{ filterModel }">
               <Dropdown
@@ -544,17 +786,72 @@ const onSort = (event) => {
               />
             </template>
         </Column>
+        <Column
+          field="is_buktitagihan"
+          header="Bukti Tagihan"
+          :showFilterMatchModes="false"
+          style="min-width:6rem;text-align:center"
+        >
+          <template #body="{ data }">
+            <i v-if="data.is_buktitagihan" class="pi pi-check text-green-500"></i>
+            <i v-else class="pi pi-times text-red-500"></i>
+          </template>
+          <template #filter="{ filterModel }">
+            <Dropdown
+              v-model="filterModel.value"
+              :options="buktiTagihanOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select Bukti Tagihan"
+              class="p-column-filter"
+              showClear
+            />
+          </template>
+        </Column>
       </DataTable>
     </div>
-    <ModalSetor 
-      ref="modalSetor"
-      v-model="showModalSetor" 
+    <ModalPotensiLainnya 
+      v-model="showModal" 
       :item="selectedItem" 
       :options="{
+        akun: akunOptions,
+      }"
+      @saved="handleSaved" 
+    />
+    <ModalTerimaPotensi
+      v-model="showModalTerima" 
+      :item="selectedItem"
+      jenisPotensi="lainnya"
+      :options="{
+        akun: akunOptions,
+        caraPembayaran: caraPembayaranOptions,
         bank: bankOptions,
+      }"
+      @saved="handleSaved"
+    />
+    <ModalRincianPotensiLainnya 
+      v-model="showModalRincian" 
+      :item="selectedItem" 
+      :options="{
+        akun: akunOptions,
       }"
     />
     <Toast />
+    <Toast position="center" group="confirm">
+      <template #message="slotProps">
+        <div class="flex flex-col items-center" style="flex: 1">
+          <div class="text-center">
+            <i class="pi pi-exclamation-triangle" style="font-size: 3rem"></i>
+            <h4>{{ slotProps.message.summary }}</h4>
+            <p>{{ slotProps.message.detail }}</p>
+          </div>
+          <div class="grid grid-cols-2 gap-4 mt-4">
+            <Button label="Tidak" @click="onReject()" />
+            <Button label="Ya" @click="onConfirmAction(slotProps.message)" />
+          </div>
+        </div>
+      </template>
+    </Toast>
   </div>
 </template>
 

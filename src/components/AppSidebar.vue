@@ -83,6 +83,8 @@ const menuItems = ref([
     label: 'Pelaporan',
     icon: 'pi pi-file',
 
+    children: [],
+
   },
 ])
 
