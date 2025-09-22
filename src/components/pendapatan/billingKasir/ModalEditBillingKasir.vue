@@ -21,7 +21,7 @@
           <span class="font-semibold text-gray-400">Informasi Pembayaran</span>
         </template>
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Tgl. Kwitansi</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Tgl. Kwitansi <span class="text-red-500">*</span></label>
           <DatePicker v-model="formData.tgl_buktibayar" date-format="dd/mm/yy" placeholder="Tgl. Kwitansi" showIcon
             class="w-full" :invalid="errors?.tgl_buktibayar?.length" />
           <div v-if="errors.tgl_buktibayar" class="text-red-500 text-sm mt-1">{{ errors?.tgl_buktibayar[0] }}</div>
@@ -32,26 +32,26 @@
           <div v-if="errors.no_buktibayar" class="text-red-500 text-sm mt-1">{{ errors?.no_buktibayar[0] }}</div>
         </div>
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Jumlah Bayar</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jumlah Bayar <span class="text-red-500">*</span></label>
           <InputNumber v-model="formData.total" placeholder="Jumlah" class="w-full" mode="currency" currency="IDR"
             locale="id-ID" :invalid="errors?.total?.length" />
           <div v-if="errors.total" class="text-red-500 text-sm mt-1">{{ errors?.total[0] }}</div>
         </div>
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Biaya Admin EDC</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Biaya Admin EDC <span class="text-red-500">*</span></label>
           <InputNumber v-model="formData.admin_kredit" placeholder="Biaya Admin EDC" class="w-full" mode="currency"
             currency="IDR" locale="id-ID" :invalid="errors?.admin_kredit?.length" />
           <div v-if="errors.admin_kredit" class="text-red-500 text-sm mt-1">{{ errors?.admin_kredit[0] }}</div>
         </div>
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Biaya Admin QRIS</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Biaya Admin QRIS <span class="text-red-500">*</span></label>
           <InputNumber v-model="formData.admin_debit" placeholder="Biaya Admin QRIS" class="w-full" mode="currency"
             currency="IDR" locale="id-ID" :invalid="errors?.admin_debit?.length" />
           <div v-if="errors.admin_debit" class="text-red-500 text-sm mt-1">{{ errors?.admin_debit[0] }}</div>
         </div>
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Selisih</label>
-          <InputNumber v-model="formData.selisih" placeholder="Selisih" class="w-full" mode="currency" currency="IDR"
+          <label class="block mb-1 text-sm font-medium text-gray-700">Selisih <span class="text-red-500">*</span></label>
+          <InputNumber v-model="formData.selisih" placeholder="Selisih" class="w-full" show-buttons step="1000" currency="IDR"
             locale="id-ID" :invalid="errors?.selisih?.length" />
           <div v-if="errors.selisih" class="text-red-500 text-sm mt-1">{{ errors?.selisih[0] }}</div>
         </div>
@@ -63,12 +63,12 @@
         </div>
         <Divider />
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Cara Pembayaran</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Cara Pembayaran <span class="text-red-500">*</span></label>
           <Dropdown v-model="formData.cara_pembayaran" :options="optionsCaraPembayaran" optionLabel="label" optionValue="value" placeholder="Pilih Cara Pembayaran" class="w-full" :invalid="errors?.cara_pembayaran?.length" />
           <div v-if="errors.cara_pembayaran" class="text-red-500 text-sm mt-1">{{ errors?.cara_pembayaran[0] }}</div>
         </div>
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Bank Tujuan</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Bank Tujuan <span class="text-red-500">*</span></label>
           <Dropdown v-model="formData.bank_tujuan" :options="optionsBankTujuan" optionLabel="label"
             optionValue="value" placeholder="Pilih Bank Tujuan" class="w-full" :invalid="errors?.bank_tujuan?.length" />
           <div v-if="errors.bank_tujuan" class="text-red-500 text-sm mt-1">{{ errors?.bank_tujuan[0] }}</div>
@@ -170,7 +170,7 @@
           <div v-if="errors.instalasi_id" class="text-red-500 text-sm mt-1">{{ errors?.instalasi_id[0] }}</div>
         </div>
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Tagihan</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Tagihan <span class="text-red-500">*</span></label>
           <Dropdown v-model="formData.jenis_tagihan" :options="optionsSumberTransaksi" optionLabel="label"
             optionValue="value" placeholder="Pilih Jenis Tagihan" class="w-full" :invalid="errors?.jenis_tagihan?.length" />
           <div v-if="errors.jenis_tagihan" class="text-red-500 text-sm mt-1">{{ errors?.jenis_tagihan[0] }}</div>
@@ -211,13 +211,15 @@
               optionLabel="label"
               optionValue="value"
               placeholder="Pilih Rekening DPA"
-              class="w-full"
+              class="w-[348px]"
               :invalid="errors?.rek_id?.length"
             />
             <Message v-if="errors.rek_id" severity="error" size="small" variant="simple">{{ errors?.rek_id[0] }}</Message>
           </div>
       </Fieldset>
-
+    </div>
+    <div class="text-end text-gray-500 px-4 -mt-2">
+       (<span class="text-red-500">*</span>) <span class="">wajib diisi</span>
     </div>
 
     <template #footer>
@@ -366,8 +368,9 @@ watch(
 const hitungJumlahNetto = () => {
   const total = formData.value.total || 0
   const adminKredit = formData.value.admin_kredit || 0
+  const adminDebit = formData.value.admin_debit || 0
   const selisih = formData.value.selisih || 0
-  return total - (adminKredit + selisih)
+  return ( parseInt(total) - parseInt(adminKredit) - parseInt(adminDebit) )  + parseInt(selisih)
 }
 
 const jumlahNetto = computed(() => {
@@ -488,7 +491,9 @@ const optionsSumberTransaksi = ref([])
 const fetchSumberTransaksi = async () => {
   if (optionsSumberTransaksi.value.length) return; // Cek jika sudah ada data, tidak perlu fetch ulang
   try {
-    const response = await api.get('/sumbertransaksi/list')
+    const response = await api.get('/sumbertransaksi/list?sumber-transaksi', {
+      params: { sumber_jenis: 'Billing Kasir' }
+    })
     if (response.data.data) {
       optionsSumberTransaksi.value = response.data.data.map((item) => ({
         label: item.sumber_nama,

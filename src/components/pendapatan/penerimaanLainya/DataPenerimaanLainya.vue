@@ -1,172 +1,61 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { FilterMatchMode } from '@primevue/core/api'
-import DatePicker from 'primevue/datepicker'
-import Select from 'primevue/select'
-import Button from 'primevue/button'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import InputText from 'primevue/inputtext'
-import SplitButton from 'primevue/splitbutton'
-import Menu from 'primevue/menu'
-import IconField from 'primevue/iconfield'
-import InputIcon from 'primevue/inputicon'
 import { useToast } from 'primevue/usetoast'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 import ModalSyncPenerimaan from './modal/TarikDataPenerimaanLainya.vue'
 import ModalEditPenerimaan from './modal/EditPenerimaan.vue'
-import Toast from 'primevue/toast'
-import * as XLSX from 'xlsx'
-import ModalValidasiPenerimaan from './modal/ModalValidasiPenerimaan.vue'
-import ModalSetorPenerimaan from './modal/ModalSetorPenerimaan.vue'
+import { usePenerimaanLain } from '@/composables/usePenerimaanLain'
+import { FilterMatchMode } from '@primevue/core/api'
+import ModalValidasi from '../ModalValidasi.vue'
+import ModalSetor from '../ModalSetor.vue'
 
 const toast = useToast()
+const { 
+  bulanOptions, 
+  tahunPeriodeOptions,
+  jenisPeriodeOptions,
+  filters,
+  formFilters,
+  data,
+  totalRecords,
+  loading,
+  loadData,
+  initFilters,
+  clearFilters,
+  exportExcel: exportExcelPenerimaanLain
+} = usePenerimaanLain()
 
-const formFilters = ref({
-  jenis_periode: 'BULANAN',
-  tahunPeriode: '',
-  bulanAwal: null,
-  bulanAkhir: null,
-  tglAwal: null,
-  tglAkhir: null,
-})
 
-const filters = ref()
-const tahunPeriodeOptions = Array.from(
-  { length: 10 },
-  (_, i) => `${new Date().getFullYear() - 5 + i}`
-)
-
-const jenisPeriodeOptions = ref([
-  { label: 'Bulanan', value: 'BULANAN' },
-  { label: 'Tanggal', value: 'TANGGAL' },
-])
-
-const bulanOptions = ref([
-    { label: 'Januari', value: 1 },
-    { label: 'Februari', value: 2 },
-    { label: 'Maret', value: 3 },
-    { label: 'April', value: 4 },
-    { label: 'Mei', value: 5 },
-    { label: 'Juni', value: 6 },
-    { label: 'Juli', value: 7 },
-    { label: 'Agustus', value: 8 },
-    { label: 'September', value: 9 },
-    { label: 'Oktober', value: 10 },
-    { label: 'November', value: 11 },
-    { label: 'Desember', value: 12 },
-])
-const data = ref([])
-const totalRecords = ref(0)
 const rows = ref(10)
 const first = ref(0)
-const loading = ref(false)
 const showModalSync = ref(false)
 const showModalEdit = ref(false)
 const selectedItem = ref(null)
 const showModalValidasi = ref(false)
-const validasiItem = ref(null)
 const showModalSetor = ref(false)
-const setorItem = ref(null)
 
-const formatDateToYYYYMMDD = (date) => {
-  if (!date) return null
-  const d = new Date(date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+watch(() => filters.value, (newVal) => {
+  if (newVal.jumlahBruto.min !== null || newVal.jumlahBruto.max !== null) {
+    newVal.jumlahBruto.matchMode = FilterMatchMode.BETWEEN
+    filters.value.jumlahBruto.value = true
+  } else {
+    newVal.jumlahBruto.matchMode = FilterMatchMode.EQUALS
+    filters.value.jumlahBruto.value = null
+  }
+  if (newVal.jumlahNetto.min !== null || newVal.jumlahNetto.max !== null) {
+    newVal.jumlahNetto.matchMode = FilterMatchMode.BETWEEN
+    filters.value.jumlahNetto.value = true
+  } else {
+    newVal.jumlahNetto.matchMode = FilterMatchMode.EQUALS
+    filters.value.jumlahNetto.value = null
+  }
+}, { deep: true })
+
+const rowStyle = (rowData) => {
+  if (rowData.is_valid === true) return { backgroundColor: '#d4edda', color: '#155724' }
 }
 
-const buildQuery = (page = 1, pageSize = rows.value) => {
-  const q = {
-    page,
-    size: pageSize,
-  }
-  if (formFilters.value.jenis_periode) q.periode = formFilters.value.jenis_periode
-  if (formFilters.value.jenis_periode === 'BULANAN') {
-    if (formFilters.value.tahunPeriode) {
-      q.tahunPeriode = formFilters.value.tahunPeriode
-    }
-    if (formFilters.value.bulanAwal) {
-      q.bulanAwal = formFilters.value.bulanAwal
-    }
-    if (formFilters.value.bulanAkhir) {
-      q.bulanAkhir = formFilters.value.bulanAkhir
-    }
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
-      const startDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAwal - 1, 1)
-      q.tglAwal = formatDateToYYYYMMDD(startDate)
-    }
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAkhir) {
-      const endDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAkhir, 0)
-      q.tglAkhir = formatDateToYYYYMMDD(endDate)
-    }
-  } else if (formFilters.value.jenis_periode === 'TANGGAL') {
-    if (formFilters.value.tglAwal) q.tglAwal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
-    if (formFilters.value.tglAkhir) q.tglAkhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
-  }
 
-  if (filters.value) {
-    Object.keys(filters.value).forEach((key) => {
-      if (filters.value[key].value) {
-        // Handle date filters specially
-        if (key === 'tgl_bayar' || key === 'tgl_dokumen') {
-          q[key] = formatDateToYYYYMMDD(filters.value[key].value)
-        } else {
-          q[key] = filters.value[key].value
-        }
-      }
-    })
-  }
-  return q
-}
-
-const loadData = async (page = 1, pageSize = rows.value) => {
-  loading.value = true
-  try {
-    const query = buildQuery(page, pageSize)
-    const response = await api.get('/penerimaan_lain', { params: query })
-    console.log('Response dari backend:', response.data) // Tambahkan ini untuk debug
-    
-    if (response.data && response.data.items) {
-      data.value = response.data.items.map((item, index) => ({
-        ...item,
-         no: (page - 1) * pageSize + index + 1,
-  // Mapping field names dari backend ke frontend
-  no_bayar: item.noBayar || '',
-  tgl_bayar: item.tglBayar || '',
-  pihak3: item.pihak3 || '',           // ← INI YANG DIPERBAIKI
-  uraian: item.uraian || '',
-  no_dokumen: item.noDokumen || '',
-  tgl_dokumen: item.tglDokumen || '',
-  sumber_transaksi: item.sumberTransaksi || '',
-  instalasi: item.instalasi || '',
-  metode_pembayaran: item.metodeBayar || '',
-  cara_pembayaran: item.caraBayar || '',
-  rekening_dpa: item.rekeningDpa || '',
-  bank_tujuan: item.bank || '',
-  total: parseInt(item.jumlahBruto) || 0,
-  admin_kredit: parseInt(item.biayaAdminEdc) || 0,
-  admin_debit: parseInt(item.biayaAdminQris) || 0,
-  selisih: parseInt(item.selisih) || 0,
-  jumlah_netto: parseInt(item.jumlahNetto) || 0,
-  akun_nama: item.akun_data?.akun_nama || '',
-      }))
-      totalRecords.value = response.data.total ?? 0
-
-      // If "All" is selected, update rows to show total records
-      if (pageSize === totalRecords.value && pageSize > 100) {
-        rows.value = 1000
-      }
-    }
-  } catch (error) {
-    console.error('Gagal memuat data:', error)
-    toast.add({ severity: 'error', summary: 'Gagal', detail: 'Gagal memuat data', life: 3000 })
-  } finally {
-    loading.value = false
-  }
-}
 const onPageChange = (event) => {
   let page = event.rows === 1000 ? 1 : event.page + 1
   first.value = event.first
@@ -197,86 +86,41 @@ const searchData = () => {
   loadData(1, rows.value)
 }
 
-const exportExcel = () => {
+const isValidated = (rowData) => {
+  return rowData.rc_id && parseInt(rowData.rc_id) > 0
+}
+
+const exportExcel = async () => {
+  await exportExcelPenerimaanLain('Penerimaan Lainya')
+}
+
+const handleAdd = async () => {
+
   try {
-    const headers = [
-      'No',
-      'No Bayar',
-      'Tanggal Bayar',
-      'Pihak3',
-      'Uraian',
-      'No Dokumen',
-      'Tanggal Dokumen',
-      'Sumber Transaksi',
-      'Instalasi',
-      'Metode Bayar',
-      'Cara Pembayaran',
-      'Rekening DPA',
-      'Bank',
-      'Jumlah Bruto',
-      'Biaya Admin EDC',
-      'Biaya Admin QRIS',
-      'Selisih',
-      'Jumlah Netto',
-    ]
-    const excelData = data.value.map((item, index) => [
-      item.no || index + 1,
-      item.no_bayar || '',
-      item.tgl_bayar || '',
-      item.pihak3 || '',
-      item.uraian || '',
-      item.no_dokumen || '',
-      item.tgl_dokumen || '',
-      item.sumber_transaksi || '',
-      item.instalasi || '',
-      item.metode_pembayaran || '',
-      item.cara_pembayaran || '',
-      item.rekening_dpa || '',
-      item.bank_tujuan || '',
-      item.total || 0,
-      item.admin_kredit || 0,
-      item.admin_debit || 0,
-      item.selisih || 0,
-      item.jumlah_netto || 0,
-    ])
-    const workbook = XLSX.utils.book_new()
-    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...excelData])
-    worksheet['!cols'] = Array(headers.length).fill({ wch: 15 })
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Penerimaan Lainnya')
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
-    const blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute(
-      'download',
-      `penerimaan_lainnya_${new Date().toISOString().split('T')[0]}.xlsx`
-    )
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    toast.add({
-      severity: 'success',
-      summary: 'Export Berhasil',
-      detail: 'Data berhasil diekspor ke Excel',
-      life: 3000,
-    })
+    loading.value = true
+    const response = await api.get(`/penerimaan_lain/create`)
+    if (response.data) {
+      selectedItem.value = response.data.data
+      selectedItem.value.total = null
+      showModalEdit.value = true
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Gagal',
+        detail: 'Gagal memuat detail data',
+        life: 3000,
+      })
+    }
   } catch (error) {
     toast.add({
       severity: 'error',
-      summary: 'Export Gagal',
-      detail: 'Gagal mengekspor data ke Excel',
+      summary: 'Gagal',
+      detail: 'Gagal memuat detail data',
       life: 3000,
     })
+  } finally {
+    loading.value = false
   }
-}
-
-const handleAdd = () => {
-  selectedItem.value = null
-  showModalEdit.value = true
 }
 
 const handleEdit = async (item) => {
@@ -293,7 +137,7 @@ const handleEdit = async (item) => {
     loading.value = true
     const response = await api.get(`/penerimaan_lain/${item.id}`)
     if (response.data) {
-      selectedItem.value = { ...response.data }
+      selectedItem.value = response.data.data
       showModalEdit.value = true
     } else {
       toast.add({
@@ -316,7 +160,7 @@ const handleEdit = async (item) => {
 }
 
 const handleValidasi = async (item) => {
-  if (item.tgl_validasi) {
+  if (item.rc_id) {
     toast.add({
       severity: 'warn',
       summary: 'Peringatan',
@@ -329,7 +173,7 @@ const handleValidasi = async (item) => {
     loading.value = true
     const response = await api.get(`/penerimaan_lain/${item.id}`)
     if (response.data) {
-      validasiItem.value = { ...response.data }
+      selectedItem.value = response.data.data
       showModalValidasi.value = true
     } else {
       toast.add({
@@ -354,10 +198,9 @@ const handleValidasi = async (item) => {
 const handleSetor = async (item) => {
   try {
     loading.value = true
-    // Ambil data setor dari backend (endpoint sama seperti validasi, bisa disesuaikan jika berbeda)
     const response = await api.get(`/penerimaan_lain/${item.id}`)
     if (response.data) {
-      setorItem.value = { ...response.data }
+      selectedItem.value = response.data.data
       showModalSetor.value = true
     } else {
       toast.add({
@@ -378,9 +221,47 @@ const handleSetor = async (item) => {
     loading.value = false
   }
 }
+const showModalCancelValidasi = ref(false)
 
-const handleBuktiBayar = (item) => {
-  console.log('Bukti Bayar item:', item)
+const confirmCancelValidasi = (item) => {
+  showModalCancelValidasi.value = true
+  selectedItem.value = item
+}
+
+const handleCancelValidasi = async () => {
+  try {
+    const item = selectedItem.value
+
+    if (!item.rc_id) {
+      throw new Error("Data belum divalidasi");
+    }
+
+    await api.post(`penerimaan_lain/cancel_validasi/penerimaan_lain`, {
+      id: item.id,
+      rc_id: item.rc_id,
+    })
+
+    toast.add({
+      severity: 'success',
+      summary: 'Berhasil',
+      detail: 'Validasi berhasil dibatalkan',
+      life: 3000,
+    })
+    selectedItem.value.value = null
+    showModalCancelValidasi.value = false
+    loadData(1, rows.value)
+  } catch (error) {
+    console.error('Gagal membatalkan validasi:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Gagal',
+      detail: error.response.data.message || 'Gagal membatalkan validasi. Silakan coba lagi.',
+      life: 3000,
+    })
+  } finally {
+    showModalCancelValidasi.value = false
+    loading.value = false
+  }
 }
 
 const handleDelete = (item) => {
@@ -421,12 +302,6 @@ const onReject = () => {
 
 const handleSaved = () => {
   showModalEdit.value = false
-  toast.add({
-    severity: 'success',
-    summary: 'Berhasil',
-    detail: 'Data berhasil disimpan',
-    life: 3000,
-  })
   loadData(1, rows.value)
 }
 
@@ -440,35 +315,10 @@ const onFilter = (event) => {
   loadData(1, rows.value)
 }
 
-const initFilters = () => {
-  filters.value = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    no_bayar: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    tgl_bayar: { value: null, matchMode: FilterMatchMode.DATE_IS },
-    pihak3: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    uraian: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    no_dokumen: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    tgl_dokumen: { value: null, matchMode: FilterMatchMode.DATE_IS },
-    sumber_transaksi: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    instalasi: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    metode_pembayaran: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    cara_pembayaran: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    rekening_dpa: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    bank_tujuan: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    total: { value: null, matchMode: FilterMatchMode.EQUALS },
-    admin_kredit: { value: null, matchMode: FilterMatchMode.EQUALS },
-    admin_debit: { value: null, matchMode: FilterMatchMode.EQUALS },
-    selisih: { value: null, matchMode: FilterMatchMode.EQUALS },
-    jumlah_netto: { value: null, matchMode: FilterMatchMode.EQUALS },
-  }
-}
+
 
 initFilters()
 
-const clearFilter = () => {
-  initFilters()
-  loadData(1, rows.value)
-}
 </script>
 
 <template>
@@ -612,6 +462,7 @@ const clearFilter = () => {
         filterDisplay="menu"
         :globalFilterFields="['no_bayar', 'pihak3', 'uraian', 'no_dokumen', 'akun_nama']"
         class="p-datatable-sm"
+        :rowStyle="rowStyle"
       >
         <template #header>
           <div class="flex justify-between">
@@ -620,7 +471,7 @@ const clearFilter = () => {
               icon="pi pi-filter-slash"
               label="Clear"
               outlined
-              @click="clearFilter()"
+              @click="clearFilters()"
             />
             <IconField>
               <InputIcon>
@@ -636,37 +487,62 @@ const clearFilter = () => {
               <p>Data Kosong</p>
             </div>
           </template>
-        <Column field="no" header="No" style="width: 5%" />
+        <Column field="no" header="No" style="width: 5%">
+          <template #body="slotProps">
+            {{ slotProps.index + 1 + first }}
+          </template>
+        </Column>
+        <Column field="validated" :showFilterMatchModes="false" style="width: 10%; text-align: center">
+          <template #header>
+            <i class="pi pi-check-circle" style="font-size: 1rem"></i>
+          </template>
+          <template #body="{ data }">
+            <i class="pi pi-check-circle"
+              :class="[isValidated(data) ? 'text-green-500' : 'text-gray-300', 'cursor-pointer']"
+              v-if="isValidated(data)"></i>
+          </template>
+          <template #filter="{ filterModel }">
+            <Dropdown optionValue="value" optionLabel="label" v-model="filterModel.value" :options="[{ label: 'Tervalidasi', value: '1' }, { label: 'Belum Tervalidasi', value: '0' }]"
+              placeholder="Filter Validasi" class="w-full" />
+          </template>
+        </Column>
         <Column header="Action" style="width: 15%">
           <template #body="slotProps">
-            <SplitButton
-              label="Aksi"
-              icon="pi pi-ellipsis-v"
-              size="small"
-              severity="secondary"
-              :model="[
-                {
-                  label: 'Ubah',
-                  icon: 'pi pi-pencil',
-                  command: () => handleEdit(slotProps.data),
-                },
-                {
-                  label: 'Setor',
-                  icon: 'pi pi-dollar',
-                  command: () => handleSetor(slotProps.data),
-                },
-                {
-                  label: 'Validasi',
-                  icon: 'pi pi-check',
-                  command: () => handleValidasi(slotProps.data),
-                },
-                {
-                  label: 'Hapus',
-                  icon: 'pi pi-trash',
-                  command: () => handleDelete(slotProps.data),
-                },
-              ]"
-            />
+            <SplitButton label="Aksi" size="small" severity="secondary" :model="[
+              {
+                label: 'Ubah',
+                icon: 'pi pi-pencil',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleEdit(slotProps.data)
+              },
+              {
+                label: 'Validasi',
+                icon: 'pi pi-check',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleValidasi(slotProps.data),
+              },
+              {
+                label: 'Setor',
+                icon: 'pi pi-dollar',
+                visible: () => !!isValidated(slotProps.data),
+                command: () => handleSetor(slotProps.data),
+              },
+              {
+                label: 'Batal Validasi',
+                icon: 'pi pi-times-circle',
+                style: 'color: red;',
+                visible: () => !!isValidated(slotProps.data),
+                command: () => confirmCancelValidasi(slotProps.data),
+              },
+              {
+                label: 'Hapus',
+                icon: 'pi pi-trash',
+                visible: () => !isValidated(slotProps.data),
+                command: () => handleDelete(slotProps.data),
+              },
+              
+            ]" />
+
           </template>
         </Column>
         <Column
@@ -694,8 +570,8 @@ const clearFilter = () => {
           <template #filter="{ filterModel }">
             <DatePicker
               v-model="filterModel.value"
-              dateFormat="dd/mm/yy"
-              placeholder="dd/mm/yyyy"
+              dateFormat="yy-mm-dd"
+              placeholder="yyyy-mm-dd"
             />
           </template>
         </Column>
@@ -750,55 +626,8 @@ const clearFilter = () => {
           <template #filter="{ filterModel }">
             <DatePicker
               v-model="filterModel.value"
-              dateFormat="dd/mm/yy"
-              placeholder="dd/mm/yyyy"
-            />
-          </template>
-        </Column>
-        <Column
-          field="sumber_transaksi"
-          header="Sumber Transaksi"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.sumber_transaksi }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by Sumber Transaksi"
-            />
-          </template>
-        </Column>
-        <Column
-          field="instalasi"
-          header="Instalasi"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.instalasi }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Instalasi" />
-          </template>
-        </Column>
-        <Column
-          field="metode_pembayaran"
-          header="Metode Bayar"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.metode_pembayaran }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by Metode Bayar"
+              dateFormat="yy-mm-dd"
+              placeholder="yyyy-mm-dd"
             />
           </template>
         </Column>
@@ -826,7 +655,7 @@ const clearFilter = () => {
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.rekening_dpa }}
+            {{ data.rekening_dpa?.rek_nama || '-' }}
           </template>
           <template #filter="{ filterModel }">
             <InputText
@@ -849,9 +678,29 @@ const clearFilter = () => {
             <InputText v-model="filterModel.value" type="text" placeholder="Search by Bank" />
           </template>
         </Column>
-        <Column field="total" header="Jumlah Bruto" style="text-align: right">
+        <Column field="jumlahBruto" header="Jumlah Bruto" :showFilterMatchModes="false" style="text-align: right">
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.total) }}
+          </template>
+          <template #filter="{ filterCallback, filterModel }">
+            <div class="flex flex-col gap-2">
+              <InputNumber
+                v-model="filterModel.min"
+                @change="filterCallback()"
+                placeholder="Min"
+                locale="id-ID"
+                size="small"
+                style="width: 100%"
+              />
+              <InputNumber
+                v-model="filterModel.max"
+                @change="filterCallback()"
+                placeholder="Max"
+                locale="id-ID"
+                size="small"
+                style="width: 100%"
+              />
+            </div>
           </template>
         </Column>
         <Column field="admin_kredit" header="Biaya Admin EDC" style="text-align: right">
@@ -878,26 +727,41 @@ const clearFilter = () => {
     </div>
     <ModalSyncPenerimaan v-model="showModalSync" @sync="loadData" />
     <ModalEditPenerimaan
-      :visible="showModalEdit"
+      v-model="showModalEdit" 
       :item="selectedItem"
-      @update:visible="showModalEdit = $event"
       @saved="handleSaved"
     />
-    <ModalValidasiPenerimaan
+    <ModalValidasi
       v-model="showModalValidasi"
-      :item="validasiItem"
+      :item="selectedItem"
+      header="Penerimaan Lainya"
       @validated="
         () => {
           showModalValidasi = false
-          loadData(1, rows.value)
+          selectedItem = null
+          loadData(1, rows)
         }
       "
     />
-    <ModalSetorPenerimaan
+    <ModalSetor
       v-model="showModalSetor"
-      :item="setorItem"
-      @setor="() => loadData(1, rows.value)"
+      :item="selectedItem"
+      @update:modelValue="() => {
+        showModalSetor = false
+        selectedItem = null
+        loadData(1, rows)
+      }"
     />
+    <Dialog :visible="showModalCancelValidasi" @update:visible="showModalCancelValidasi = $event" modal
+      header="Konfirmasi Batal Validasi" :closable="true" :style="{ width: '400px' }">
+      <div class="p-4">
+        <p>Apakah Anda yakin ingin membatalkan validasi data no. bayar: <strong>{{ selectedItem.no_bayar }}</strong> ?</p>
+        <div class="flex justify-end gap-2 pt-4">
+          <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi" />
+          <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)" />
+        </div>
+      </div>
+    </Dialog>
     <Toast position="center" group="confirm">
       <template #message="slotProps">
         <div class="flex flex-col items-center" style="flex: 1">

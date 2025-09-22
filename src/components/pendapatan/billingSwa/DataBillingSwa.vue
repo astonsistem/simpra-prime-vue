@@ -22,7 +22,7 @@ import Dialog from 'primevue/dialog'
 import Dropdown from 'primevue/dropdown'
 import Calendar from 'primevue/calendar'
 import ModalValidasiBillingSwa from './ModalValidasiBillingSwa.vue'
-import ModalSetorBillingSwa from './ModalSetorBillingSwa.vue'
+import ModalSetorBillingKasir from '../billingKasir/ModalSetorBillingKasir.vue'
 
 const toast = useToast()
 
@@ -130,6 +130,24 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
           q['rekId'] = filters.value[key].value.rekId
         }
       }
+      // jumlahBruto filter (between)
+      if( key === 'jumlahBruto') {
+        if(filters.value[key]?.min !== null) {
+          q['jumlahBrutoMin'] = filters.value[key].min
+        }
+        if(filters.value[key]?.max !== null) {
+          q['jumlahBrutoMax'] = filters.value[key].max
+        }
+      }
+      // jumlahNetto filter (between)
+      if( key === 'jumlahNetto') {
+        if(filters.value[key]?.min !== null) {
+          q['jumlahNettoMin'] = filters.value[key].min
+        }
+        if(filters.value[key]?.max !== null) {
+          q['jumlahNettoMax'] = filters.value[key].max
+        }
+      }
     })
   }
 
@@ -141,7 +159,7 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   try {
     const query = buildQuery(page, pageSize)
 
-    const response = await api.get('/billing_swa', { params: query })
+    const response = await apiClient.get('/billing_swa', { params: query })
     if (response.data && response.data.data) {
       data.value = response.data.data
       totalRecords.value = response.data?.meta?.total ?? 0
@@ -164,7 +182,6 @@ const onPageChange = (event) => {
   rows.value = event.rows
   loadData(page, event.rows)
 }
-
 
 const resetFilter = () => {
   formFilters.value = {
@@ -222,7 +239,7 @@ const exportExcel = () => {
       item.instalasi || '',
       item.metodeBayar || '',
       item.caraBayar || '',
-      item.rekeningDpa || '',
+      item.rekeningDpa?.rekNama || '',
       item.bank || '',
       item.jumlahBruto || 0,
       item.biayaAdminEdc || 0,
@@ -607,18 +624,35 @@ const initFilters = () => {
     noDokumen: { value: null, matchMode: FilterMatchMode.CONTAINS },
     tglDokumen: { value: null, matchMode: FilterMatchMode.DATE_IS },
     sumberTransaksi: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    instalasi: { value: null, matchMode: FilterMatchMode.CONTAINS },
     metodeBayar: { value: null, matchMode: FilterMatchMode.CONTAINS },
     caraBayar: { value: null, matchMode: FilterMatchMode.CONTAINS },
     rekeningDpa: { value: null, matchMode: FilterMatchMode.CONTAINS },
     bank: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    jumlahBruto: { value: null, matchMode: FilterMatchMode.EQUALS },
     biayaAdminEdc: { value: null, matchMode: FilterMatchMode.EQUALS },
     biayaAdminQris: { value: null, matchMode: FilterMatchMode.EQUALS },
     selisih: { value: null, matchMode: FilterMatchMode.EQUALS },
-    jumlahNetto: { value: null, matchMode: FilterMatchMode.EQUALS },
+    jumlahBruto: { value: null, min: null, max: null, matchMode: FilterMatchMode.BETWEEN },
+    jumlahNetto: { value: null, min: null, max: null, matchMode: FilterMatchMode.BETWEEN },
+    validated: { value: null, matchMode: FilterMatchMode.EQUALS },
   }
 }
+
+watch(() => filters.value, (newVal) => {
+  if (newVal.jumlahBruto.min !== null || newVal.jumlahBruto.max !== null) {
+    newVal.jumlahBruto.matchMode = FilterMatchMode.BETWEEN
+    filters.value.jumlahBruto.value = true
+  } else {
+    newVal.jumlahBruto.matchMode = FilterMatchMode.EQUALS
+    filters.value.jumlahBruto.value = null
+  }
+  if (newVal.jumlahNetto.min !== null || newVal.jumlahNetto.max !== null) {
+    newVal.jumlahNetto.matchMode = FilterMatchMode.BETWEEN
+    filters.value.jumlahNetto.value = true
+  } else {
+    newVal.jumlahNetto.matchMode = FilterMatchMode.EQUALS
+    filters.value.jumlahNetto.value = null
+  }
+}, { deep: true })
 
 initFilters()
 
@@ -791,11 +825,18 @@ function setor(data) {
         <Column field="no" header="No" style="width: 5%">
           <template #body="{ data, index }">{{ index + 1 + first }}</template>
         </Column>
-        <Column field="rcId" header="#" style="width: 10%; text-align: center">
+        <Column field="validated" :showFilterMatchModes="false" style="width: 10%; text-align: center">
+          <template #header>
+            <i class="pi pi-check-circle" style="font-size: 1rem"></i>
+          </template>
           <template #body="{ data }">
             <i class="pi pi-check-circle"
               :class="[isValidated(data) ? 'text-green-500' : 'text-gray-300', 'cursor-pointer']"
               v-if="isValidated(data)"></i>
+          </template>
+          <template #filter="{ filterModel }">
+            <Dropdown optionValue="value" optionLabel="label" v-model="filterModel.value" :options="[{ label: 'Tervalidasi', value: '1' }, { label: 'Belum Tervalidasi', value: '0' }]"
+              placeholder="Filter Validasi" class="w-full" />
           </template>
         </Column>
         <Column header="Action" style="width: 15%">
@@ -814,8 +855,8 @@ function setor(data) {
                 command: () => handleValidasi(slotProps.data),
               },
               {
-                label: 'Bukti Bayar',
-                icon: 'pi pi-file',
+                label: 'Setor',
+                icon: 'pi pi-send',
                 style: 'color: green;',
                 visible: () => !!isValidated(slotProps.data),
                 command: () => setor(slotProps.data),
@@ -941,19 +982,6 @@ function setor(data) {
           </template>
         </Column>
         <Column
-          field="instalasi"
-          header="Instalasi"
-          :showFilterMatchModes="false"
-          style="min-width: 12rem"
-        >
-          <template #body="{ data }">
-            {{ data.instalasi }}
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Instalasi" />
-          </template>
-        </Column>
-        <Column
           field="metodeBayar"
           header="Metode Bayar"
           :showFilterMatchModes="false"
@@ -996,13 +1024,13 @@ function setor(data) {
           <template #body="{ data }">
             {{ data.rekeningDpa?.rekNama }}
           </template>
-          <!-- <template #filter="{ filterModel }">
+          <template #filter="{ filterModel }">
             <InputText
               v-model="filterModel.value"
               type="text"
               placeholder="Search by Rekening DPA"
             />
-          </template> -->
+          </template>
         </Column>
         <Column field="bank" header="Bank" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
@@ -1012,9 +1040,29 @@ function setor(data) {
             <InputText v-model="filterModel.value" type="text" placeholder="Search by Bank" />
           </template>
         </Column>
-        <Column field="jumlahBruto" header="Jumlah Bruto" style="text-align: right">
+        <Column field="jumlahBruto" header="Jumlah Bruto" :showFilterMatchModes="false" style="text-align: right">
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlahBruto || 0) }}
+          </template>
+          <template #filter="{ filterCallback, filterModel }">
+            <div class="flex flex-col gap-2">
+              <InputNumber
+                v-model="filterModel.min"
+                @change="filterCallback()"
+                placeholder="Min"
+                locale="id-ID"
+                size="small"
+                style="width: 100%"
+              />
+              <InputNumber
+                v-model="filterModel.max"
+                @change="filterCallback()"
+                placeholder="Max"
+                locale="id-ID"
+                size="small"
+                style="width: 100%"
+              />
+            </div>
           </template>
         </Column>
         <Column field="biayaAdminEdc" header="Biaya Admin EDC" style="text-align: right">
@@ -1032,9 +1080,29 @@ function setor(data) {
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.selisih || 0) }}
           </template>
         </Column>
-        <Column field="jumlahNetto" header="Jumlah Netto" style="text-align: right">
+        <Column field="jumlahNetto" header="Jumlah Netto" :showFilterMatchModes="false" style="text-align: right">
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlahNetto || 0) }}
+          </template>
+          <template #filter="{ filterCallback, filterModel }">
+            <div class="flex flex-col gap-2">
+              <InputNumber
+                v-model="filterModel.min"
+                @change="filterCallback()"
+                placeholder="Min"
+                locale="id-ID"
+                size="small"
+                style="width: 100%"
+              />
+              <InputNumber
+                v-model="filterModel.max"
+                @change="filterCallback()"
+                placeholder="Max"
+                locale="id-ID"
+                size="small"
+                style="width: 100%"
+              />
+            </div>
           </template>
         </Column>
       </DataTable>
@@ -1124,7 +1192,7 @@ function setor(data) {
       :item="validasiItem"
       @validated="loadData(1, rows)"
     />
-    <ModalSetorBillingSwa v-model="showModalSetor" :item="selectedItem" />
+    <ModalSetorBillingKasir v-model="showModalSetor" :item="selectedItem" />
 
     <Toast />
     <Toast position="center" group="confirm">

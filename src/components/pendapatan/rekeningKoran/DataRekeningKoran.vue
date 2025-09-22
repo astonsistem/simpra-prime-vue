@@ -70,7 +70,7 @@ const formatDateToYYYYMMDD = (date) => {
 const buildQuery = (page = 1, pageSize = rows.value) => {
   const q = {
     page,
-    size: 100,
+    size: pageSize,
   }
   if (formFilters.value.jenis_periode) q.periode = formFilters.value.jenis_periode
   if (formFilters.value.jenis_periode === 'BULANAN') {
@@ -111,14 +111,14 @@ const loadData = async (page = 1, pageSize = rows.value) => {
   try {
     const query = buildQuery(page, pageSize)
     const response = await apiClient.get('/rekening_koran', { params: query })
-    console.log('response', response.data.items)
-    if (response.data && response.data.items) {
-      data.value = response.data.items.map((item, index) => ({
+    if (response.data.data && response.data.data.items) {
+      data.value = response.data.data.items.map((item, index) => ({
         ...item,
         no: (page - 1) * pageSize + index + 1,
       }))
-      totalRecords.value = response.data.total ?? 0
-
+      totalRecords.value = response.data.data.total ?? 0
+      
+      console.log('data', data.value)
       // If "All" is selected, update rows to show total records
       if (pageSize === totalRecords.value && pageSize > 100) {
         rows.value = 1000

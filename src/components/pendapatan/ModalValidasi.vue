@@ -1,27 +1,32 @@
 <template>
-  <Dialog :visible="modelValue" @update:visible="closeModal" modal header="Validasi Billing Kasir"
+  <Dialog :visible="modelValue" @update:visible="closeModal" modal
     :style="{ width: '35rem' }">
+    <template #header>
+      <div class="flex items-center justify-between w-full">
+        <div>Validasi {{ header }}</div>
+      </div>
+    </template>
     <div class="p-4 space-y-4">
-      <Fieldset legend="Data Billing Kasir">
+      <Fieldset :legend="`Data ${header}`">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm mb-2 ml-4">
           <!-- grid 2 column -->
           <div>No. Bayar</div>
-          <div>: <span class="font-bold">{{ item?.noBayar || '-' }}</span></div>
+          <div>: <span class="font-bold">{{ item?.no_bayar || '-' }}</span></div>
 
           <div>Tanggal Bayar</div>
-          <div>: <span class="font-bold">{{ item?.tglBayar || '-' }}</span></div>
+          <div>: <span class="font-bold">{{ item?.tgl_bayar || '-' }}</span></div>
 
           <div>Pasien</div>
-          <div>: <span class="font-bold">{{ item?.pasien || '-' }}</span></div>
+          <div>: <span class="font-bold">{{ item?.pihak3 || '-' }}</span></div>
 
           <div>Jumlah Bruto</div>
-          <div>: <span class="font-bold">{{ formatCurrency(item?.jumlahBruto) }}</span></div>
+          <div>: <span class="font-bold">{{ formatCurrency(item?.jumlah_bruto) }}</span></div>
 
           <div>Jumlah Netto</div>
           <div>: <span class="font-bold">{{ formatCurrency(jumlahNetto) }}</span></div>
 
           <div>Bank</div>
-          <div>: <span class="font-bold">{{ item?.bank || '-' }}</span></div>
+          <div>: <span class="font-bold">{{ bankTujuan }}</span></div>
       
         </div>
       </Fieldset>
@@ -31,7 +36,7 @@
         <FormRekeningKoran 
           v-model="form.rc_id" 
           v-model:selection="selectedRc"
-          v-model:bank="props.item.bank" 
+          v-model:bank="bankTujuan" 
           v-model:tgl_rc="props.item.tglBayar"
           placeholder="Rekening Koran" 
           class="w-full" 
@@ -68,17 +73,21 @@
   </Dialog>
 </template>
 <script setup>
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import api from '@/api/client.js'
 import { formatCurrency } from '@/utils/utils'
-import FormRekeningKoran from '../../form/RekeningKoran.vue'
+import FormRekeningKoran from '@/components/form/RekeningKoran.vue'
 
 const props = defineProps({
   modelValue: Boolean,
   item: Object,
+  header: {
+    type: String,
+    default: 'Penerimaan',
+  }
 })
 const emit = defineEmits(['update:modelValue', 'validated'])
 const toast = useToast()
@@ -94,7 +103,7 @@ watch(
   async (val) => {
     selectedRc.value = null
     if(val) {
-      form.value.rc_id = props.item.rcId
+      form.value.rc_id = getRcId()
     }
   }
 )
@@ -103,12 +112,24 @@ const jumlahNetto = computed(() => {
   if (!props.item) return 0
 
   return (
-    parseInt(props.item.jumlahBruto || 0) -
+    parseInt(props.item.jumlah_bruto || 0) -
     parseInt(props.item.admin_kredit || 0) -
     parseInt(props.item.admin_debit || 0) -
     parseInt(props.item.selisih || 0)
   )
 })
+
+const bankTujuan = computed(() => {
+  return props.item.bank 
+    ? props.item.bank : props.item.bank_tujuan
+    ? props.item.bank_tujuan : null
+})
+
+function getRcId() {
+  return props.item.rc_id 
+    ? props.item.rc_id : props.item.rcId
+    ? props.item.rcId : null
+}
 
 function closeModal() {
   emit('update:modelValue', false)
@@ -127,7 +148,7 @@ async function doValidasi() {
       return
     }
 
-    await api.put(`/billing_kasir/validasi/penerimaan_layanan`, {
+    await api.post(`/penerimaan_lain/validasi/penerimaan_lain`, {
       id: props.item.id,
       rc_id: selectedRc.value.rc_id,
     })

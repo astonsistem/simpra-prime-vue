@@ -1,5 +1,6 @@
 import axios from 'axios'
 import api from '../api/client'
+import { set } from 'lodash'
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:8000/api'
 
@@ -19,6 +20,24 @@ export const authService = {
 
   async getCurrentUser() {
     return await api.get(`${BASE_URL}/auth/user/me`)
+  },
+
+  async getProfile() {
+    try {
+      const token = this.getAccessToken()
+      const response = await axios.get(
+        `${BASE_URL}/auth/profile`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error('Get profile failed:', error)
+      throw error
+    }
   },
 
   decodeJWT(token) {
@@ -46,8 +65,20 @@ export const authService = {
     return user?.role || null
   },
 
+  setAccessToken(token) {
+    localStorage.setItem('accessToken', token)
+  },
+
   getAccessToken() {
     return localStorage.getItem('accessToken')
+  },
+
+  setRefreshToken(token) {
+    localStorage.setItem('refreshToken', token)
+  },
+
+  getRefreshToken() {
+    return localStorage.getItem('refreshToken')
   },
 
   async logout() {
@@ -72,4 +103,28 @@ export const authService = {
       window.location.href = '/login'
     }
   },
+
+  async changePassword(currentPassword, newPassword, newPasswordConfirmation) {
+    try {
+      const token = this.getAccessToken()
+      const response = await axios.put(
+        `${BASE_URL}/auth/profile/change-password`,
+        {
+          current_password: currentPassword,
+          new_password: newPassword,
+          new_password_confirmation: newPasswordConfirmation
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      return response.data
+    } catch (error) {
+      console.error('Change password failed:', error)
+      throw error
+    }
+  },
 }
+

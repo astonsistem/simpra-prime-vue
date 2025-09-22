@@ -1,20 +1,27 @@
 <script setup>
 import { useLayout } from '../composables/useLayout'
 import AppConfig from './AppConfig.vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ref, watch } from 'vue'
 import Menu from 'primevue/menu'
 import { authService } from '../services/authService'
 
 const route = useRoute()
+const router = useRouter()
 const breadcrumb = ref(route.meta.breadcrumb || [])
 const menu = ref()
 const items = ref([
   {
     label: 'Options',
     items: [
-      { label: 'Profile', icon: 'pi pi-user' },
-      { label: 'Ganti Password', icon: 'pi pi-pencil' },
+     
+      {
+        label: 'Profil & Ganti Password',
+        icon: 'pi pi-pencil',
+        command: () => {
+          router.push('/profile')
+        }
+      },
       // { label: 'Ganti Device', icon: 'pi pi-cog' },
       {
         label: 'Logout',
