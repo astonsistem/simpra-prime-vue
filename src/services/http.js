@@ -28,7 +28,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !error.config._retry) {
       error.config._retry = true
       try {
-        const { data } = await api.post('/auth/refresh', null, {
+        const { data } = await api.post('/refresh', null, {
           headers: {
             Authorization: `Bearer ${authService.getAccessToken()}`,
           },
