@@ -26,34 +26,21 @@ api.interceptors.response.use(
     const status = error.response?.status
 
     if (error.response?.status === 401 && !error.config._retry) {
-      error.config._retry = true
-      try {
-        const { data } = await api.post('/refresh', null, {
-          headers: {
-            Authorization: `Bearer ${authService.getAccessToken()}`,
-          },
-        })
-        console.log('refresh', data)
-        authService.setAccessToken(data.access_token)
-        error.config.headers.Authorization = `Bearer ${data.access_token}`
-        return api(error.config)
-      } catch (e) {
-        console.log('API Error 401: Unauthorized. Logging out.')
-        authService.logout()
+      console.log('API Error 401: Unauthorized. Logging out.')
+      authService.logout()
 
-        // rediirect to login beserta info halaman terakhir diakses
-        router.push('/login', {
-          query: {
-            redirect: router.currentRoute.value.fullPath,
-          },
-        })
+      // rediirect to login beserta info halaman terakhir diakses
+      router.push('/login', {
+        query: {
+          redirect: router.currentRoute.value.fullPath,
+        },
+      })
 
-        return Promise.reject({
-          type: 'auth',
-          status: status,
-          message: 'Unauthorized. Please log in again.',
-        })
-      }
+      return Promise.reject({
+        type: 'auth',
+        status: status,
+        message: 'Unauthorized. Please log in again.',
+      })
     }
 
     if (status === 422) {
