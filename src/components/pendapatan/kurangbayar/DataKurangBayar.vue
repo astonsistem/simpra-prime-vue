@@ -544,7 +544,7 @@ const handleSyncSubmit = async () => {
 <template>
   <div class="p-4">
     <h1 class="text-2xl font-bold mb-4 text-[#17316E]">Kurang Bayar/Selisih</h1>
-
+<!-- 
     <div class="flex gap-2 mb-4">
       <router-link to="/kas/kurang-bayar/data-transaksi" v-slot="{ navigate, isActive }">
         <Button
@@ -560,7 +560,7 @@ const handleSyncSubmit = async () => {
           :class="{'p-button-info': isActive, 'p-button-secondary': !isActive}"
         />
       </router-link>
-    </div>
+    </div> -->
 
     <div>
       <div

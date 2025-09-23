@@ -83,12 +83,12 @@ const router = createRouter({
             {
               path: 'data-transaksi',
               name: 'kas-kurang-bayar-transaksi',
-              component: () => import('../components/pendapatan/kurangbayar/dataTransaksi/Index.vue'),
+              component: () => import('../components/pendapatan/kurangbayar/dataTransaksi/IndexDataTransaksi.vue'),
             },
             {
               path: 'data-selisih',
               name: 'kas-kurang-bayar-selisih',
-              component: () => import('../components/pendapatan/kurangbayar/dataSelisih/Index.vue'),
+              component: () => import('../components/pendapatan/kurangbayar/DataKurangBayar.vue'),
             },
             {
               path: 'data-selisih0',
