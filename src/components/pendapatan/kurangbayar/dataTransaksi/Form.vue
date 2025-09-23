@@ -27,9 +27,9 @@
             class="w-full"
             :invalid="errors?.tgl_setor?.length"
           />
-          <div v-if="errors.tgl_setor" class="text-red-500 text-sm mt-1">
-            {{ errors?.tgl_setor[0] }}
-          </div>
+          <Message v-if="errors.tgl_setor" severity="error" size="small" variant="simple">{{
+            errors?.tgl_setor[0]
+          }}</Message>  
         </div>
 
         <div class="mb-4">
@@ -40,6 +40,7 @@
             optionLabel="label"
             optionValue="value"
             class="w-full"
+            :invalid="errors?.jenis?.length"
           />
           <Message v-if="errors.jenis" severity="error" size="small" variant="simple">{{
             errors?.jenis[0]
@@ -54,6 +55,7 @@
             optionLabel="label"
             optionValue="value"
             class="w-full"
+            :invalid="errors?.cara_pembayaran?.length"
           />
           <Message v-if="errors.cara_pembayaran" severity="error" size="small" variant="simple">{{
             errors?.cara_pembayaran[0]
@@ -69,6 +71,7 @@
             optionLabel="label"
             optionValue="value"
             class="w-full"
+            :invalid="errors?.bank_tujuan?.length"
           />
           <Message v-if="errors.bank_tujuan" severity="error" size="small" variant="simple">{{
             errors?.bank_tujuan[0]
@@ -146,7 +149,30 @@
 
       </Fieldset>
       <Fieldset legend="Informasi Detail">
-        
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Tgl. Bukti</label>
+          <DatePicker
+            v-model="form.tgl_buktibayar"
+            showIcon
+            date-format="yy-mm-dd"
+            class="w-full"
+            :invalid="errors?.tgl_buktibayar?.length"
+          />
+          <Message v-if="errors.tgl_buktibayar" severity="error" size="small" variant="simple">{{
+            errors?.tgl_buktibayar[0]
+          }}</Message>  
+        </div>
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">No. Bukti</label>
+          <InputText
+            v-model="form.no_buktibayar"
+            class="w-full"
+            :invalid="errors?.no_buktibayar?.length"
+          />
+          <Message v-if="errors.no_buktibayar" severity="error" size="small" variant="simple">{{
+            errors?.no_buktibayar[0]
+          }}</Message>
+        </div>
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Penyetor</label>
           <InputText
@@ -154,7 +180,9 @@
             class="w-full"
             :invalid="errors?.penyetor?.length"
           />
-          <div v-if="errors.penyetor" class="text-red-500 text-sm mt-1">{{ errors?.penyetor[0] }}</div>
+          <Message v-if="errors.penyetor" severity="error" size="small" variant="simple">{{
+            errors?.penyetor[0]
+          }}</Message>
         </div>
 
         <div class="mb-4">
@@ -196,7 +224,9 @@
             { label: 'Piutang', value: 'Piutang' },
             { label: 'PDD', value: 'PDD' },
           ]" optionLabel="label" optionValue="value" placeholder="Klasifikasi" class="w-full" :invalid="errors?.klasifikasi?.length" />
-          <div v-if="errors.klasifikasi" class="text-red-500 text-sm mt-1">{{ errors?.klasifikasi[0] }}</div>
+          <Message v-if="errors.klasifikasi" severity="error" size="small" variant="simple">{{
+            errors?.klasifikasi[0]
+          }}</Message>
         </div>
 
       </Fieldset>
@@ -207,7 +237,7 @@
       <Button
         label="Simpan"
         icon="pi pi-check"
-        @click="saveData"
+        @click="submit"
         :loading="loading"
         class="p-button-success"
       />
@@ -216,20 +246,28 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue'
+import { ref, watch, computed } from 'vue'
 import useDataTransaksiForm from '@/composables/selisih/useDataTransaksiForm';
 import useCaraPembayaran from '@/composables/useCaraPembayaran'
 import useBankTujuan from '@/composables/useBankTujuan'
 import useRekeningDpa from '@/composables/useRekeningDpa'
 import useSumberTransaksi from '@/composables/useSumberTransaksi'
-import { useToast } from 'primevue/usetoast'
-import api from '@/api/client'
-import { formatCurrency } from '@/utils/utils'
 
 const visible = defineModel()
 const form = ref({})
-const errors = ref({})
-const { create } = useDataTransaksiForm()
+const emit = defineEmits(['update:modelValue', 'saved'])  
+const props = defineProps({
+  modelValue: {
+    type: Boolean,
+    default: false
+  },
+  item: {
+    type: Object,
+    default: null
+  }
+})
+
+const { store, update, loading, errors } = useDataTransaksiForm()
 const { fetchList: fetchCaraPembayaran, options: optionsCaraPembayaran } = useCaraPembayaran()
 const { fetchList: fetchBankTujuan, options: optionsBankTujuan } = useBankTujuan()
 const { fetchList: fetchRekeningDpa, options: optionsRekeningDpa } = useRekeningDpa()
@@ -242,14 +280,56 @@ const optionsJenis = ref([
   { label: 'Lebih Setor', value: 'Lebih Setor' },
 ])
 
+watch(() => props.item, (value) => {
+  if(value) {
+    form.value = value
+  }
+}, {immediate: true})
+
 watch(() => visible.value, (value) => {
   if(value) {
-    create()
+    errors.value = {}
     fetchCaraPembayaran()
     fetchBankTujuan()
     fetchRekeningDpa()
     fetchSumberTransaksi()
   }
 })
+const isEdit = computed(() => !!form.value.id)
+const jumlahNetto = computed(() => {
+  return (
+    (form.value.jumlah || 0) - 
+    (form.value.admin_kredit || 0) -
+    (form.value.admin_debit || 0)
+  )
+})
+
+watch(() => jumlahNetto.value, (value) => {
+  form.value.jumlah_netto = value
+})
+
+async function submit () {
+  if (isEdit.value) {
+    const response = await update(form.value)
+    if (response.status === 200) {
+      emit('saved', response)
+      closeModal()
+    }
+    return
+  }
+  
+  const response = await store(form.value)
+
+  if (response.status === 200) {
+    emit('saved', response)
+    closeModal()
+  }
+}
+
+function closeModal () {
+  form.value = {}
+  visible.value = false
+  errors.value = {}
+}
 
 </script>

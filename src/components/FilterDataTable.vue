@@ -2,7 +2,7 @@
   <div
     class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
     <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
-    <div class="grid gap-4" :class="{ 'grid-cols-5': form.jenisPeriode === 'BULANAN', 'grid-cols-4': form.jenisPeriode === 'TANGGAL'}">
+    <div class="grid gap-4" :class="{ 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5': form.jenisPeriode === 'BULANAN', 'grid-cols-2 md:grid-cols-4': form.jenisPeriode === 'TANGGAL'}">
       <div>
         <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
         <Select v-model="form.jenisPeriode" :options="jenisPeriodeOptions" optionLabel="label" optionValue="value"

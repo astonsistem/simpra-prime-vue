@@ -12,15 +12,21 @@ export default function useDataTransaksi() {
   const first = ref(0)
   const meta = ref({})
 
-  async function loadData () {
-    fetchData()
+  async function loadData (params = {}) {
+    fetchData(params)
   }
 
-  async function fetchData () {
+  async function fetchData (params = {}) {
     try {
       loading.value = true
-      const response = await api.get('/kurangbayar/data_transaksi')
-      console.log('response.data', response.data)
+      const response = await api.get('/kurangbayar/data_transaksi', {
+        params: {
+          page: first.value,
+          per_page: rows.value,
+          ...params
+        }
+      })
+   
       items.value = response.data.data
 
       return Promise.resolve(response)
@@ -39,10 +45,27 @@ export default function useDataTransaksi() {
     }
   }
 
+  function onPageChange(event) {
+    let page = event.rows === 1000 ? 1 : event.page + 1
+    first.value = event.first
+    if (rows.value > event.rows) {
+      page = 1
+      first.value = 0
+    }
+    rows.value = event.rows
+    loadData()
+  }
+
   return {
     loading,
     items,
+    filters,
+    rows,
+    total,
+    first,
+    meta,
     fetchData,
     loadData,
+    onPageChange,
   }
 }
