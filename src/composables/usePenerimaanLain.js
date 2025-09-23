@@ -40,6 +40,15 @@ export function usePenerimaanLain() {
       jumlahNetto: { value: null, min: null, max: null, matchMode: FilterMatchMode.BETWEEN },
       export: {value: null}
     }
+
+    formFilters.value = {
+      jenis_periode: 'BULANAN',
+      tahunPeriode: '',
+      bulanAwal: null,
+      bulanAkhir: null,
+      tglAwal: null,
+      tglAkhir: null,
+    }
   }
 
   function clearFilters () {

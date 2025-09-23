@@ -28,12 +28,12 @@
       <Fieldset legend="Informasi Billing">
         <!-- Tgl. Bayar (dropdown) -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Tgl. Bayar</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Tgl. Bayar <span class="text-red-500">*</span></label>
           <DatePicker
             v-model="formData.tgl_bayar"
             showIcon
-            date-format="dd/mm/yy"
-            placeholder="Tgl. Bayar"
+            date-format="yy-mm-dd"
+            placeholder="YYYY-MM-DD"
             class="w-full"
             :invalid="errors?.tgl_bayar?.length"
           />
@@ -58,7 +58,7 @@
 
         <!-- Jumlah Bruto -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Jumlah Bruto</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jumlah Bruto <span class="text-red-500">*</span></label>
           <InputNumber
             v-model="formData.total"
             placeholder="Jumlah Bruto"
@@ -76,7 +76,7 @@
 
         <!-- Biaya Admin EDC -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Biaya Admin EDC</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Biaya Admin EDC <span class="text-red-500">*</span></label>
           <InputNumber
             v-model="formData.admin_kredit"
             placeholder="Biaya Admin EDC"
@@ -96,7 +96,7 @@
 
         <!-- Biaya Admin QRIS -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Biaya Admin QRIS</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Biaya Admin QRIS <span class="text-red-500">*</span></label>
           <InputNumber
             v-model="formData.admin_debit"
             placeholder="Biaya Admin QRIS"
@@ -116,13 +116,11 @@
 
         <!-- Selisih -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Selisih</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Selisih <span class="text-red-500">*</span></label>
           <InputNumber
             v-model="formData.selisih"
             placeholder="Selisih"
             class="w-full"
-            mode="currency"
-            currency="IDR"
             locale="id-ID"
             show-buttons
             step="1000"
@@ -135,7 +133,7 @@
 
         <!-- Jumlah Netto -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Jumlah Netto</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jumlah Netto <span class="text-red-500">*</span></label>
           <InputNumber
             v-model="formData.jumlah_netto"
             placeholder="Jumlah Netto"
@@ -153,7 +151,7 @@
 
         <!-- Cara Pembayaran (dropdown) -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Cara Pembayaran</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Cara Pembayaran <span class="text-red-500">*</span></label>
           <Dropdown
             v-model="formData.cara_pembayaran"
             :options="optionsCaraPembayaran"
@@ -169,7 +167,7 @@
 
         <!-- Bank Tujuan (dropdown) -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Bank Tujuan</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Bank Tujuan  <span class="text-red-500">*</span></label>
           <Dropdown
             v-model="formData.bank_tujuan"
             :options="optionsBankTujuan"
@@ -185,7 +183,7 @@
 
         <!-- Pendapatan -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Pendapatan</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Pendapatan <span class="text-red-500">*</span></label>
           <InputNumber
             v-model="formData.pendapatan"
             placeholder="Pendapatan"
@@ -201,7 +199,7 @@
 
         <!-- PDD -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">PDD</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">PDD <span class="text-red-500">*</span></label>
           <InputNumber
             v-model="formData.pdd"
             placeholder="PDD"
@@ -217,7 +215,7 @@
 
         <!-- Piutang -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Piutang</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Piutang <span class="text-red-500">*</span></label>
           <InputNumber
             v-model="formData.piutang"
             placeholder="Piutang"
@@ -234,7 +232,7 @@
       <Fieldset legend="Informasi Detail">
         <!-- Jenis Penerimaan (dropdown) -->
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Penerimaan</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Penerimaan <span class="text-red-500">*</span></label>
           <FormJenisPenerimaan
             v-model="formData.akun_id"
             dataKey="akun_id"
@@ -283,8 +281,8 @@
           <DatePicker
             v-model="formData.tgl_dokumen"
             showIcon
-            date-format="dd/mm/yy"
-            placeholder="Tgl. Dokumen"
+            date-format="yy-mm-dd"
+            placeholder="YYYY-MM-DD"
             class="w-full"
             :invalid="errors?.tgl_dokumen?.length"
           />
@@ -354,6 +352,7 @@ import { ref, watch, computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import apiClient from '@/api/client'
 import FormJenisPenerimaan from '@/components/form/JenisPenerimaan.vue'
+import { formatDateToYYYYMMDD } from '../../../utils/dateUtils'
 
 const props = defineProps({
   modelValue: {
@@ -521,6 +520,8 @@ const saveData = async () => {
   errors.value = {}
   try {
     const payload = formData.value
+    payload.tgl_bayar = formatDateToYYYYMMDD(payload.tgl_bayar)
+    payload.tgl_dokumen = formatDateToYYYYMMDD(payload.tgl_dokumen)
 
     if (isEdit.value) {
       await apiClient.put(`/billing_swa/${formData.value.id}`, payload)
