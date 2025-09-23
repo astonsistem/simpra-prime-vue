@@ -104,8 +104,8 @@
             currency="IDR"
             locale="id-ID"
             show-buttons
-            step="1000"
-            min="0"
+            :step="1000"
+            :min="0"
             :invalid="errors?.admin_kredit?.length"
           />
         </div>
@@ -122,8 +122,8 @@
             currency="IDR"
             locale="id-ID"
             show-buttons
-            step="1000"
-            min="0"
+            :step="1000"
+            :min="0"
             :invalid="errors?.admin_debit?.length"
           />
           <Message v-if="errors.admin_debit" severity="error" size="small" variant="simple">{{
@@ -247,7 +247,7 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue'
-import useDataTransaksiForm from '@/composables/selisih/useDataTransaksiForm';
+import useDataTransaksiActions from '@/composables/selisih/useDataTransaksiActions';
 import useCaraPembayaran from '@/composables/useCaraPembayaran'
 import useBankTujuan from '@/composables/useBankTujuan'
 import useRekeningDpa from '@/composables/useRekeningDpa'
@@ -267,7 +267,7 @@ const props = defineProps({
   }
 })
 
-const { store, update, loading, errors } = useDataTransaksiForm()
+const { store, update, loading, errors } = useDataTransaksiActions()
 const { fetchList: fetchCaraPembayaran, options: optionsCaraPembayaran } = useCaraPembayaran()
 const { fetchList: fetchBankTujuan, options: optionsBankTujuan } = useBankTujuan()
 const { fetchList: fetchRekeningDpa, options: optionsRekeningDpa } = useRekeningDpa()
