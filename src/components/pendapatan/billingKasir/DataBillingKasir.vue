@@ -690,7 +690,11 @@ function setor(data) {
           'caraBayar',
           'rekeningDpa',
           'bank',
-        ]" class="p-datatable-sm">
+        ]" 
+        :rowStyle="(rowData) =>  {
+          if (!!rowData.rcId || !!rowData.rc_id) return { backgroundColor: '#d4edda', color: '#155724' }
+        }"
+        class="p-datatable-sm">
         <template #header>
           <div class="flex justify-between">
             <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />

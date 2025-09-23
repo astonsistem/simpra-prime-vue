@@ -796,6 +796,9 @@ function setor(data) {
         dataKey="id"
         filterDisplay="menu"
         :globalFilterFields="['noBayar', 'pasien', 'pihak3', 'uraian', 'noDokumen']"
+        :rowStyle="(rowData) =>  {
+          if (!!rowData.rcId || !!rowData.rc_id) return { backgroundColor: '#d4edda', color: '#155724' }
+        }"
         class="p-datatable-sm"
       >
         <template #header>
