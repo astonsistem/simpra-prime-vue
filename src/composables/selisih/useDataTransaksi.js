@@ -21,7 +21,7 @@ export default function useDataTransaksi() {
       loading.value = true
       const response = await api.get('/kurangbayar/data_transaksi', {
         params: {
-          page: first.value,
+          page: first.value > 0 ? first.value : 1,
           per_page: rows.value,
           ...params
         }

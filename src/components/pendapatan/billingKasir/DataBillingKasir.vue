@@ -125,6 +125,24 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
           q[key] = filters.value[key].value
         }
       }
+      // jumlahBruto filter (between)
+        if (key === 'jumlahBruto') {
+          if (filters.value[key]?.min !== null) {
+            q['jumlahBrutoMin'] = filters.value[key].min
+          }
+          if (filters.value[key]?.max !== null) {
+            q['jumlahBrutoMax'] = filters.value[key].max
+          }
+        }
+        // jumlahNetto filter (between)
+        if (key === 'jumlahNetto') {
+          if (filters.value[key]?.min !== null) {
+            q['jumlahNettoMin'] = filters.value[key].min
+          }
+          if (filters.value[key]?.max !== null) {
+            q['jumlahNettoMax'] = filters.value[key].max
+          }
+        }
     })
   }
 
@@ -160,7 +178,7 @@ const onPageChange = (event) => {
   }
 
   rows.value = event.rows
-  
+
   loadData(page, event.rows)
 }
 
@@ -198,6 +216,8 @@ const exportExcel = () => {
       'Metode Bayar',
       'Cara Pembayaran',
       'Rekening DPA',
+      'Cara Bayar',
+      'Kasir',
       'Bank',
       'Jumlah Bruto',
       'Biaya Admin EDC',
@@ -218,8 +238,10 @@ const exportExcel = () => {
       item.sumberTransaksi || '',
       item.instalasi || '',
       item.metodeBayar || '',
-      item.caraBayar || '',
+      item.caraPembayaran || '',
       item.rekeningDpa?.rekNama || '',
+      item.caraBayar || '',
+      item.kasir || '',
       item.bank || '',
       item.jumlahBruto || 0,
       item.biayaAdminEdc || 0,
@@ -246,6 +268,8 @@ const exportExcel = () => {
       { wch: 15 }, // Metode Bayar
       { wch: 15 }, // Cara Pembayaran
       { wch: 15 }, // Rekening DPA
+      { wch: 10 }, // Cara Bayar
+      { wch: 10 }, // Kasir
       { wch: 10 }, // Bank
       { wch: 15 }, // Jumlah Bruto
       { wch: 15 }, // Biaya Admin EDC
@@ -494,17 +518,21 @@ const initFilters = () => {
     sumberTransaksi: { value: null, matchMode: FilterMatchMode.CONTAINS },
     instalasi: { value: null, matchMode: FilterMatchMode.CONTAINS },
     metodeBayar: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    caraPembayaran: { value: null, matchMode: FilterMatchMode.CONTAINS },
     caraBayar: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    kasir: { value: null, matchMode: FilterMatchMode.CONTAINS },
     rekeningDpa: { value: null, matchMode: FilterMatchMode.CONTAINS },
     bank: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    jumlahBruto: { value: null, matchMode: FilterMatchMode.EQUALS },
+    kasir: { value: null, matchMode: FilterMatchMode.CONTAINS },
     biayaAdminEdc: { value: null, matchMode: FilterMatchMode.EQUALS },
     biayaAdminQris: { value: null, matchMode: FilterMatchMode.EQUALS },
     selisih: { value: null, matchMode: FilterMatchMode.EQUALS },
-    jumlahNetto: { value: null, matchMode: FilterMatchMode.EQUALS },
-    validated: { value: null, matchMode: FilterMatchMode.EQUALS },
     noClosingKasir: { value: null, matchMode: FilterMatchMode.CONTAINS },
     rekeningDpa: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    validated: { value: null, matchMode: FilterMatchMode.EQUALS },
+    jumlahBruto: { value: null, min: null, max: null, matchMode: FilterMatchMode.BETWEEN },
+    jumlahNetto: { value: null, min: null, max: null, matchMode: FilterMatchMode.BETWEEN },
+    export: { value: null }
   }
 }
 
@@ -559,6 +587,23 @@ watch(selectedSync, (val) => {
     syncForm.value = {}
   }
 })
+
+watch(() => filters.value, (newVal) => {
+  if (newVal.jumlahBruto.min !== null || newVal.jumlahBruto.max !== null) {
+    newVal.jumlahBruto.matchMode = FilterMatchMode.BETWEEN
+    filters.value.jumlahBruto.value = true
+  } else {
+    newVal.jumlahBruto.matchMode = FilterMatchMode.EQUALS
+    filters.value.jumlahBruto.value = null
+  }
+  if (newVal.jumlahNetto.min !== null || newVal.jumlahNetto.max !== null) {
+    newVal.jumlahNetto.matchMode = FilterMatchMode.BETWEEN
+    filters.value.jumlahNetto.value = true
+  } else {
+    newVal.jumlahNetto.matchMode = FilterMatchMode.EQUALS
+    filters.value.jumlahNetto.value = null
+  }
+}, { deep: true })
 
 const handleSyncSubmit = async () => {
   if (!selectedSync.value) {
@@ -677,8 +722,8 @@ function setor(data) {
         </div>
       </div>
       <DataTable :filters="filters" :value="data" responsiveLayout="scroll" paginator lazy :totalRecords="totalRecords"
-        :rows="rows" :first="first" :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]" @page="onPageChange" :loading="loading"
-        @filter="onFilter" dataKey="id" filterDisplay="menu" :globalFilterFields="[
+        :rows="rows" :first="first" :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]" @page="onPageChange"
+        :loading="loading" @filter="onFilter" dataKey="id" filterDisplay="menu" :globalFilterFields="[
           'validated',
           'noBayar',
           'pasien',
@@ -687,10 +732,14 @@ function setor(data) {
           'sumberTransaksi',
           'instalasi',
           'metodeBayar',
+          'caraPembayaran',
           'caraBayar',
+          'kasir',
           'rekeningDpa',
           'bank',
-        ]" class="p-datatable-sm">
+        ]" :rowStyle="(rowData) => {
+          if (!!rowData.rcId || !!rowData.rc_id) return { backgroundColor: '#d4edda', color: '#155724' }
+        }" class="p-datatable-sm">
         <template #header>
           <div class="flex justify-between">
             <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />
@@ -706,7 +755,7 @@ function setor(data) {
         </template>
 
         <Column field="no" header="No" style="width: 5%;">
-          <template #body="{ index }">{{ first + index + 1}}</template>
+          <template #body="{ index }">{{ first + index + 1 }}</template>
         </Column>
 
         <Column field="validated" style="width: 10%; text-align: center" :showFilterMatchModes="false">
@@ -719,7 +768,8 @@ function setor(data) {
               v-if="isValidated(data)"></i>
           </template>
           <template #filter="{ filterModel }">
-            <Dropdown optionValue="value" optionLabel="label" v-model="filterModel.value" :options="[{ label: 'Tervalidasi', value: '1' }, { label: 'Belum Tervalidasi', value: '0' }]"
+            <Dropdown optionValue="value" optionLabel="label" v-model="filterModel.value"
+              :options="[{ label: 'Tervalidasi', value: '1' }, { label: 'Belum Tervalidasi', value: '0' }]"
               placeholder="Filter Validasi" class="w-full" />
           </template>
         </Column>
@@ -847,9 +897,9 @@ function setor(data) {
           </template>
         </Column>
 
-        <Column field="caraBayar" header="Cara Pembayaran" :showFilterMatchModes="false" style="min-width: 12rem">
+        <Column field="caraPembayaran" header="Cara Pembayaran" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
-            {{ data.caraBayar }}
+            {{ data.caraPembayaran }}
           </template>
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search by Cara Pembayaran" />
@@ -865,6 +915,24 @@ function setor(data) {
           </template>
         </Column>
 
+        <Column field="caraBayar" header="Cara Bayar" :showFilterMatchModes="false" style="min-width: 12rem">
+          <template #body="{ data }">
+            {{ data.caraBayar }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Cara Bayar" />
+          </template>
+        </Column>
+
+        <Column field="kasir" header="Kasir" :showFilterMatchModes="false" style="min-width: 12rem">
+          <template #body="{ data }">
+            {{ data.kasir }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Kasir" />
+          </template>
+        </Column>
+
         <Column field="bank" header="Bank" :showFilterMatchModes="false" style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.bank }}
@@ -874,11 +942,18 @@ function setor(data) {
           </template>
         </Column>
 
-        <Column field="jumlahBruto" header="Jumlah Bruto" style="text-align: right">
+        <Column field="jumlahBruto" header="Jumlah Bruto" :showFilterMatchModes="false" style="text-align: right">
           <template #body="slotProps">
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlahBruto || 0) }}
           </template>
-
+          <template #filter="{ filterCallback, filterModel }">
+            <div class="flex flex-col gap-2">
+              <InputNumber v-model="filterModel.min" @change="filterCallback()" placeholder="Min" locale="id-ID"
+                size="small" style="width: 100%" />
+              <InputNumber v-model="filterModel.max" @change="filterCallback()" placeholder="Max" locale="id-ID"
+                size="small" style="width: 100%" />
+            </div>
+          </template>
         </Column>
 
         <Column field="biayaAdminEdc" header="Biaya Admin EDC" style="text-align: right">
@@ -955,8 +1030,10 @@ function setor(data) {
       <div class="p-4">
         <p>Apakah Anda yakin ingin membatalkan validasi data ini?</p>
         <div class="flex justify-end gap-2 pt-4">
-          <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)" severity="secondary" />
-          <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi" severity="warn" />
+          <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)"
+            severity="secondary" />
+          <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi"
+            severity="warn" />
         </div>
       </div>
     </Dialog>

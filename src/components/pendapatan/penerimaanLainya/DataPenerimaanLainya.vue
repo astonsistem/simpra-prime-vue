@@ -68,14 +68,7 @@ const onPageChange = (event) => {
 }
 
 const resetFilter = () => {
-  formFilters.value = {
-    jenis_periode: 'BULANAN',
-    tahunPeriode: '',
-    bulanAwal: null,
-    bulanAkhir: null,
-    tglAwal: null,
-    tglAkhir: null,
-  }
+  initFilters()
   first.value = 0
   rows.value = 10
   loadData(1, rows.value)
