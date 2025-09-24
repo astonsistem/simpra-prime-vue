@@ -23,7 +23,7 @@
           <div>: <span class="font-bold">{{ formatCurrency(jumlahNetto) }}</span></div>
 
           <div>Bank</div>
-          <div>: <span class="font-bold">{{ bankTujuan }}</span></div>
+          <div>: <span class="font-bold">{{ props.bank }}</span></div>
       
         </div>
       </Fieldset>
@@ -33,8 +33,8 @@
         <FormRekeningKoran 
           v-model="form.rc_id" 
           v-model:selection="selectedRc"
-          v-model:bank="bankTujuan" 
-          v-model:tgl_rc="props.item.tglBayar"
+          v-model:bank="props.bank" 
+          v-model:tgl_rc="props.date"
           placeholder="Rekening Koran" 
           class="w-full" 
           :errorMessage="errors?.rc_id?.length ? errors?.rc_id[0] : ''" 
@@ -77,10 +77,13 @@ import { useToast } from 'primevue/usetoast'
 import api from '@/api/client.js'
 import { formatCurrency } from '@/utils/utils'
 import FormRekeningKoran from '@/components/form/RekeningKoran.vue'
+// import { date } from '@primeuix/themes/aura/datepicker'
 
 const props = defineProps({
   modelValue: Boolean,
   item: Object,
+  bank: String,
+  date: String,
   header: {
     type: String,
     default: 'Penerimaan',
@@ -115,11 +118,6 @@ const jumlahNetto = computed(() => {
   )
 })
 
-const bankTujuan = computed(() => {
-  return props.item.bank 
-    ? props.item.bank : props.item.bank_tujuan
-    ? props.item.bank_tujuan : null
-})
 
 function getRcId() {
   return props.item.rc_id 

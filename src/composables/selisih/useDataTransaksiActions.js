@@ -156,7 +156,7 @@ export default function useDataTransaksiForm() {
       loading.value = true
       const response = await api.get(`/kurangbayar/data_transaksi/${data.id}`)
 
-      if(!response.data) {
+      if (!response.data) {
         throw new Error('Gagal memuat detail data')
       }
 
@@ -181,6 +181,38 @@ export default function useDataTransaksiForm() {
     }
   }
 
+  async function cancelValidation(item) {
+    try {
+      if (!item.rc_id) {
+        throw new Error('Data belum divalidasi')
+      }
+
+      const response = await api.post(`/kurangbayar/data_transaksi/cancel_validation`, {
+        id: item.id,
+        rc_id: item.rc_id,
+      })
+
+      toast.add({
+        severity: 'success',
+        summary: 'Berhasil',
+        detail: 'Validasi berhasil dibatalkan',
+        life: 3000,
+      })
+      return Promise.resolve(response)
+    } catch (error) {
+      console.error('Gagal membatalkan validasi:', error)
+      toast.add({
+        severity: 'error',
+        summary: 'Gagal',
+        detail: error.response.data.message || 'Gagal membatalkan validasi. Silakan coba lagi.',
+        life: 3000,
+      })
+      return Promise.reject(error)
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     loading,
     selectedItem,
@@ -192,5 +224,6 @@ export default function useDataTransaksiForm() {
     update,
     validasi,
     destroy,
+    cancelValidation,
   }
 }

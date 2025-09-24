@@ -192,33 +192,37 @@
   </div>
 
   <FormDataTransaksi v-model="modalForm" :item="selectedItem" @saved="loadData()" />
-  <ModalValidasi v-model="showModalValidasi" :item="selectedItem" header="Penerimaan Lainya" @validated="
+  
+  <ValidasiDataTransaksi 
+    v-model="showModalValidasi" 
+    :item="selectedItem" 
+    :bank="selectedItem?.bank_tujuan"
+    :date="selectedItem?.tgl_setor"
+    header="Selisih Kas" @validated="
     () => {
       showModalValidasi = false
       selectedItem = null
       loadData()
     }" />
-  <ModalSetor v-model="showModalSetor" :item="selectedItem" @update:modelValue="() => {
-    showModalSetor = false
-    selectedItem = null
-    loadData()
-  }" />
+    
+  <ModalSetor
+      v-model="showModalSetor"
+      :item="selectedItem"
+      @update:modelValue="() => {
+        showModalSetor = false
+        selectedItem = null
+        loadData(1, rows)
+      }"
+  >
+      <template #rekeningKoran="{ item }">
+        {{  item  }}
+      </template>
+  </ModalSetor>
 
   <Dialog :visible="showModalCancelValidasi" @update:visible="showModalCancelValidasi = $event" modal
     header="Konfirmasi Batal Validasi" :closable="true" :style="{ width: '400px' }">
     <div class="p-4">
-      <p>Apakah Anda yakin ingin membatalkan validasi data no. bayar: <strong>{{ selectedItem.no_bayar }}</strong> ?</p>
-      <div class="flex justify-end gap-2 pt-4">
-        <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi" />
-        <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)" />
-      </div>
-    </div>
-  </Dialog>
-
-  <Dialog :visible="showModalCancelValidasi" @update:visible="showModalCancelValidasi = $event" modal
-    header="Konfirmasi Batal Validasi" :closable="true" :style="{ width: '400px' }">
-    <div class="p-4">
-      <p>Apakah Anda yakin ingin membatalkan validasi data no. bayar: <strong>{{ selectedItem.no_bayar }}</strong> ?</p>
+      <p>Apakah Anda yakin ingin membatalkan validasi data ini ?</p>
       <div class="flex justify-end gap-2 pt-4">
         <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi" />
         <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)" />
@@ -251,7 +255,9 @@ import { formatCurrency } from '@/utils/utils';
 import useDataTransaksi from '@/composables/selisih/useDataTransaksi';
 import useDataTransaksiActions from '@/composables/selisih/useDataTransaksiActions';
 import FilterDataTable from '@/components/FilterDataTable.vue';
-import ModalValidasi from './Validasi.vue';
+import ValidasiDataTransaksi from './ValidasiDataTransaksi.vue';
+import ModalSetor from '@/components/pendapatan/billingKasir/ModalSetorBillingKasir.vue'
+
 
 const modalForm = ref(false)
 const selectedItem = ref(null)
@@ -260,8 +266,8 @@ const showModalValidasi = ref(false)
 const showModalSetor = ref(false)
 const showModalCancelValidasi = ref(false)
 
-const { create, show, destroy } = useDataTransaksiActions()
-const { items, first, last, rows, total, filters, clearFilter, loading, loadData, update: onTableUpdate, onPageChange } = useDataTransaksi()
+const { create, show, destroy, cancelValidation } = useDataTransaksiActions()
+const { items, first, rows, total, filters, clearFilter, loading, loadData, update: onTableUpdate, onPageChange } = useDataTransaksi()
 const emit = defineEmits(['search', 'openSyncDialog'])
 
 // experimental
@@ -313,40 +319,13 @@ const confirmCancelValidasi = (item) => {
   selectedItem.value = item
 }
 
-const handleCancelValidasi = async () => {
-  try {
-    const item = selectedItem.value
-
-    if (!item.rc_id) {
-      throw new Error("Data belum divalidasi");
-    }
-
-    await api.post(`/kurangbayar/data_transaksi/cancel_validation`, {
-      id: item.id,
-      rc_id: item.rc_id,
-    })
-
-    toast.add({
-      severity: 'success',
-      summary: 'Berhasil',
-      detail: 'Validasi berhasil dibatalkan',
-      life: 3000,
-    })
-    selectedItem.value.value = null
-    showModalCancelValidasi.value = false
+const handleCancelValidasi = () => {
+  cancelValidation(selectedItem.value).then(() => {
+    console.log('Data berhasil dibatalkan validasi')
     loadData()
-  } catch (error) {
-    console.error('Gagal membatalkan validasi:', error)
-    toast.add({
-      severity: 'error',
-      summary: 'Gagal',
-      detail: error.response.data.message || 'Gagal membatalkan validasi. Silakan coba lagi.',
-      life: 3000,
-    })
-  } finally {
+    selectedItem.value = null
     showModalCancelValidasi.value = false
-    loading.value = false
-  }
+  })
 }
 
 function handleDelete(item) {
