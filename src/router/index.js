@@ -88,7 +88,7 @@ const router = createRouter({
             {
               path: 'data-selisih',
               name: 'kas-kurang-bayar-selisih',
-              component: () => import('../components/pendapatan/kurangbayar/DataKurangBayar.vue'),
+              component: () => import('../components/pendapatan/kurangbayar/dataSelisih/IndexDataSelisih.vue'),
             },
             {
               path: 'data-selisih0',

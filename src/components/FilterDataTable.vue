@@ -46,8 +46,8 @@
     </div>
     <div class="mt-4 flex gap-2">
       <Button label="Reset Filter" icon="pi pi-refresh" class="p-button-secondary" @click="resetFilter" />
-      <Button label="Tarik Data Kurang Bayar" icon="pi pi-refresh" class="p-button-warning"
-        style="background-color: #ffa500; border: none; color: #fff" @click="emit('openSyncDialog')" />
+      <!-- <Button label="Tarik Data Kurang Bayar" icon="pi pi-refresh" class="p-button-warning"
+        style="background-color: #ffa500; border: none; color: #fff" @click="emit('openSyncDialog')" /> -->
     </div>
   </div>
 </template>
