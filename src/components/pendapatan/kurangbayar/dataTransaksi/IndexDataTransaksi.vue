@@ -22,7 +22,7 @@
             <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />
             <div class="flex gap-2">
               <Button label="Tambah Data" icon="pi pi-plus" class="p-button-primary" @click="handleAdd" />
-              <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel" />
+              <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" @click="handleExportExcel" />
             </div>
           </div>
         </template>
@@ -267,7 +267,7 @@ const showModalSetor = ref(false)
 const showModalCancelValidasi = ref(false)
 
 const { create, show, destroy, cancelValidation } = useDataTransaksiActions()
-const { items, first, rows, total, filters, clearFilter, loading, loadData, update: onTableUpdate, onPageChange } = useDataTransaksi()
+const { items, first, rows, total, filters, clearFilter, loading, loadData, update: onTableUpdate, onPageChange, exportExcel } = useDataTransaksi()
 const emit = defineEmits(['search', 'openSyncDialog'])
 
 // experimental
@@ -286,8 +286,8 @@ function searchData(data) {
   })
 }
 
-function exportExcel() {
-
+function handleExportExcel() {
+  exportExcel()
 }
 
 function handleAdd() {

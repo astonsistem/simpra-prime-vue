@@ -3,6 +3,7 @@ import api from '@/api/client.js'
 import { useToast } from 'primevue/usetoast'
 import { FilterMatchMode } from '@primevue/core'
 import { formatDateToYYYYMMDD } from '@/utils/dateUtils.js'
+import { exportExcel as exportExcelUtils } from '../../utils/utils'
 
 export default function useDataTransaksi() {
   const loading = ref(false)
@@ -87,7 +88,7 @@ export default function useDataTransaksi() {
       })
 
       items.value = response.data.data
-      total.value = response.data.meta.total
+      total.value = response.data?.data?.total ?? 0
       meta.value = response.data.meta
 
       return Promise.resolve(response)
@@ -116,6 +117,77 @@ export default function useDataTransaksi() {
     loadData({page, per_page: event.rows})
   }
 
+
+
+  async function exportExcel(modul = 'Penerimaan Lain')
+  {
+    try {
+      const headers = [
+        'No',
+        'Tgl. Setor',
+        'No Bukti',
+        'Tgl. Bukti',
+        'Penyetor',
+        'Jenis',
+        'Bank',
+        'Kasir',
+        'Loket',
+        'Sumber Transaksi',
+        'Rekening DPA',
+        'Jumlah',
+        'Admin EDC',
+        'Admin QRIS',
+        'Jumlah Netto',
+      ]
+
+      
+      const response = await fetchData({ export: true })
+
+      console.log('response', response)
+      
+      const dataExcel = response.data.data
+      const excelData = dataExcel.map((item, index) => [
+        item.no || index + 1,
+        item.tgl_setor || '',
+        item.no_buktibayar || '',
+        item.tgl_buktibayar || '',
+        item.penyetor || '',
+        item.jenis || '',
+        item.bank_tujuan || '',
+        item.kasir || '',
+        item.loket || '',
+        item.sumber_transaksi || '',
+        item.rekening_dpa?.rek_nama || '',
+        item.jumlah || '',
+        item.admin_kredit || 0,
+        item.admin_debit || 0,
+        item.jumlah_netto || 0,
+      ])
+  
+      exportExcelUtils(modul, excelData, headers)
+        .then(() => {
+            toast.add({
+            severity: 'success',
+            summary: 'Export Berhasil',
+            detail: 'Data berhasil diekspor ke Excel',
+            life: 3000,
+          })
+        })
+        .catch((error) => {
+          console.error('Gagal mengekspor data ke Excel:', error)
+          toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Gagal mengekspor data ke Excel',
+            life: 3000,
+          })
+        })
+      
+    } catch (error) {
+      console.error("Error export ", error)
+    }
+  }
+
   return {
     loading,
     items,
@@ -130,5 +202,6 @@ export default function useDataTransaksi() {
     fetchData,
     loadData,
     onPageChange,
+    exportExcel,
   }
 }
