@@ -256,7 +256,7 @@ import useDataTransaksi from '@/composables/selisih/useDataTransaksi';
 import useDataTransaksiActions from '@/composables/selisih/useDataTransaksiActions';
 import FilterDataTable from '@/components/FilterDataTable.vue';
 import ValidasiDataTransaksi from './ValidasiDataTransaksi.vue';
-import ModalSetor from '@/components/pendapatan/billingKasir/ModalSetorBillingKasir.vue'
+import ModalSetor from '../../CommonModalSetor.vue'
 
 
 const modalForm = ref(false)

@@ -47,7 +47,7 @@
 							Selisih</Button>
 						<div class="text-xs text-gray-400"><i class="pi pi-chart-line text-amber-300" style="font-size: 0.7rem"></i>
 							{{
-								hitungTotalBruto(penerimaanSelisih) }}</div>
+								hitungTotal('jumlah', penerimaanSelisih) }}</div>
 						<div class="text-xs text-gray-400"><i class="pi pi-chart-line text-green-300" style="font-size: 0.7rem"></i>
 							{{
 								hitungTotalNetto(penerimaanSelisih) }}</div>
@@ -126,27 +126,19 @@
 								</div>
 							</template>
 							<Column field="tgl_setor" header="Tgl. Setor"></Column>
-
 							<Column field="no_buktibayar" header="No. Bukti"></Column>
-
 							<Column field="tgl_buktibayar" header="Tgl. Bukti"></Column>
-
 							<Column field="penyetor" header="Penyetor"></Column>
-
 							<Column field="jenis" header="Jenis"></Column>
-
 							<Column field="bank_tujuan" header="Bank"></Column>
-
 							<Column field="sumber_transaksi" header="Sumber Transaksi"></Column>
-
 							<Column field="rekening_dpa" header="Rekening DPA"></Column>
-
 							<Column field="jumlah" header="Jumlah" style="text-align: right"></Column>
 							<template #footer>
 								<div class="flex justify-end">
 									<div class="w-1/4 grid grid-cols-2 gap-2">
 										<div>Total Bruto:</div>
-										<div class="text-end font-medium">{{ hitungTotalBruto(penerimaanSelisih) }}</div>
+										<div class="text-end font-medium">{{ hitungTotal('jumlah', penerimaanSelisih) }}</div>
 										<div>Total Netto:</div>
 										<div class="text-end font-medium text-blue-700">{{ hitungTotalNetto(penerimaanSelisih) }}</div>
 									</div>
@@ -246,6 +238,12 @@ function hitungTotalNetto(items) {
 	)
 }
 
+function hitungTotal(key,items) {
+	return formatCurrency(
+		items.reduce((total, item) => total + parseInt(item[key] || 0), 0)
+	)
+}
+
 function load() {
 	loading.value = true
 	api.get(`/billing_kasir/setor/${getRcId()}`)
@@ -258,7 +256,7 @@ function load() {
 			}
 		})
 		.catch((error) => {
-			console.log(error)
+			console.error(error)
 			toast.add({
 				severity: 'error',
 				summary: 'Error',
