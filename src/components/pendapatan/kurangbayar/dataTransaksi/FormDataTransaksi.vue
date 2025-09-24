@@ -63,7 +63,9 @@
               class="text-red-500">*</span></label>
           <InputNumber v-model="form.jumlah" class="w-full" mode="currency" currency="IDR" locale="id-ID" show-buttons
             :step="1000" :min="0" :invalid="errors?.jumlah?.length" />
-          <div v-if="errors.jumlah" class="text-red-500 text-sm mt-1">{{ errors?.jumlah[0] }}</div>
+          <Message v-if="errors.jumlah" severity="error" size="small" variant="simple">{{
+            errors?.jumlah[0] 
+          }}</Message>
         </div>
 
         <!-- Biaya Admin EDC -->
@@ -155,6 +157,15 @@
           <Message v-if="errors.no_buktibayar" severity="error" size="small" variant="simple">{{
             errors?.no_buktibayar[0]
             }}</Message>
+        </div>
+        
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Selisih Kurang</label>
+          <InputNumber v-model="form.nilai" class="w-full" mode="currency" currency="IDR" locale="id-ID" show-buttons
+            :step="1000" :min="0" :invalid="errors?.nilai?.length" />
+          <Message v-if="errors.nilai" severity="error" size="small" variant="simple">{{
+            errors?.nilai[0] 
+          }}</Message>
         </div>
 
         <div class="mb-4">

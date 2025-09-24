@@ -44,8 +44,8 @@
             &nbsp;
           </template>
           <template #body="{ data }">
-            <i class="pi pi-check-circle"
-              :class="[data.is_valid ? 'text-green-500' : 'text-gray-300', 'cursor-pointer']" v-if="data.is_valid"></i>
+            <i v-if="data.is_valid" class="pi pi-check-circle text-green-500 cursor-pointer" @click="confirmCancelValidasi(data)"></i>
+            <i v-else class="pi pi-check-circle text-gray-300 cursor-pointer" @click="handleValidasi(data)"></i>
           </template>
           <template #filter="{ filterModel, applyFilter }">
             <ToggleSwitch v-model="filterModel.value" @update:modelValue="applyFilter" />
@@ -76,7 +76,7 @@
               {
                 label: 'Batal Validasi',
                 icon: 'pi pi-times-circle',
-                style: 'color: red;',
+                style: () => ({ color: 'red' }),
                 visible: () => !!slotProps.data.is_valid,
                 command: () => confirmCancelValidasi(slotProps.data),
               },
@@ -172,6 +172,17 @@
           </template>
         </Column>
 
+        <Column field="nilai" header="Selisih Kurang" sortable :showFilterMatchModes="false" :showClearButton="true"
+          style="text-align: right">
+          <template #body="slotProps">
+            {{ formatCurrency(slotProps.data.nilai) }}
+          </template>
+          <template #filter="{ filterModel, applyFilter }">
+            <InputNumber v-model="filterModel.value" @keyup.enter="applyFilter" locale="id-ID"
+              placeholder="masukkan Selisih Kurang" />
+          </template>
+        </Column>
+
         <Column field="jumlah" header="Jumlah" sortable :showFilterMatchModes="false" :showClearButton="true"
           style="text-align: right">
           <template #body="slotProps">
@@ -191,7 +202,7 @@
     </div>
   </div>
 
-  <FormDataTransaksi v-model="modalForm" :item="selectedItem" @saved="loadData()" />
+  <FormDataTransaksi v-model="modalForm" :item="selectedItem" @saved="onSaved" />
   
   <ValidasiDataTransaksi 
     v-model="showModalValidasi" 
@@ -267,7 +278,21 @@ const showModalSetor = ref(false)
 const showModalCancelValidasi = ref(false)
 
 const { create, show, destroy, cancelValidation } = useDataTransaksiActions()
-const { items, first, rows, total, filters, clearFilter, loading, loadData, update: onTableUpdate, onPageChange, exportExcel } = useDataTransaksi()
+const { 
+  items,
+  first,
+  rows,
+  total,
+  filters,
+  sort,
+  clearFilter,
+  loading,
+  loadData,
+  update: onTableUpdate,
+  onPageChange,
+  exportExcel 
+} = useDataTransaksi()
+
 const emit = defineEmits(['search', 'openSyncDialog'])
 
 // experimental
@@ -283,6 +308,12 @@ function searchData(data) {
   loadData({
     ...data,
     ...filters.value
+  })
+}
+
+function onSaved() {
+  loadData({
+    ...sort.value
   })
 }
 

@@ -15,6 +15,7 @@ export default function useDataTransaksi() {
   const first = ref(0)
   const last = ref(0)
   const meta = ref({})
+  const sort = ref({})
 
   initFilters()
 
@@ -42,6 +43,8 @@ export default function useDataTransaksi() {
 
   function clearFilter() {
     initFilters()
+    sort.value = {}
+
     loadData()
   }
 
@@ -49,15 +52,19 @@ export default function useDataTransaksi() {
     filters.value = event.filters
     first.value = 0
 
+
+
     // sort if exists
-    const sort = {}
     if (event.sortField !== null && event.sortOrder !== null) {
-      sort.sort_field = event.sortField
-      sort.sort_order = event.sortOrder
+      sort.value.sort_field = event.sortField
+      sort.value.sort_order = event.sortOrder
+    }
+    else{
+      sort.value = {}
     }
     
     setTimeout(() => {
-      loadData({...sort})
+      loadData({...sort.value})
     }, 300);
   }
 
@@ -87,8 +94,10 @@ export default function useDataTransaksi() {
         },
       })
 
+      const totalResult = params && params.export ? response.data.data?.length : response.data.meta?.total
+
       items.value = response.data.data
-      total.value = response.data?.data?.total ?? 0
+      total.value = totalResult || 0
       meta.value = response.data.meta
 
       return Promise.resolve(response)
@@ -140,10 +149,7 @@ export default function useDataTransaksi() {
         'Jumlah Netto',
       ]
 
-      
       const response = await fetchData({ export: true })
-
-      console.log('response', response)
       
       const dataExcel = response.data.data
       const excelData = dataExcel.map((item, index) => [
@@ -197,6 +203,7 @@ export default function useDataTransaksi() {
     first,
     last,
     meta,
+    sort,
     clearFilter,
     update,
     fetchData,

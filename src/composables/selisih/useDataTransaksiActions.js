@@ -89,8 +89,6 @@ export default function useDataTransaksiForm() {
 
       const response = await api.put(`/kurangbayar/data_transaksi/${data.id}`, data)
 
-      console.log('response update', response)
-
       if (response.status === 200) {
         toast.add({
           severity: 'success',
