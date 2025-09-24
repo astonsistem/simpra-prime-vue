@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import api from '@/api/client.js'
 import { useToast } from 'primevue/usetoast'
 import { FilterMatchMode } from '@primevue/core'
@@ -10,12 +10,32 @@ export default function useDataTransaksi() {
   const items = ref([])
   const toast = useToast()
   const filters = ref({})
+  const additionalFilters = ref({})
   const rows = ref(10)
   const total = ref(0)
   const first = ref(0)
   const last = ref(0)
   const meta = ref({})
   const sort = ref({})
+
+  const buildFromFilters = computed(() => {
+    const filterParams = {}
+    Object.keys(filters.value).forEach((key) => {
+      if (filters.value[key].value !== null) {
+        filterParams[key] = filters.value[key].value
+        // contains of tgl or tanggal
+        if (key.includes('tgl') || key.includes('tanggal')) {
+          filterParams[key] = formatDateToYYYYMMDD(filters.value[key].value)
+        }
+      }
+    })
+    Object.keys(additionalFilters.value).forEach((key) => {
+      if(additionalFilters.value[key] !== null) {
+        filterParams[key] = additionalFilters.value[key]
+      }
+    })
+    return filterParams
+  })
 
   initFilters()
 
@@ -35,6 +55,10 @@ export default function useDataTransaksi() {
       bank_tujuan: { value: null, matchMode: FilterMatchMode.CONTAINS },
       export: {value: null}
     }
+  }
+
+  function setAdditionalFilter(data) {
+    additionalFilters.value = data
   }
 
   async function loadData(params = {}) {
@@ -68,20 +92,6 @@ export default function useDataTransaksi() {
     }, 300);
   }
 
-  function buildFromFilters() {
-    const filterParams = {}
-    Object.keys(filters.value).forEach((key) => {
-      if (filters.value[key].value !== null) {
-        filterParams[key] = filters.value[key].value
-        // contains of tgl or tanggal
-        if (key.includes('tgl') || key.includes('tanggal')) {
-          filterParams[key] = formatDateToYYYYMMDD(filters.value[key].value)
-        }
-      }
-    })
-    return filterParams
-  }
-
   async function fetchData(params = {}) {
     try {
       loading.value = true
@@ -89,7 +99,7 @@ export default function useDataTransaksi() {
         params: {
           page: 1,
           per_page: rows.value,
-          ...buildFromFilters(),
+          ...buildFromFilters.value,
           ...params,
         },
       })
@@ -204,6 +214,7 @@ export default function useDataTransaksi() {
     last,
     meta,
     sort,
+    setAdditionalFilter,
     clearFilter,
     update,
     fetchData,
