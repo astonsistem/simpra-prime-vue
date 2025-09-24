@@ -45,7 +45,7 @@ export default function usePeriodeFilter()
   function buildQuery() {
     const q = {}
     if (form.value.jenisPeriode) {
-      q.jenisPeriode = form.value.jenisPeriode
+      q.jenis_periode = form.value.jenisPeriode
     }
 
     if (form.value.jenisPeriode === 'BULANAN' || form.value.jenis_periode === 'BULANAN') {
