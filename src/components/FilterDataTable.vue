@@ -26,10 +26,6 @@
           <Select v-model="form.bulanAkhir" :options="bulanOptions" optionLabel="label" optionValue="value"
             placeholder="Bulan Akhir" class="w-full" />
         </div>
-        <div class="self-end">
-          <label class="block mb-1 text-sm font-medium text-gray-700"></label>
-          <Button label="Cari" icon="pi pi-search" class="p-button-info" @click="searchData" />
-        </div>
       </template>
       <template v-if="form.jenisPeriode === 'TANGGAL'">
         <div>
@@ -42,23 +38,24 @@
           <DatePicker v-model="form.tglAkhir" placeholder="Tanggal Akhir" showIcon class="w-full" dateFormat="dd/mm/yy"
             :showTime="false" :showSeconds="false" :showMilliseconds="false" />
         </div>
-        <div class="self-end">
-          <label class="block mb-1 text-sm font-medium text-gray-700"></label>
-          <Button label="Cari" icon="pi pi-search" class="p-button-info" @click="searchData" />
-        </div>
       </template>
+      <div class="self-end">
+        <label class="block mb-1 text-sm font-medium text-gray-700"></label>
+        <Button label="Cari" icon="pi pi-search" class="p-button-info" :disabled="!validatedForm" @click="searchData" />
+      </div>
     </div>
     <div class="mt-4 flex gap-2">
       <Button label="Reset Filter" icon="pi pi-refresh" class="p-button-secondary" @click="resetFilter" />
-      <Button label="Tarik Data Kurang Bayar" icon="pi pi-refresh" class="p-button-warning"
-        style="background-color: #ffa500; border: none; color: #fff" @click="emit('openSyncDialog')" />
+      <!-- <Button label="Tarik Data Kurang Bayar" icon="pi pi-refresh" class="p-button-warning"
+        style="background-color: #ffa500; border: none; color: #fff" @click="emit('openSyncDialog')" /> -->
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { formatDateToYYYYMMDD } from '@/utils/dateUtils'
+import { handle } from '@primeuix/themes/aura/imagecompare'
 
 
 const emit = defineEmits(['search', 'openSyncDialog'])
@@ -94,6 +91,15 @@ const tahunPeriodeOptions = Array.from(
   (_, i) => `${new Date().getFullYear() - 5 + i}`
 )
 
+const validatedForm = computed(() => {
+  if (form.value.jenisPeriode === 'BULANAN') {
+    return form.value.tahunPeriode !== null && form.value.bulanAwal !== null && form.value.bulanAkhir !== null
+  } else if (form.value.jenisPeriode === 'TANGGAL') {
+    return form.value.tglAwal !== null && form.value.tglAkhir !== null
+  }
+  return false
+})
+
 function initForm() {
   form.value = {
     jenisPeriode: 'BULANAN',
@@ -108,7 +114,7 @@ function initForm() {
 function buildQuery() {
   const q = {}
   if (form.value.jenisPeriode) {
-    q.jenis_periode = form.value.jenisPeriode
+    q.periode = form.value.jenisPeriode
   }
 
   if (form.value.jenisPeriode === 'BULANAN') {

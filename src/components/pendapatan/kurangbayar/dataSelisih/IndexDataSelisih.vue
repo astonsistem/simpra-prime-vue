@@ -263,10 +263,10 @@
 import { ref, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { formatCurrency } from '@/utils/utils';
-import useDataTransaksi from '@/composables/selisih/useDataTransaksi';
-import useDataTransaksiActions from '@/composables/selisih/useDataTransaksiActions';
+import useDataSelisih from '@/composables/selisih/useDataSelisih';
+import useDataSelisihActions from '@/composables/selisih/useDataSelisihActions';
 import FilterDataTable from '@/components/FilterDataTable.vue';
-import ValidasiDataTransaksi from './ValidasiDataTransaksi.vue';
+import ValidasiDataTransaksi from './ValidasiDataSelisih.vue';
 import ModalSetor from '../../CommonModalSetor.vue'
 
 
@@ -277,7 +277,7 @@ const showModalValidasi = ref(false)
 const showModalSetor = ref(false)
 const showModalCancelValidasi = ref(false)
 
-const { create, show, destroy, cancelValidation } = useDataTransaksiActions()
+const { create, show, destroy, cancelValidation } = useDataSelisihActions()
 const { 
   items,
   first,
@@ -286,13 +286,12 @@ const {
   filters,
   sort,
   clearFilter,
-  setAdditionalFilter,
   loading,
   loadData,
   update: onTableUpdate,
   onPageChange,
   exportExcel 
-} = useDataTransaksi()
+} = useDataSelisih()
 
 const emit = defineEmits(['search', 'openSyncDialog'])
 
@@ -304,10 +303,12 @@ onMounted(async () => {
 })
 
 function searchData(data) {
-  console.log('Search data:', data)
-  setAdditionalFilter(data)
+  periodFilters.value = data
 
-  loadData()
+  loadData({
+    ...data,
+    ...filters.value
+  })
 }
 
 function onSaved() {
@@ -351,7 +352,6 @@ const confirmCancelValidasi = (item) => {
 
 const handleCancelValidasi = () => {
   cancelValidation(selectedItem.value).then(() => {
-    console.log('Data berhasil dibatalkan validasi')
     loadData()
     selectedItem.value = null
     showModalCancelValidasi.value = false
