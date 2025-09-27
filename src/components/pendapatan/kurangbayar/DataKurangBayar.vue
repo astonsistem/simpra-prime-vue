@@ -355,22 +355,6 @@ const handleValidasi = async (item) => {
   }
 }
 
-const handleBuktiBayar = (item) => {
-  console.log('Bukti Bayar item:', item)
-}
-
-const handleDelete = (item) => {
-  toast.add({
-    severity: 'warn',
-    summary: 'Konfirmasi Hapus',
-    detail: 'Apakah Anda yakin ingin menghapus data ini?',
-    group: 'confirm',
-    data: {
-      id: item.id,
-    },
-  })
-}
-
 const onConfirmDelete = async (event) => {
   toast.removeGroup('confirm')
   const { id } = event.data

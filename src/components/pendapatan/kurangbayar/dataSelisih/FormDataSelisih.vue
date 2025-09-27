@@ -161,7 +161,7 @@
         
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Selisih Kurang</label>
-          <InputNumber v-model="form.nilai" class="w-full" mode="currency" currency="IDR" locale="id-ID" show-buttons
+          <InputNumber v-model="form.nilai" class="w-full" locale="id-ID" show-buttons
             :step="1000" :min="0" :invalid="errors?.nilai?.length" />
           <Message v-if="errors.nilai" severity="error" size="small" variant="simple">{{
             errors?.nilai[0] 
@@ -197,7 +197,7 @@
 
 <script setup>
 import { ref, watch, computed } from 'vue'
-import useDataTransaksiActions from '@/composables/selisih/useDataTransaksiActions';
+import useDataSelisihActions from '@/composables/selisih/useDataSelisihActions';
 import useCaraPembayaran from '@/composables/useCaraPembayaran'
 import useBankTujuan from '@/composables/useBankTujuan'
 import useRekeningDpa from '@/composables/useRekeningDpa'
@@ -219,7 +219,7 @@ const props = defineProps({
   }
 })
 
-const { store, update, loading, errors } = useDataTransaksiActions()
+const { store, update, loading, errors } = useDataSelisihActions()
 const { fetchList: fetchCaraPembayaran, options: optionsCaraPembayaran } = useCaraPembayaran()
 const { fetchList: fetchBankTujuan, options: optionsBankTujuan } = useBankTujuan()
 const { fetchList: fetchRekeningDpa, options: optionsRekeningDpa } = useRekeningDpa()
@@ -265,21 +265,12 @@ watch(() => jumlahNetto.value, (value) => {
 })
 
 watch(() => form.value, (newValue) => {
-  if (form.value.cara_pembayaran && form.value.cara_pembayaran.toUpperCase() === 'TUNAI' && (!form.value.bank_tujuan || form.value.bank_tujuan === '')) {
+  if (newValue.cara_pembayaran && newValue.cara_pembayaran.toUpperCase() === 'TUNAI' && (!newValue.bank_tujuan || newValue.bank_tujuan === '')) {
     form.value.bank_tujuan = 'JATIM'
   }
 }, { deep: true })
 
 async function submit() {
-  if (isEdit.value) {
-    const response = await update(form.value)
-    if (response.status === 200) {
-      emit('saved', response)
-      closeModal()
-    }
-    return
-  }
-
   const response = await store(form.value)
 
   if (response.status === 200) {

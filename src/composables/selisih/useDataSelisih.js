@@ -49,10 +49,8 @@ export default function useDataTransaksi() {
       penyetor: { value: null, matchMode: FilterMatchMode.CONTAINS },
       jenis: { value: null, matchMode: FilterMatchMode.CONTAINS },
       rekening_dpa: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      jumlah: { value: null, matchMode: FilterMatchMode.EQUALS },
-      cara_pembayaran: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      sumber_transaksi: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      bank_tujuan: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      nilai: { value: null, matchMode: FilterMatchMode.EQUALS },
+      tersetor: { value: null, matchMode: FilterMatchMode.EQUALS },
       export: {value: null}
     }
   }
@@ -95,7 +93,7 @@ export default function useDataTransaksi() {
   async function fetchData(params = {}) {
     try {
       loading.value = true
-      const response = await api.get('/kurangbayar/data_transaksi', {
+      const response = await api.get('/kurangbayar/data_selisih', {
         params: {
           page: 1,
           per_page: rows.value,
@@ -138,7 +136,7 @@ export default function useDataTransaksi() {
 
 
 
-  async function exportExcel(modul = 'Penerimaan Lain')
+  async function exportExcel(modul = 'Data Selisih')
   {
     try {
       const headers = [
@@ -148,15 +146,9 @@ export default function useDataTransaksi() {
         'Tgl. Bukti',
         'Penyetor',
         'Jenis',
-        'Bank',
-        'Kasir',
-        'Loket',
-        'Sumber Transaksi',
         'Rekening DPA',
-        'Jumlah',
-        'Admin EDC',
-        'Admin QRIS',
-        'Jumlah Netto',
+        'Nilai',
+        'Tersetor',
       ]
 
       const response = await fetchData({ export: true })
@@ -169,15 +161,9 @@ export default function useDataTransaksi() {
         item.tgl_buktibayar || '',
         item.penyetor || '',
         item.jenis || '',
-        item.bank_tujuan || '',
-        item.kasir || '',
-        item.loket || '',
-        item.sumber_transaksi || '',
         item.rekening_dpa?.rek_nama || '',
-        item.jumlah || '',
-        item.admin_kredit || 0,
-        item.admin_debit || 0,
-        item.jumlah_netto || 0,
+        item.nilai || 0,
+        item.tersetor || 0
       ])
   
       exportExcelUtils(modul, excelData, headers)

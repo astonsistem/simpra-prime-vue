@@ -1,10 +1,10 @@
 <template>
-  <FilterDataTable @search="searchData" @openSyncDialog="openSyncDialog" />
+  <FilterDataTable @search="searchData"/>
   <div>
     <div
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xl font-semibold text-[#17316E]">Data Transaksi</h3>
+        <h3 class="text-xl font-semibold text-[#17316E]">Data Selisih Kurang Bayar / Setor</h3>
       </div>
       <DataTable :filters="filters" :value="items" :loading="loading" responsiveLayout="scroll" paginator lazy
         showGridlines :totalRecords="total" :rows="rows" :first="first" :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
@@ -21,7 +21,6 @@
           <div class="flex justify-between">
             <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />
             <div class="flex gap-2">
-              <Button label="Tambah Data" icon="pi pi-plus" class="p-button-primary" @click="handleAdd" />
               <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" @click="handleExportExcel" />
             </div>
           </div>
@@ -38,53 +37,20 @@
           <template #body="{ index }">{{ first + index + 1 }}</template>
         </Column>
 
-        <Column field="is_valid" sortable :showFilterMatchModes="false" :showApplyButton="false"
-          style="width: 10%; text-align: center">
-          <template #header>
-            &nbsp;
-          </template>
-          <template #body="{ data }">
-            <i v-if="data.is_valid" class="pi pi-check-circle text-green-500 cursor-pointer" @click="confirmCancelValidasi(data)"></i>
-            <i v-else class="pi pi-check-circle text-gray-300 cursor-pointer" @click="handleValidasi(data)"></i>
-          </template>
-          <template #filter="{ filterModel, applyFilter }">
-            <ToggleSwitch v-model="filterModel.value" @update:modelValue="applyFilter" />
-            <span>{{ filterModel.value ? 'Tervalidasi' : 'Belum Tervalidasi' }}</span>
-          </template>
-        </Column>
         <Column header="Action" style="width: 15%">
           <template #body="slotProps">
             <SplitButton label="Aksi" size="small" severity="secondary" :model="[
               {
-                label: 'Ubah',
-                icon: 'pi pi-pencil',
-                visible: () => !slotProps.data.is_valid,
-                command: () => handleEdit(slotProps.data)
-              },
-              {
-                label: 'Validasi',
-                icon: 'pi pi-check',
-                visible: () => !slotProps.data.is_valid,
-                command: () => handleValidasi(slotProps.data),
-              },
-              {
                 label: 'Setor',
-                icon: 'pi pi-dollar',
-                visible: () => !!slotProps.data.is_valid,
+                icon: 'pi pi-pencil',
+                visible: () => !dataTransaksiExists(slotProps.data),
                 command: () => handleSetor(slotProps.data),
               },
               {
-                label: 'Batal Validasi',
-                icon: 'pi pi-times-circle',
-                style: () => ({ color: 'red' }),
-                visible: () => !!slotProps.data.is_valid,
-                command: () => confirmCancelValidasi(slotProps.data),
-              },
-              {
-                label: 'Hapus',
-                icon: 'pi pi-trash',
-                visible: () => !slotProps.data.is_valid,
-                command: () => handleDelete(slotProps.data),
+                label: 'Rincian Setor',
+                icon: 'pi pi-send',
+                // visible: () => !!slotProps.data.is_valid,
+                command: () => handleRincianSetor(slotProps.data),
               },
 
             ]" />
@@ -141,27 +107,6 @@
           </template>
         </Column>
 
-        <Column field="bank_tujuan" header="Bank" sortable :showFilterMatchModes="false" :showClearButton="true"
-          style="min-width: 12rem">
-          <template #body="{ data }">
-            {{ data.bank_tujuan }}
-          </template>
-          <template #filter="{ filterModel, applyFilter }">
-            <InputText v-model="filterModel.value" @keyup.enter="applyFilter" placeholder="Search by Bank" />
-          </template>
-        </Column>
-
-        <Column field="sumber_transaksi" header="Sumber Transaksi" sortable :showFilterMatchModes="false"
-          :showClearButton="true" style="min-width: 12rem">
-          <template #body="{ data }">
-            {{ data.sumber_transaksi }}
-          </template>
-          <template #filter="{ filterModel, applyFilter }">
-            <InputText v-model="filterModel.value" @keyup.enter="applyFilter"
-              placeholder="Search by Sumber Transaksi" />
-          </template>
-        </Column>
-
         <Column field="rekening_dpa" header="Rekening DPA" :showFilterMatchModes="false"
           :showClearButton="true" style="min-width: 12rem">
           <template #body="{ data }">
@@ -172,25 +117,25 @@
           </template>
         </Column>
 
-        <Column field="nilai" header="Selisih Kurang" sortable :showFilterMatchModes="false" :showClearButton="true"
+        <Column field="nilai" header="Nilai" sortable :showFilterMatchModes="false" :showClearButton="true"
           style="text-align: right">
           <template #body="slotProps">
             {{ formatCurrency(slotProps.data.nilai) }}
           </template>
           <template #filter="{ filterModel, applyFilter }">
             <InputNumber v-model="filterModel.value" @keyup.enter="applyFilter" locale="id-ID"
-              placeholder="masukkan Selisih Kurang" />
+              placeholder="Masukkan Nilai" />
           </template>
         </Column>
 
-        <Column field="jumlah" header="Jumlah" sortable :showFilterMatchModes="false" :showClearButton="true"
+        <Column field="tersetor" header="Tersetor" sortable :showFilterMatchModes="false" :showClearButton="true"
           style="text-align: right">
           <template #body="slotProps">
-            {{ formatCurrency(slotProps.data.jumlah) }}
+            {{ formatCurrency(slotProps.data.tersetor) }}
           </template>
           <template #filter="{ filterModel, applyFilter }">
             <InputNumber v-model="filterModel.value" @keyup.enter="applyFilter" locale="id-ID"
-              placeholder="masukkan Jumlah" />
+              placeholder="Masukkan Tersetor" />
           </template>
         </Column>
         <template #paginatorstart>
@@ -202,19 +147,7 @@
     </div>
   </div>
 
-  <FormDataTransaksi v-model="modalForm" :item="selectedItem" @saved="onSaved" />
-  
-  <ValidasiDataTransaksi 
-    v-model="showModalValidasi" 
-    :item="selectedItem" 
-    :bank="selectedItem?.bank_tujuan"
-    :date="selectedItem?.tgl_setor"
-    header="Selisih Kas" @validated="
-    () => {
-      showModalValidasi = false
-      selectedItem = null
-      loadData()
-    }" />
+  <FormDataSelisih v-model="modalForm" :item="selectedItem" @saved="onSaved" />
     
   <ModalSetor
       v-model="showModalSetor"
@@ -222,7 +155,7 @@
       @update:modelValue="() => {
         showModalSetor = false
         selectedItem = null
-        loadData(1, rows)
+        loadData()
       }"
   >
       <template #rekeningKoran="{ item }">
@@ -230,33 +163,6 @@
       </template>
   </ModalSetor>
 
-  <Dialog :visible="showModalCancelValidasi" @update:visible="showModalCancelValidasi = $event" modal
-    header="Konfirmasi Batal Validasi" :closable="true" :style="{ width: '400px' }">
-    <div class="p-4">
-      <p>Apakah Anda yakin ingin membatalkan validasi data ini ?</p>
-      <div class="flex justify-end gap-2 pt-4">
-        <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi" />
-        <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)" />
-      </div>
-    </div>
-  </Dialog>
-
-  <Toast group="confirm" position="center">
-    <template #message="slotProps">
-      <div class="flex flex-col flex-1">
-        <div class="text-center font-bold text-lg mb-2">
-          {{ slotProps.message.summary }}
-        </div>
-        <div class="text-center text-sm mb-4">
-          {{ slotProps.message.detail }}
-        </div>
-        <div class="flex gap-2">
-          <Button label="Hapus" class="p-button-danger w-full" @click="onConfirmDelete(slotProps.message)"></Button>
-          <Button label="Batal" class="p-button-text w-full" @click="toast.removeGroup('confirm')"></Button>
-        </div>
-      </div>
-    </template>
-  </Toast>
 </template>
 
 <script setup>
@@ -266,18 +172,16 @@ import { formatCurrency } from '@/utils/utils';
 import useDataSelisih from '@/composables/selisih/useDataSelisih';
 import useDataSelisihActions from '@/composables/selisih/useDataSelisihActions';
 import FilterDataTable from '@/components/FilterDataTable.vue';
-import ValidasiDataTransaksi from './ValidasiDataSelisih.vue';
+import FormDataSelisih from './FormDataSelisih.vue';
 import ModalSetor from '../../CommonModalSetor.vue'
 
 
 const modalForm = ref(false)
 const selectedItem = ref(null)
 const toast = useToast()
-const showModalValidasi = ref(false)
 const showModalSetor = ref(false)
-const showModalCancelValidasi = ref(false)
 
-const { create, show, destroy, cancelValidation } = useDataSelisihActions()
+const { show } = useDataSelisihActions()
 const { 
   items,
   first,
@@ -292,11 +196,6 @@ const {
   onPageChange,
   exportExcel 
 } = useDataSelisih()
-
-const emit = defineEmits(['search', 'openSyncDialog'])
-
-// experimental
-const periodFilters = ref({})
 
 onMounted(async () => {
   await loadData()
@@ -321,68 +220,26 @@ function handleExportExcel() {
   exportExcel()
 }
 
-function handleAdd() {
-  create().then((data) => {
-    selectedItem.value = data
-    modalForm.value = true
-  })
-}
-
-function handleEdit(item) {
+function handleSetor(item) {
   show(item).then((data) => {
     selectedItem.value = data
     modalForm.value = true
   })
 }
 
-function handleValidasi(item) {
-  selectedItem.value = item
-  showModalValidasi.value = true
-}
-
-function handleSetor(item) {
-  selectedItem.value = item
-  showModalSetor.value = true
-}
-
-const confirmCancelValidasi = (item) => {
-  showModalCancelValidasi.value = true
-  selectedItem.value = item
-}
-
-const handleCancelValidasi = () => {
-  cancelValidation(selectedItem.value).then(() => {
-    loadData()
-    selectedItem.value = null
-    showModalCancelValidasi.value = false
+function handleRincianSetor(item) {
+  show(item).then((data) => {
+    selectedItem.value = data
+    showModalSetor.value = true
   })
 }
 
-function handleDelete(item) {
-  toast.add({
-    severity: 'warn',
-    summary: 'Konfirmasi Hapus',
-    detail: 'Apakah Anda yakin ingin menghapus data ini?',
-    group: 'confirm',
-    data: {
-      id: item.id,
-    },
-  })
-}
-
-function onConfirmDelete(event) {
-  destroy(event.data).then(() => {
-    loadData()
-    toast.removeGroup('confirm')
-  })
-}
-
-function openSyncDialog() {
-  emit('openSyncDialog')
+function dataTransaksiExists(rowData) {
+  return (rowData.data_transaksi_exists === true)
 }
 
 function rowStyle(rowData) {
-  if (rowData.is_valid === true) return { backgroundColor: '#e4f6e8', color: '#419e56' }
+  if ( dataTransaksiExists(rowData) ) return { backgroundColor: '#e4f6e8', color: '#419e56' }
 }
 
 
