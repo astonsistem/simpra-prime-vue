@@ -7,7 +7,7 @@
         <h3 class="text-xl font-semibold text-[#17316E]">Data Selisih Kurang Bayar / Setor</h3>
       </div>
       <DataTable :filters="filters" :value="items" :loading="loading" responsiveLayout="scroll" paginator lazy
-        showGridlines :totalRecords="total" :rows="rows" :first="first" :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
+        showGridlines stripedRows :totalRecords="total" :rows="rows" :first="first" :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
         @page="onPageChange" @filter="onTableUpdate" @sort="onTableUpdate" dataKey="id" filterDisplay="menu"
         currentPageReportTemplate="{first} to {last} of {totalRecords}"
         :rowStyle="rowStyle" :globalFilterFields="[
@@ -43,7 +43,7 @@
               {
                 label: 'Setor',
                 icon: 'pi pi-pencil',
-                visible: () => !dataTransaksiExists(slotProps.data),
+                // visible: () => !dataTransaksiExists(slotProps.data),
                 command: () => handleSetor(slotProps.data),
               },
               {
@@ -149,19 +149,16 @@
 
   <FormDataSelisih v-model="modalForm" :item="selectedItem" @saved="onSaved" />
     
-  <ModalSetor
+  <RincianSetor
       v-model="showModalSetor"
       :item="selectedItem"
-      @update:modelValue="() => {
-        showModalSetor = false
+      :items="selectedItem?.data_transaksi || []"
+      @deleted="onDeletedRincianSetor"
+      @update:modalValue="() => {
         selectedItem = null
         loadData()
       }"
-  >
-      <template #rekeningKoran="{ item }">
-        {{  item  }}
-      </template>
-  </ModalSetor>
+  ></RincianSetor>
 
 </template>
 
@@ -173,11 +170,12 @@ import useDataSelisih from '@/composables/selisih/useDataSelisih';
 import useDataSelisihActions from '@/composables/selisih/useDataSelisihActions';
 import FilterDataTable from '@/components/FilterDataTable.vue';
 import FormDataSelisih from './FormDataSelisih.vue';
-import ModalSetor from '../../CommonModalSetor.vue'
+import RincianSetor from './RincianSetor.vue'
 
 
 const modalForm = ref(false)
 const selectedItem = ref(null)
+
 const toast = useToast()
 const showModalSetor = ref(false)
 
@@ -214,6 +212,12 @@ function onSaved() {
   loadData({
     ...sort.value
   })
+  
+  setTimeout(() => {
+    if(selectedItem.value) {
+      handleRincianSetor(selectedItem.value)
+    }
+  }, 300)
 }
 
 function handleExportExcel() {
@@ -222,15 +226,23 @@ function handleExportExcel() {
 
 function handleSetor(item) {
   show(item).then((data) => {
-    selectedItem.value = data
+    selectedItem.value = data.data
     modalForm.value = true
   })
 }
 
 function handleRincianSetor(item) {
   show(item).then((data) => {
-    selectedItem.value = data
+    selectedItem.value = data.data
+    selectedItem.value.data_transaksi = data.data_transaksi
     showModalSetor.value = true
+  })
+}
+
+function onDeletedRincianSetor() {
+   show(selectedItem.value).then((data) => {
+    selectedItem.value = data.data
+    selectedItem.value.data_transaksi = data.data_transaksi
   })
 }
 

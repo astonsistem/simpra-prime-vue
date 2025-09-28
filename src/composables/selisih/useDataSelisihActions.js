@@ -15,10 +15,9 @@ export default function useDataTransaksiForm() {
       const response = await api.get(`/kurangbayar/data_selisih/${item.id}`)
 
       const { data } = response
-      console.log('data.data', data.data)
       selectedItem.value = data.data
 
-      return Promise.resolve(data.data)
+      return Promise.resolve(data)
     } catch (error) {
       console.error('Error fetch show data transaksi:', error)
       toast.add({
