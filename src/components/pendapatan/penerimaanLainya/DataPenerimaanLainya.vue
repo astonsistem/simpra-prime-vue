@@ -455,6 +455,8 @@ initFilters()
         filterDisplay="menu"
         :globalFilterFields="['no_bayar', 'pihak3', 'uraian', 'no_dokumen', 'akun_nama']"
         class="p-datatable-sm"
+        showGridlines
+        stripedRows
         :rowStyle="rowStyle"
       >
         <template #header>
