@@ -408,7 +408,7 @@ import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import { useToast } from 'primevue/usetoast'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 
 const props = defineProps({
   modelValue: {

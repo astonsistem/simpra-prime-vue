@@ -2,17 +2,17 @@
   <Dialog
     v-model:visible="visible"
     modal
-    header="Tarik Potensi Pelayanan"
+    :header="jenis == 'pelayanan' ? 'Tarik Potensi Pelayanan' : 'Tarik Potensi Lainnya'"
     :style="{ width: '60rem' }"
     :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
   >
     <div class="p-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700">Tanggal Pelayanan</label>
+        <label class="block text-sm font-medium text-gray-700">{{ fieldConfig.label }}</label>
         <DatePicker
-          v-model="formData.tgl_pelayanan"
+          v-model="formData[fieldConfig.key]"
           date-format="dd/mm/yy"
-          placeholder="Tanggal Pelayanan"
+          :placeholder="fieldConfig.placeholder"
           showIcon
           class="w-full"
         />
@@ -32,30 +32,30 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, watchEffect } from 'vue'
+import { ref, watch, computed } from 'vue'
 import Dialog from 'primevue/dialog'
 import DatePicker from 'primevue/datepicker'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 
 const props = defineProps({
   modelValue: {
     type: Boolean,
     default: false,
   },
-  item: {
-    type: Object,
-    default: null,
-  },
-  options: Object
+  jenis: {
+    type: String,
+    required: true,
+  }
 })
 const emit = defineEmits(['update:modelValue', 'saved'])
 const toast = useToast()
 const loading = ref(false)
 const visible = ref(props.modelValue)
 const defaultForm = {
-  tgl_pelayanan: ''
+  tgl_pelayanan: '',
+  tgl_dokumen: ''
 }
 const formData = ref({ ...defaultForm })
 const resetForm = () => {
@@ -69,6 +69,21 @@ const formatDateToYYYYMMDD = (date) => {
   const day = String(d.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
+const fieldConfig = computed(() => {
+  if (props.jenis == "pelayanan") {
+    return {
+      key: "tgl_pelayanan",
+      label: "Tanggal Pelayanan",
+      placeholder: "Tanggal Pelayanan"
+    }
+  } else {
+    return {
+      key: "tgl_dokumen",
+      label: "Tanggal Dokumen",
+      placeholder: "Tanggal Dokumen"
+    }
+  }
+})
 
 watch(
   () => props.modelValue,
@@ -103,7 +118,7 @@ const saveData = async () => {
       },
     }
 
-    const res = await api.post('/potensi_pelayanan/tarik', cleanedPayload, config)
+    const res = await api.post(`/potensi_${props.jenis}/tarik`, cleanedPayload, config)
 
     if (res.data.count == 0) {
       toast.add({

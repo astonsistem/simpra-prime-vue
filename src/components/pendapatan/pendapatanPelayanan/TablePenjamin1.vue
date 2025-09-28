@@ -197,7 +197,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 import { FilterMatchMode } from '@primevue/core/api'
 import ModalEditPenjamin1 from '@/components/pendapatan/pendapatanPelayanan/ModalEditPenjamin1.vue'
 
@@ -346,6 +346,7 @@ const onPageChange = (event) => {
 const onSort = (event) => {
     sortField.value = event.sortField
     sortOrder.value = event.sortOrder
+    first.value = 0
     loadData(1, rows.value)
 }
 const onFilter = (event) => {
@@ -458,6 +459,7 @@ const onConfirmAction = async (event) => {
             detail: `Aksi ${title} berhasil dijalankan`,
             life: 3000,
         })
+        first.value = 0
         loadData(1, rows.value)
     } catch (error) {
         console.error(`Gagal ${title}:`, error)
@@ -474,6 +476,7 @@ const onReject = () => {
 }
 const handleSaved = () => {
     showModalEdit.value = false
+    first.value = 0
     loadData(1, rows.value)
 }
 
@@ -485,6 +488,7 @@ watch(
             data.value = []
             totalRecords.value = 0 
         } else {
+            first.value = 0
             await loadData(1, rows.value, newId)
         }
     },

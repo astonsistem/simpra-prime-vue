@@ -123,7 +123,7 @@
         <Button
           label="Tambah Rincian"
           icon="pi pi-plus"
-          @click="createData"
+          @click="createRincian"
           :loading="loading"
           class="p-button-success mt-4"
         />
@@ -189,7 +189,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import Dialog from 'primevue/dialog'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import InputText from 'primevue/inputtext'
@@ -280,7 +280,7 @@ watch(
   { immediate: true }
 )
 
-const createData = async () => {
+const createRincian = async () => {
   selectedItem.value = null
   showModal.value = true
 }

@@ -30,21 +30,20 @@
                     size="small"
                     severity="secondary"
                     :model="[
-                        isDaftar 
-                        ? { label: 'Batalkan', icon: 'pi pi-file-minus', command: () => handleBatalkan(slotProps.data) } 
-                        : { label: 'Daftarkan', icon: 'pi pi-file-plus', command: () => handleDaftarkan(slotProps.data) }
+                        { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
+                        { label: 'Hapus', icon: 'pi pi-times', command: () => handleDelete(slotProps.data) },
                     ]"
                 />
             </template>
         </Column>
-        <Column field="tgl_dokumen" header="Tgl Dokumen" style="min-width: 8rem">
+        <Column field="rek_id" header="Kode Rekening" style="min-width: 8rem">
             <template #body="{ data }">
-                {{ formatDateID(data.tgl_dokumen) }}
+                {{ data.rek_id }}
             </template>
         </Column>
-        <Column field="no_dokumen" header="No Dokumen" style="min-width: 12rem">
+        <Column field="akun_id" header="Kode Akun" style="min-width: 8rem">
             <template #body="{ data }">
-                {{ data.no_dokumen }}
+                {{ data.akun_id }}
             </template>
         </Column>
         <Column field="uraian" header="Uraian" style="min-width: 20rem">
@@ -52,12 +51,39 @@
                 {{ data.uraian }}
             </template>
         </Column>
-        <Column field="total" header="Nilai" style="text-align: right">
+        <Column field="jumlah" header="Jumlah" style="text-align: right">
             <template #body="{ data }">
-                {{ new Intl.NumberFormat('id-ID').format(data.total || 0) }}
+                {{ new Intl.NumberFormat('id-ID').format(data.jumlah || 0) }}
+            </template>
+        </Column>
+        <Column field="pendapatan" header="Pendapatan" style="text-align: right">
+            <template #body="{ data }">
+                {{ new Intl.NumberFormat('id-ID').format(data.pendapatan || 0) }}
+            </template>
+        </Column>
+        <Column field="piutang" header="Piutang" style="text-align: right">
+            <template #body="{ data }">
+                {{ new Intl.NumberFormat('id-ID').format(data.piutang || 0) }}
+            </template>
+        </Column>
+        <Column field="pdd" header="PDD" style="text-align: right">
+            <template #body="{ data }">
+                {{ new Intl.NumberFormat('id-ID').format(data.pdd || 0) }}
+            </template>
+        </Column>
+        <Column field="pad_rinci" header="Pad Rincian" style="min-width: 8rem">
+            <template #body="{ data }">
+                {{ data.pad_rinci }}
             </template>
         </Column>
     </DataTable>
+    <ModalRincianBKU
+        v-model="showModal" 
+        :item="selectedItem" 
+        :bkuId="bkuId"
+        :options="options"
+        @saved="handleSaved" 
+    />
     <Toast />
     <Toast position="center" group="table-confirm">
       <template #message="slotProps">
@@ -84,21 +110,14 @@ import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
 import api from '@/api/client.js'
 import { FilterMatchMode } from '@primevue/core/api'
+import ModalRincianBKU from '@/components/pendapatan/bku/ModalRincianBKU.vue'
 
 const props = defineProps({
-    isDaftar: {
-        type: Boolean,
-        default: false,
-    },
-    indukId: { 
+    bkuId: { 
         type: String, 
         default: null 
     },
-    pihak3: { 
-        type: String, 
-        default: null 
-    },
-    options: Object     
+    options: Object
 })
 const emit = defineEmits(['saved'])
 const toast = useToast()
@@ -110,12 +129,8 @@ const rows = ref(10)
 const first = ref(0)
 const sortField = ref(null)
 const sortOrder = ref(null)
-
-function formatDateID(dateStr) {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('id-ID')
-}
+const selectedItem = ref(null)
+const showModal = ref(false)
 
 const buildQuery = (page = 1, pageSize = rows.value) => {
     const q = {
@@ -136,9 +151,7 @@ const buildQuery = (page = 1, pageSize = rows.value) => {
         q.sortOrder = sortOrder.value === 1 ? 'asc' : 'desc'
     }
 
-    if (props.isDaftar) q.is_daftar = 1
-    if (props.indukId) q.induk_id = props.indukId
-    if (props.pihak3) q.pihak3 = props.pihak3
+    if (props.bkuId) q.bku_id = props.bkuId
 
     return q
 }
@@ -146,7 +159,7 @@ const loadData = async (page = 1, pageSize = rows.value) => {
     loading.value = true
     try {
         const query = buildQuery(page, pageSize)
-        const response = await api.get('/rincian_potensi_lainnya', { params: query })
+        const response = await api.get('/rincian_bku', { params: query })
         if (response.data && response.data.items) {
             data.value = response.data.items.map((item, index) => ({
                 ...item,
@@ -185,7 +198,6 @@ const onPageChange = (event) => {
 const onSort = (event) => {
     sortField.value = event.sortField
     sortOrder.value = event.sortOrder
-    first.value = 0
     loadData(1, rows.value)
 }
 const onFilter = (event) => {
@@ -193,33 +205,42 @@ const onFilter = (event) => {
     first.value = 0
     loadData(1, rows.value)
 }
-const clearTableFilters = () => {
-    initFilters()
-    first.value = 0
-    loadData(1, rows.value)
-}
 
-const handleBatalkan = (item) => {
+const handleEdit = async (item) => {
+  try {
+    loading.value = true
+    const response = await api.get(`/rincian_bku/${item.rincian_id}`)
+    if (response.data) {
+      selectedItem.value = { ...response.data }
+      showModal.value = true
+    } else {
+      toast.add({
+        severity: 'error',
+        summary: 'Gagal',
+        detail: 'Gagal memuat detail data',
+        life: 3000,
+      })
+    }
+  } catch (error) {
     toast.add({
-        severity: 'warn',
-        summary: 'Konfirmasi',
-        detail: 'Apakah Anda yakin ingin membatalkan data ini?',
-        group: 'table-confirm',
-        data: {
-            url: `/rincian_potensi_lainnya/batalkan/${item.id}`,
-            title: 'batalkan'
-        }
+      severity: 'error',
+      summary: 'Gagal',
+      detail: 'Gagal memuat detail data',
+      life: 3000,
     })
+  } finally {
+    loading.value = false
+  }
 }
-const handleDaftarkan = (item) => {
+const handleDelete = (item) => {
     toast.add({
         severity: 'warn',
         summary: 'Konfirmasi',
-        detail: 'Apakah Anda yakin ingin mendaftarkan data ini?',
+        detail: 'Apakah Anda yakin ingin menghapus data ini?',
         group: 'table-confirm',
         data: {
-            url: `/rincian_potensi_lainnya/daftarkan/${item.id}`,
-            title: 'daftarkan'
+            url: `/rincian_bku/${item.rincian_id}`,
+            title: 'hapus'
         }
     })
 }
@@ -228,18 +249,7 @@ const onConfirmAction = async (event) => {
     const { url, title } = event.data
     try {
 
-        const payload = {
-            induk_id: props.indukId,
-            pihak3: props.pihak3,
-        }
-
-        const config = {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        }
-
-        await api.put(url, payload, config)
+        await api.delete(url)
 
         toast.add({
             severity: 'success',
@@ -247,7 +257,7 @@ const onConfirmAction = async (event) => {
             detail: `Aksi ${title} berhasil dijalankan`,
             life: 3000,
         })
-        emit('saved')
+        loadData(1, rows.value)
     } catch (error) {
         console.error(`Gagal ${title}:`, error)
         toast.add({
@@ -262,19 +272,21 @@ const onReject = () => {
     toast.removeGroup('table-confirm')
 }
 
+const handleSaved = () => {
+  showModal.value = false
+  loadData(1, rows.value)
+}
+
 watch(
-    () => [props.isDaftar, props.indukId, props.pihak3, props.options],
-    async ([newIsDaftar, newPiutangId, newPenjaminId, newOptions]) => {
-        first.value = 0
+    () => props.bkuId,
+    async (newBkuId) => {
         await loadData(1, rows.value)
     },
     { immediate: true }
 )
 
 defineExpose({
-    data,
     loadData,
-    clearTableFilters,
 })
 
 </script>
