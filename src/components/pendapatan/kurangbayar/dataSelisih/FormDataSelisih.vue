@@ -160,7 +160,8 @@
         </div>
         
         <div class="mb-4">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Selisih Kurang</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700">Selisih Kurang <span
+              class="text-red-500">*</span></label>
           <InputNumber v-model="form.nilai" class="w-full" locale="id-ID" show-buttons
             :step="1000" :min="0" :invalid="errors?.nilai?.length" />
           <Message v-if="errors.nilai" severity="error" size="small" variant="simple">{{
