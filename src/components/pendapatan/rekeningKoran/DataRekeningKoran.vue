@@ -1,478 +1,29 @@
-<script setup>
-import { ref, onMounted } from 'vue'
-import { FilterMatchMode } from '@primevue/core/api'
-import DatePicker from 'primevue/datepicker'
-import Select from 'primevue/select'
-import Button from 'primevue/button'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import InputText from 'primevue/inputtext'
-import SplitButton from 'primevue/splitbutton'
-import api from '@/services/http.js'
-import apiClient from '@/api/client.js'
-import { useToast } from 'primevue/usetoast'
-import Toast from 'primevue/toast'
-import * as XLSX from 'xlsx'
-
-const toast = useToast()
-
-const formFilters = ref({
-  jenis_periode: 'BULANAN',
-  tahunPeriode: '',
-  bulanAwal: null,
-  bulanAkhir: null,
-  tglAwal: null,
-  tglAkhir: null,
-})
-
-const filters = ref()
-
-const tahunPeriodeOptions = Array.from(
-  { length: 10 },
-  (_, i) => `${new Date().getFullYear() - 5 + i}`
-)
-
-const jenisPeriodeOptions = ref([
-  { label: 'Bulanan', value: 'BULANAN' },
-  { label: 'Tanggal', value: 'TANGGAL' },
-]);
-
-const bulanOptions = ref([
-    { label: 'Januari', value: 1 },
-    { label: 'Februari', value: 2 },
-    { label: 'Maret', value: 3 },
-    { label: 'April', value: 4 },
-    { label: 'Mei', value: 5 },
-    { label: 'Juni', value: 6 },
-    { label: 'Juli', value: 7 },
-    { label: 'Agustus', value: 8 },
-    { label: 'September', value: 9 },
-    { label: 'Oktober', value: 10 },
-    { label: 'November', value: 11 },
-    { label: 'Desember', value: 12 },
-]);
-
-const data = ref([])
-const totalRecords = ref(0)
-const rows = ref(10)
-const first = ref(0)
-const loading = ref(false)
-
-const formatDateToYYYYMMDD = (date) => {
-  if (!date) return null
-  const d = new Date(date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-const buildQuery = (page = 1, pageSize = rows.value) => {
-  const q = {
-    page,
-    size: pageSize,
-  }
-  if (formFilters.value.jenis_periode) q.periode = formFilters.value.jenis_periode
-  if (formFilters.value.jenis_periode === 'BULANAN') {
-    if (formFilters.value.tahunPeriode) {
-      q.tahunPeriode = formFilters.value.tahunPeriode
-    }
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAwal) {
-      const startDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAwal - 1, 1)
-      q.tglAwal = formatDateToYYYYMMDD(startDate)
-    }
-    if (formFilters.value.tahunPeriode && formFilters.value.bulanAkhir) {
-      const endDate = new Date(formFilters.value.tahunPeriode, formFilters.value.bulanAkhir, 0)
-      q.tglAkhir = formatDateToYYYYMMDD(endDate)
-    }
-  } else if (formFilters.value.jenis_periode === 'TANGGAL') {
-    if (formFilters.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(formFilters.value.tglAwal)
-    if (formFilters.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(formFilters.value.tglAkhir)
-  }
-
-  if (filters.value) {
-    Object.keys(filters.value).forEach((key) => {
-      if (filters.value[key].value) {
-        // Handle date filters specially
-        if (key === 'tgl_rc') {
-          q[key] = formatDateToYYYYMMDD(filters.value[key].value)
-        } else {
-          q[key] = filters.value[key].value
-        }
-      }
-    })
-  }
-
-  return q
-}
-
-const loadData = async (page = 1, pageSize = rows.value) => {
-  loading.value = true
-  try {
-    const query = buildQuery(page, pageSize)
-    const response = await apiClient.get('/rekening_koran', { params: query })
-    if (response.data.data && response.data.data.items) {
-      data.value = response.data.data.items.map((item, index) => ({
-        ...item,
-        no: (page - 1) * pageSize + index + 1,
-      }))
-      totalRecords.value = response.data.data.total ?? 0
-      
-      console.log('data', data.value)
-      // If "All" is selected, update rows to show total records
-      if (pageSize === totalRecords.value && pageSize > 100) {
-        rows.value = 1000
-      }
-    }
-  } catch (error) {
-    console.error('Gagal memuat data:', error)
-    toast.add({ severity: 'error', summary: 'Gagal', detail: 'Gagal memuat data', life: 3000 })
-  } finally {
-    loading.value = false
-  }
-}
-
-const onPageChange = (event) => {
-  first.value = event.first
-  rows.value = event.rows
-
-  // Handle "All" option (1000) - load all data in one page
-  if (event.rows === 1000) {
-    // This is the "All" option, load all data
-    loadData(1, totalRecords.value)
-  } else {
-    const page = event.page + 1
-    loadData(page, event.rows)
-  }
-}
-
-const resetFilter = () => {
-  formFilters.value = {
-    jenis_periode: 'BULANAN',
-    tahunPeriode: '',
-    bulanAwal: null,
-    bulanAkhir: null,
-    tglAwal: null,
-    tglAkhir: null,
-  }
-  first.value = 0
-  loadData(1, rows.value)
-}
-
-const searchData = () => {
-  first.value = 0
-  loadData(1, rows.value)
-}
-
-const tarikData = () => {
-  toast.add({
-    severity: 'info',
-    summary: 'Tarik Data',
-    detail: 'Fitur ini belum diimplementasikan',
-    life: 2000,
-  })
-}
-
-const exportExcel = () => {
-  try {
-    const headers = [
-      'No',
-      'No RC',
-      'Tanggal RC',
-      'Uraian',
-      'Klasifikasi Monev',
-      'Verifikasi Langsung',
-      'Rekening DPA',
-      'Bank',
-      'PB dari Bank',
-      'Debit',
-      'Kredit',
-      'Terklasifikasi',
-      'Belum Klarifikasi',
-      'Status',
-    ]
-
-    const excelData = data.value.map((item, index) => [
-      item.no || index + 1,
-      item.no_rc || '',
-      item.tgl_rc || '',
-      item.uraian || '',
-      '', // Klasifikasi Monev - Not in API
-      '', // Verifikasi Langsung - Not in API
-      item.akun_data.akun_nama || '',
-      item.bank || '',
-      item.pb_dari || '',
-      item.debit || 0,
-      item.kredit || 0,
-      '', // Terklasifikasi - Not in API
-      '', // Belum Klarifikasi - Not in API
-      item.status || '',
-    ])
-
-    const workbook = XLSX.utils.book_new()
-    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...excelData])
-
-    const columnWidths = [
-      { wch: 5 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 30 },
-      { wch: 20 },
-      { wch: 20 },
-      { wch: 20 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 15 },
-      { wch: 15 },
-    ]
-    worksheet['!cols'] = columnWidths
-
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Rekening Koran')
-
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
-    const blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    })
-
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `rekening_koran_${new Date().toISOString().split('T')[0]}.xlsx`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
-    toast.add({
-      severity: 'success',
-      summary: 'Export Berhasil',
-      detail: 'Data berhasil diekspor ke Excel',
-      life: 3000,
-    })
-  } catch (error) {
-    console.error('Gagal export Excel:', error)
-    toast.add({
-      severity: 'error',
-      summary: 'Export Gagal',
-      detail: 'Gagal mengekspor data ke Excel',
-      life: 3000,
-    })
-  }
-}
-
-const onFilter = (event) => {
-  filters.value = event.filters
-  first.value = 0
-  loadData(1, rows.value)
-}
-
-const initFilters = () => {
-  filters.value = {
-    global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    no_rc: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    tgl_rc: { value: null, matchMode: FilterMatchMode.DATE_IS },
-    uraian: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    rekening_dpa: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    bank: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    pb_dari_bank: { value: null, matchMode: FilterMatchMode.CONTAINS },
-    debit: { value: null, matchMode: FilterMatchMode.EQUALS },
-    kredit: { value: null, matchMode: FilterMatchMode.EQUALS },
-    terklarifikasi: { value: null, matchMode: FilterMatchMode.CONTAINS },
-  }
-}
-
-initFilters()
-
-const clearFilter = () => {
-  initFilters()
-  loadData(1, rows.value)
-}
-
-onMounted(async () => {
-  loadData(1, rows.value)
-})
-
-const handleView = (data) => {
-  console.log('View:', data)
-  toast.add({
-    severity: 'info',
-    summary: 'Info',
-    detail: 'Fungsi Lihat belum diimplementasikan',
-    life: 3000,
-  })
-}
-
-const handleEdit = (data) => {
-  console.log('Edit:', data)
-  toast.add({
-    severity: 'info',
-    summary: 'Info',
-    detail: 'Fungsi Ubah belum diimplementasikan',
-    life: 3000,
-  })
-}
-
-const handleDelete = (data) => {
-  console.log('Delete:', data)
-  toast.add({
-    severity: 'info',
-    summary: 'Info',
-    detail: 'Fungsi Hapus belum diimplementasikan',
-    life: 3000,
-  })
-}
-</script>
-
 <template>
-  <div class="p-4">
-    <div class="mb-6">
-      <h2 class="text-2xl font-bold text-[#17316E]">Rekening Koran</h2>
-      <p class="text-gray-500">Kelola data Rekening Koran</p>
-    </div>
-
-    <!-- Filter Section -->
+  <FilterDataTable @search="searchData" @openSyncDialog="openSyncDialog" />
+  <div>
     <div
-      class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full"
-    >
-      <h3 class="text-xl font-semibold text-[#17316E] mb-4">Filter Data</h3>
-      <div class="grid grid-cols-4 gap-4">
-        <div>
-          <label class="block mb-1 text-sm font-medium text-gray-700">Jenis Periode</label>
-          <Select
-            v-model="formFilters.jenis_periode"
-            :options="jenisPeriodeOptions"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Jenis Periode"
-            class="w-full"
-          />
-        </div>
-
-        <template v-if="formFilters.jenis_periode === 'BULANAN'">
-          <div>
-            <label class="block mb-1 text-sm font-medium text-gray-700">Tahun Periode</label>
-            <Select
-              v-model="formFilters.tahunPeriode"
-              :options="tahunPeriodeOptions"
-              placeholder="Tahun Periode"
-              class="w-full"
-            />
-          </div>
-          <div>
-            <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Awal</label>
-            <Select
-              v-model="formFilters.bulanAwal"
-              :options="bulanOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Bulan Awal"
-              class="w-full"
-            />
-          </div>
-          <div>
-            <label class="block mb-1 text-sm font-medium text-gray-700">Bulan Akhir</label>
-            <Select
-              v-model="formFilters.bulanAkhir"
-              :options="bulanOptions"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Bulan Akhir"
-              class="w-full"
-            />
-          </div>
-        </template>
-        <template v-if="formFilters.jenis_periode === 'TANGGAL'">
-          <div>
-            <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Awal</label>
-            <DatePicker
-              v-model="formFilters.tglAwal"
-              placeholder="Tanggal Awal"
-              showIcon
-              class="w-full"
-              dateFormat="dd/mm/yy"
-              :showTime="false"
-              :showSeconds="false"
-              :showMilliseconds="false"
-            />
-          </div>
-          <div>
-            <label class="block mb-1 text-sm font-medium text-gray-700">Tanggal Akhir</label>
-            <DatePicker
-              v-model="formFilters.tglAkhir"
-              placeholder="Tanggal Akhir"
-              showIcon
-              class="w-full"
-              dateFormat="dd/mm/yy"
-              :showTime="false"
-              :showSeconds="false"
-              :showMilliseconds="false"
-            />
-          </div>
-        </template>
-      </div>
-      <div class="mt-4 flex gap-2">
-        <Button label="Cari" icon="pi pi-search" class="p-button-info" @click="searchData" />
-        <Button
-          label="Reset Filter"
-          icon="pi pi-refresh"
-          class="p-button-secondary"
-          @click="resetFilter"
-        />
-        <Button
-          label="Tarik Data Billing"
-          icon="pi pi-refresh"
-          class="p-button-warning"
-          style="background-color: #ffa500; border: none; color: #fff"
-          @click="tarikData"
-        />
-      </div>
-    </div>
-
-    <!-- Data Table Section -->
-    <div
-      class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full"
-    >
+      class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
       <div class="flex justify-between items-center mb-2">
         <h3 class="text-xl font-semibold text-[#17316E]">Data Rekening Koran</h3>
-        <div class="flex gap-2">
-          <Button
-            label="Export Excel"
-            icon="pi pi-file-excel"
-            class="p-button-success"
-            @click="exportExcel"
-          />
-        </div>
       </div>
-      <DataTable
-        :filters="filters"
-        :value="data"
-        :loading="loading"
-        responsiveLayout="scroll"
-        paginator
-        lazy
-        :totalRecords="totalRecords"
-        :rows="rows"
-        :first="first"
-        :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
-        @page="onPageChange"
-        @filter="onFilter"
-        dataKey="rc_id"
-        filterDisplay="menu"
-        :globalFilterFields="['no_rc', 'uraian', 'rekening_dpa', 'bank', 'pb_dari_bank']"
-        class="p-datatable-sm"
-      >
+      <DataTable :filters="filters" :value="items" :loading="loading" responsiveLayout="scroll" paginator lazy
+        showGridlines :totalRecords="total" :rows="rows" :first="first" :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
+        @page="onPageChange" @filter="onTableUpdate" @sort="onTableUpdate" dataKey="id" filterDisplay="menu"
+        currentPageReportTemplate="{first} to {last} of {totalRecords}" size="small"
+        :rowStyle="rowStyle" :globalFilterFields="[
+          'noBukti',
+          'noSetor',
+          'penyetor',
+          'jenis',
+          'rekeningDpa',
+        ]" class="p-datatable-sm text-sm">
         <template #header>
           <div class="flex justify-between">
-            <Button
-              type="button"
-              icon="pi pi-filter-slash"
-              label="Clear"
-              outlined
-              @click="clearFilter()"
-            />
+            <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />
+            <div class="flex gap-2">
+              <!-- <Button label="Tambah Data" icon="pi pi-plus" class="p-button-primary" @click="handleAdd" />
+              <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" @click="handleExportExcel" /> -->
+            </div>
           </div>
         </template>
 
@@ -483,143 +34,294 @@ const handleDelete = (data) => {
           </div>
         </template>
 
-        <Column field="no" header="No" style="width: 5%"></Column>
-        <Column field="action" header="Action" :showFilterMatchModes="false" style="width: 10%">
+        <Column field="no" header="No" style="width: 5%;text-align: center">
+          <template #body="{ index }">{{ first + index + 1 }}</template>
+        </Column>
+
+        <Column header="Action" style="width: 15%">
           <template #body="slotProps">
-            <SplitButton
-              label="Action"
-              icon="pi pi-ellipsis-v"
-              size="small"
-              severity="secondary"
-              :model="[
-                { label: 'Lihat', icon: 'pi pi-eye', command: () => handleView(slotProps.data) },
-                { label: 'Ubah', icon: 'pi pi-pencil', command: () => handleEdit(slotProps.data) },
-                {
-                  label: 'Hapus',
-                  icon: 'pi pi-trash',
-                  command: () => handleDelete(slotProps.data),
-                },
-              ]"
-            />
-          </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Action" />
+            <SplitButton label="Aksi" size="small" severity="secondary" :model="[
+              {
+                label: 'Ubah',
+                icon: 'pi pi-pencil',
+                // visible: () => !slotProps.data.is_valid,
+                command: () => handleEdit(slotProps.data)
+              },
+              {
+                label: 'PB',
+                icon: 'pi pi-check',
+                // visible: () => !slotProps.data.is_valid,
+                command: () => handlePB(slotProps.data),
+              },
+              {
+                label: 'BKU',
+                icon: 'pi pi-dollar',
+                // visible: () => !!slotProps.data.is_valid,
+                command: () => handleBKU(slotProps.data),
+              }
+
+            ]" />
+
           </template>
         </Column>
-        <Column field="no_rc" header="No RC" :showFilterMatchModes="false">
+
+        <Column field="no_rc" header="No. RC" sortable :showFilterMatchModes="false" :showClearButton="true"
+          style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.no_rc }}
           </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by No RC" />
+          <template #filter="{ filterModel, applyFilter }">
+            <InputText v-model="filterModel.value" @keyup.enter="applyFilter" placeholder="Search by No. RC" />
           </template>
         </Column>
-        <Column field="tgl_rc" header="Tanggal RC" :showFilterMatchModes="false">
+
+        <Column field="tgl_rc" header="Tgl. RC" sortable :showFilterMatchModes="false" :showClearButton="true"
+          style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.tgl_rc }}
           </template>
-          <template #filter="{ filterModel }">
-            <DatePicker
-              v-model="filterModel.value"
-              dateFormat="dd/mm/yy"
-              placeholder="dd/mm/yyyy"
-            />
+          <template #filter="{ filterModel, applyFilter }">
+            <DatePicker v-model="filterModel.value" dateFormat="yy-mm-dd" placeholder="yyyy-dd-mm" />
           </template>
         </Column>
-        <Column field="uraian" header="Uraian" :showFilterMatchModes="false">
+
+        <Column field="uraian" header="Uraian" sortable :showFilterMatchModes="false" :showClearButton="true">
           <template #body="{ data }">
             {{ data.uraian }}
           </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Uraian" />
+          <template #filter="{ filterModel, applyFilter }">
+            <InputText v-model="filterModel.value" @keyup.enter="applyFilter" placeholder="Cari Uraian" />
           </template>
         </Column>
-        <Column field="klasifikasi_monev" header="Klasifikasi Monev">
-          <template #body> - </template>
-        </Column>
-        <Column field="verifikasi_langsung" header="Verifikasi Langsung">
-          <template #body> - </template>
-        </Column>
-        <Column field="rekening_dpa" header="Rekening DPA" :showFilterMatchModes="false">
+
+        <Column field="akun_data" header="Klarifikasi Monev" sortable :showFilterMatchModes="false" :showClearButton="true">
           <template #body="{ data }">
-            {{ data.akun_data ? data.akun_data.akun_nama : '-' }}
+            {{ data.akun_data?.akun_nama }}
           </template>
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by Rekening DPA"
-            />
+          <template #filter="{ filterModel, applyFilter }">
+            <InputText v-model="filterModel.value" @keyup.enter="applyFilter" placeholder="Cari Klarifikasi Monev" />
           </template>
         </Column>
-        <Column field="bank" header="Bank" :showFilterMatchModes="false">
+
+        <Column field="akunls_data" header="Verifikasi Langsung" sortable :showFilterMatchModes="false" :showClearButton="true">
+          <template #body="{ data }">
+            {{ data.akunls_data?.akunls_nama }}
+          </template>
+          <template #filter="{ filterModel, applyFilter }">
+            <InputText v-model="filterModel.value" @keyup.enter="applyFilter" placeholder="Cari Verifikasi Langsung" />
+          </template>
+        </Column>
+
+        <Column field="bank" header="Bank" sortable :showFilterMatchModes="false" :showClearButton="true"
+          style="min-width: 12rem">
           <template #body="{ data }">
             {{ data.bank }}
           </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Bank" />
+          <template #filter="{ filterModel, applyFilter }">
+            <InputText v-model="filterModel.value" @keyup.enter="applyFilter" placeholder="Search by Bank" />
           </template>
         </Column>
-        <Column field="pb_dari_bank" header="PB dari Bank" :showFilterMatchModes="false">
+
+        <Column field="pb" header="PB dari Bank" sortable :showFilterMatchModes="false"
+          :showClearButton="true" style="min-width: 12rem">
           <template #body="{ data }">
-            {{ data.pb_dari || '-' }}
+            {{ data.pb }}
           </template>
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by PB dari Bank"
-            />
+          <template #filter="{ filterModel, applyFilter }">
+            <InputText v-model="filterModel.value" @keyup.enter="applyFilter"
+              placeholder="Search by PB dari Bank" />
           </template>
         </Column>
-        <Column
-          field="debit"
-          header="Debit"
-          :showFilterMatchModes="false"
-          style="text-align: right"
-        >
+
+        <Column field="debit" header="Debit" sortable :showFilterMatchModes="false" :showClearButton="true"
+          style="text-align: right">
           <template #body="slotProps">
-            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.debit || 0) }}
+            {{ formatCurrency(slotProps.data.debit) }}
           </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Debit" />
+          <template #filter="{ filterModel, applyFilter }">
+            <InputNumber v-model="filterModel.value" @keyup.enter="applyFilter" locale="id-ID"
+              placeholder="masukkan Debit" />
           </template>
         </Column>
-        <Column
-          field="kredit"
-          header="Kredit"
-          :showFilterMatchModes="false"
-          style="text-align: right"
-        >
+
+        <Column field="kredit" header="Kredit" sortable :showFilterMatchModes="false" :showClearButton="true"
+          style="text-align: right">
           <template #body="slotProps">
-            {{ new Intl.NumberFormat('id-ID').format(slotProps.data.kredit || 0) }}
+            {{ formatCurrency(slotProps.data.kredit) }}
           </template>
-          <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Kredit" />
-          </template>
-        </Column>
-        <Column field="terklarifikasi" header="Terklarifikasi" :showFilterMatchModes="false">
-          <template #body> - </template>
-          <template #filter="{ filterModel }">
-            <InputText
-              v-model="filterModel.value"
-              type="text"
-              placeholder="Search by Terklarifikasi"
-            />
+          <template #filter="{ filterModel, applyFilter }">
+            <InputNumber v-model="filterModel.value" @keyup.enter="applyFilter" locale="id-ID"
+              placeholder="masukkan Kredit" />
           </template>
         </Column>
-        <Column field="belum_klarifikasi" header="Belum Klarifikasi">
-          <template #body> - </template>
+
+        <Column field="terklarifikasi" header="Terklarifikasi" sortable :showFilterMatchModes="false" :showClearButton="true"
+          style="text-align: right">
+          <template #body="slotProps">
+            {{ formatCurrency(slotProps.data.terklarifikasi) }}
+          </template>
+          <template #filter="{ filterModel, applyFilter }">
+            <InputNumber v-model="filterModel.value" @keyup.enter="applyFilter" locale="id-ID"
+              placeholder="masukkan Terklarifikasi" />
+          </template>
         </Column>
-        <Column field="status" header="Status">
+
+        <Column field="belum_terklarifikasi" header="Belum Terklarifikasi" sortable :showFilterMatchModes="false" :showClearButton="true"
+          style="text-align: right">
+          <template #body="slotProps">
+            {{ formatCurrency(slotProps.data.belum_terklarifikasi) }}
+          </template>
+          <template #filter="{ filterModel, applyFilter }">
+            <InputNumber v-model="filterModel.value" @keyup.enter="applyFilter" locale="id-ID"
+              placeholder="masukkan Belum Terklarifikasi" />
+          </template>
+        </Column>
+        
+        <Column field="rekening_dpa" header="Rekening DPA" :showFilterMatchModes="false"
+          :showClearButton="true" style="min-width: 12rem">
           <template #body="{ data }">
-            {{ data.status || '-' }}
+            {{ data.rekening_dpa?.rek_nama ?? '' }}
+          </template>
+          <template #filter="{ filterModel, applyFilter }">
+            <InputText v-model="filterModel.value" @keyup.enter="applyFilter" placeholder="Search by Rekening DPA" />
           </template>
         </Column>
+        <template #paginatorstart>
+          <span class="current-page-report">
+            Showing {{ first + 1 }} to {{ first + rows }} of {{ total }} entries
+          </span>
+        </template>
       </DataTable>
     </div>
-    <Toast />
   </div>
+
+  <FormDataTransaksi v-model="modalForm" :item="selectedItem" @saved="onSaved" /> 
+
+  <Dialog :visible="showModalCancelValidasi" @update:visible="showModalCancelValidasi = $event" modal
+    header="Konfirmasi Batal Validasi" :closable="true" :style="{ width: '400px' }">
+    <div class="p-4">
+      <p>Apakah Anda yakin ingin membatalkan validasi data ini ?</p>
+      <div class="flex justify-end gap-2 pt-4">
+        <Button label="Ya, Batalkan Validasi" class="p-button-warning" @click="handleCancelValidasi" />
+        <Button label="Tidak" class="p-button-secondary" @click="() => (showModalCancelValidasi = false)" />
+      </div>
+    </div>
+  </Dialog>
+
+  <Toast group="confirm" position="center">
+    <template #message="slotProps">
+      <div class="flex flex-col flex-1">
+        <div class="text-center font-bold text-lg mb-2">
+          {{ slotProps.message.summary }}
+        </div>
+        <div class="text-center text-sm mb-4">
+          {{ slotProps.message.detail }}
+        </div>
+        <div class="flex gap-2">
+          <Button label="Hapus" class="p-button-danger w-full" @click="onConfirmDelete(slotProps.message)"></Button>
+          <Button label="Batal" class="p-button-text w-full" @click="toast.removeGroup('confirm')"></Button>
+        </div>
+      </div>
+    </template>
+  </Toast>
 </template>
 
-<style scoped></style>
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useToast } from 'primevue/usetoast';
+import { formatCurrency } from '@/utils/utils';
+import useRekeningKoran from '@/composables/useRekeningKoran';
+import useDataTransaksiActions from '@/composables/selisih/useDataTransaksiActions';
+import FilterDataTable from '@/components/FilterDataTable.vue';
+
+const modalForm = ref(false)
+const selectedItem = ref(null)
+const toast = useToast()
+const showModalValidasi = ref(false)
+const showModalSetor = ref(false)
+const showModalCancelValidasi = ref(false)
+
+const { create, show, destroy } = useDataTransaksiActions()
+const { 
+  items,
+  first,
+  rows,
+  total,
+  filters,
+  sort,
+  clearFilter,
+  setAdditionalFilter,
+  loading,
+  loadData,
+  update: onTableUpdate,
+  onPageChange,
+  exportExcel 
+} = useRekeningKoran()
+
+const emit = defineEmits(['search', 'openSyncDialog'])
+
+onMounted(async () => {
+  await loadData()
+})
+
+function searchData(data) {
+  setAdditionalFilter(data)
+  loadData()
+}
+
+function onSaved() {
+  loadData({
+    ...sort.value
+  })
+}
+
+function handleExportExcel() {
+  exportExcel()
+}
+
+function handleEdit(item) {
+  show(item).then((data) => {
+    selectedItem.value = data
+    modalForm.value = true
+  })
+}
+
+function handlePB(item) {
+  selectedItem.value = item
+  showModalValidasi.value = true
+}
+
+function handleBKU(item) {
+  selectedItem.value = item
+  showModalSetor.value = true
+}
+
+function handleDelete(item) {
+  toast.add({
+    severity: 'warn',
+    summary: 'Konfirmasi Hapus',
+    detail: 'Apakah Anda yakin ingin menghapus data ini?',
+    group: 'confirm',
+    data: {
+      id: item.id,
+    },
+  })
+}
+
+function onConfirmDelete(event) {
+  destroy(event.data).then(() => {
+    loadData()
+    toast.removeGroup('confirm')
+  })
+}
+
+function openSyncDialog() {
+  emit('openSyncDialog')
+}
+
+function rowStyle(rowData) {
+  if (rowData.is_valid === true) return { backgroundColor: '#e4f6e8', color: '#419e56' }
+}
+
+
+</script>
