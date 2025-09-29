@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { authService } from '../services/authService'; // Import authService
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:8000/api'
 

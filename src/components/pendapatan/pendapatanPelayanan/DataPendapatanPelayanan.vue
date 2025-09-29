@@ -10,7 +10,7 @@ import Column from 'primevue/column'
 import Toast from 'primevue/toast'
 import InputText from 'primevue/inputtext'
 import * as XLSX from 'xlsx'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 import { useToast } from 'primevue/usetoast'
 import ModalEditPendapatanPelayanan from '@/components/pendapatan/pendapatanPelayanan/ModalEditPendapatanPelayanan.vue'
 import ModalPenjamin1 from '@/components/pendapatan/pendapatanPelayanan/ModalPenjamin1.vue'
@@ -435,6 +435,7 @@ const onConfirmAction = async (event) => {
       detail: `Aksi ${title} berhasil dijalankan`,
       life: 3000,
     })
+    first.value = 0
     loadData(1, rows.value)
   } catch (error) {
     console.error(`Gagal ${title}:`, error)
@@ -451,6 +452,7 @@ const onReject = () => {
 }
 const handleSaved = () => {
   showModalEdit.value = false
+  first.value = 0
   loadData(1, rows.value)
 }
 
@@ -750,11 +752,13 @@ const clearTableFiltersP1 = () => {
 const onSort = (event) => {
   sortField.value = event.sortField
   sortOrder.value = event.sortOrder
+  first.value = 0
   loadData(1, rows.value)
 }
 
 watch(showModalPenjamin1, (newVal, oldVal) => {
   if (!newVal && oldVal) {
+    first.value = 0
     loadData(1, rows.value)
   }
 })

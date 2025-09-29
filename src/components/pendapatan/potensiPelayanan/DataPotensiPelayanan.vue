@@ -9,12 +9,12 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import SplitButton from 'primevue/splitbutton'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
 import * as XLSX from 'xlsx'
 import ModalPotensiPelayanan from '@/components/pendapatan/potensiPelayanan/ModalPotensiPelayanan.vue'
-import ModalTarikPotensiPelayanan from '@/components/pendapatan/potensiPelayanan/ModalTarikPotensiPelayanan.vue'
+import ModalTarikPotensi from '@/components/pendapatan/ModalTarikPotensi.vue'
 import ModalTerimaPotensi from '@/components/pendapatan/ModalTerimaPotensi.vue'
 import ModalRincianPotensiPelayanan from '@/components/pendapatan/potensiPelayanan/ModalRincianPotensiPelayanan.vue'
 
@@ -360,6 +360,7 @@ const onConfirmAction = async (event) => {
             detail: `Aksi ${title} berhasil dijalankan`,
             life: 3000,
         })
+        first.value = 0
         loadData(1, rows.value)
     } catch (error) {
         console.error(`Gagal ${title}:`, error)
@@ -378,6 +379,7 @@ const handleSaved = () => {
   showModal.value = false
   showModalTarik.value = false
   showModalTerima.value = false
+  first.value = 0
   loadData(1, rows.value)
 }
 
@@ -588,12 +590,14 @@ const onFilter = (event) => {
 }
 const clearTableFilters = () => {
   initFilters()
+  first.value = 0
   loadData(1, rows.value)
 }
 
 const onSort = (event) => {
   sortField.value = event.sortField
   sortOrder.value = event.sortOrder
+  first.value = 0
   loadData(1, rows.value)
 }
 </script>
@@ -901,8 +905,9 @@ const onSort = (event) => {
       }"
       @saved="handleSaved" 
     />
-    <ModalTarikPotensiPelayanan
+    <ModalTarikPotensi
       v-model="showModalTarik" 
+      jenis="pelayanan"
       @saved="handleSaved"
     />
     <ModalTerimaPotensi

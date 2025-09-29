@@ -107,7 +107,7 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Toast from 'primevue/toast'
 import { useToast } from 'primevue/usetoast'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 import { FilterMatchMode } from '@primevue/core/api'
 
 const props = defineProps({
@@ -215,6 +215,7 @@ const onPageChange = (event) => {
 const onSort = (event) => {
     sortField.value = event.sortField
     sortOrder.value = event.sortOrder
+    first.value = 0
     loadData(1, rows.value)
 }
 const onFilter = (event) => {
@@ -294,6 +295,7 @@ const onReject = () => {
 watch(
     () => [props.isDaftar, props.piutangId, props.penjaminId, props.carabayarId, props.options],
     async ([newIsDaftar, newPiutangId, newPenjaminId, newCarabayarId, newOptions]) => {
+        first.value = 0
         await loadData(1, rows.value)
         caraBayarProgsusId.value = newOptions.carabayar.find(opt =>
             opt.label.toLowerCase().replace(/\s+/g, '').includes("programkhusus")

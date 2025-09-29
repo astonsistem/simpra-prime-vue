@@ -9,11 +9,12 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import SplitButton from 'primevue/splitbutton'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
 import * as XLSX from 'xlsx'
 import ModalPotensiLainnya from '@/components/pendapatan/potensiLainnya/ModalPotensiLainnya.vue'
+import ModalTarikPotensi from '@/components/pendapatan/ModalTarikPotensi.vue'
 import ModalTerimaPotensi from '@/components/pendapatan/ModalTerimaPotensi.vue'
 import ModalRincianPotensiLainnya from '@/components/pendapatan/potensiLainnya/ModalRincianPotensiLainnya.vue'
 
@@ -81,6 +82,7 @@ const first = ref(0)
 const loading = ref(false)
 const selectedItem = ref(null)
 const showModal = ref(false)
+const showModalTarik = ref(false)
 const showModalTerima = ref(false)
 const showModalRincian = ref(false)
 const sortField = ref(null)
@@ -358,6 +360,7 @@ const onConfirmAction = async (event) => {
             detail: `Aksi ${title} berhasil dijalankan`,
             life: 3000,
         })
+        first.value = 0
         loadData(1, rows.value)
     } catch (error) {
         console.error(`Gagal ${title}:`, error)
@@ -374,13 +377,15 @@ const onReject = () => {
 }
 const handleSaved = () => {
   showModal.value = false
+  showModalTarik.value = false
   showModalTerima.value = false
+  first.value = 0
   loadData(1, rows.value)
 }
 
 const fetchAkun = async () => {
   try {
-    const response = await api.get('/akun/list/akunpotensilain')
+    const response = await api.get('/akun/list')
     if (response.data && response.data.data) {
       akunOptions.value = response.data.data.map((item) => ({
         label: item.akun_nama,
@@ -524,12 +529,14 @@ const onFilter = (event) => {
 }
 const clearTableFilters = () => {
   initFilters()
+  first.value = 0
   loadData(1, rows.value)
 }
 
 const onSort = (event) => {
   sortField.value = event.sortField
   sortOrder.value = event.sortOrder
+  first.value = 0
   loadData(1, rows.value)
 }
 </script>
@@ -630,6 +637,7 @@ const onSort = (event) => {
         <h3 class="text-xl font-semibold text-[#17316E]">Data Potensi Lainnya</h3>
         <div class="flex gap-2">
           <Button label="Tambah Data" icon="pi pi-plus" class="p-button-success" @click="handleAdd" />
+          <Button label="Tarik Data" icon="pi pi-download" class="p-button-success"  @click="showModalTarik = true" />
           <Button label="Clear Column Filters" icon="pi pi-filter-slash" class="p-button-success" @click="clearTableFilters" />
           <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel"/>
         </div>
@@ -817,6 +825,11 @@ const onSort = (event) => {
         akun: akunOptions,
       }"
       @saved="handleSaved" 
+    />
+    <ModalTarikPotensi
+      v-model="showModalTarik" 
+      jenis="lainnya"
+      @saved="handleSaved"
     />
     <ModalTerimaPotensi
       v-model="showModalTerima" 

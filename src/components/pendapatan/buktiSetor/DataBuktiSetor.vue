@@ -9,10 +9,13 @@ import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import InputText from 'primevue/inputtext'
 import SplitButton from 'primevue/splitbutton'
-import api from '@/services/http.js'
+import api from '@/api/client.js'
 import { useToast } from 'primevue/usetoast'
 import Toast from 'primevue/toast'
-import ModalSetor from '@/components/pendapatan/buktiSetor/ModalSetor.vue'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
+import { formatCurrency } from '@/utils/utils'
+import ModalSetor from '@/components/pendapatan/billingKasir/ModalSetorBillingKasir.vue'
 
 const formatDateToYYYYMMDD = (date) => {
   if (!date) return null
@@ -241,13 +244,7 @@ const handleSetor = async (item) => {
 const handleCetak = async (item) => {
   try {
     loading.value = true
-    const response = await api.get(`/bukti_setor/${item.rc_id}`)
-    if (!response.data) {
-      throw new Error("Gagal memuat detail data")
-    }
-    selectedItem.value = { ...response.data }
-
-    await modalSetor.value.exportPDF()
+    await exportPDF(item.rc_id)
   } catch (error) {
     console.error("Aksi Cetak gagal:", error)
     toast.add({
@@ -296,13 +293,313 @@ const onFilter = (event) => {
 }
 const clearTableFilters = () => {
   initFilters()
+  first.value = 0
   loadData(1, rows.value)
 }
 
 const onSort = (event) => {
   sortField.value = event.sortField
   sortOrder.value = event.sortOrder
+  first.value = 0
   loadData(1, rows.value)
+}
+
+function hitungTotalBruto(items) {
+  return formatCurrency(
+    items.reduce((total, item) => total + parseInt(item.total || 0), 0)
+  )
+}
+
+function hitungTotalNetto(items) {
+  return formatCurrency(
+    items.reduce((total, item) => total + parseInt(item.total_jumlah_netto || 0), 0)
+  )
+}
+
+async function exportPDF(rcId) {
+  // API 1 endpoint utama yang sudah ada
+  const response = await api.get(`/billing_kasir/setor/${rcId}`)
+
+  if (response.data.status !== 200) {
+    throw new Error("Gagal ambil data dari API")
+  }
+
+  const { rekening_koran, billing_kasir, penerimaan_selisih, penerimaan_lain } =
+    response.data.data
+
+  const doc = new jsPDF({
+    orientation: "landscape",
+    unit: "mm",
+    format: "a4"
+  })
+  const pageWidth = doc.internal.pageSize.getWidth()
+
+  // === Logo ===
+  const img = new Image()
+  img.src = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTR8XOakzh-V_i0pMpEb2WRXmsm20150mz9WxBXNo_xU0fUURAEvwCYjZnGfV_VFUHi-S0&usqp=CAU"
+  await new Promise((resolve) => (img.onload = resolve))
+  const imgWidth = 40
+  const imgHeight = 40
+  const x = (pageWidth - imgWidth) / 2
+  const y = 10
+  doc.addImage(img, "PNG", x, y, imgWidth, imgHeight)
+
+  // === Judul ===
+  doc.setFontSize(18)
+  doc.text("Bukti Setor", pageWidth / 2, y + imgHeight + 10, { align: "center" })
+
+  // === Tabel Form (rekening_koran) ===
+  const fieldLabels = {
+    tgl_rc: "Tanggal RC",
+    no_rc: "No RC",
+    nominal: "Nominal",
+    uraian: "Uraian",
+    bank: "Bank",
+  }
+
+  const formRows = Object.entries(rekening_koran ?? {})
+    .filter(([key]) => key in fieldLabels)
+    .map(([key, value]) => {
+      let displayValue = value ?? ""
+      if (key == "nominal") {
+        displayValue = formatCurrency(displayValue)
+      }
+      return [fieldLabels[key], displayValue]
+    })
+
+  autoTable(doc, {
+    startY: y + imgHeight + 20,
+    body: formRows,
+  })
+
+  let tableY = doc.lastAutoTable.finalY + 10
+
+  // === Table Config
+  const defaultTableConfig = {
+    styles: {
+      fontSize: 7, // smaller font
+      cellPadding: 2,
+      overflow: "linebreak",
+      lineWidth: 0.2,   // thicker lines for all cells
+      lineColor: [0, 0, 0], // black color
+    },
+    headStyles: {
+      fillColor: [41, 128, 185], // blue
+      textColor: 255,
+      halign: "center",
+      valign: "middle",
+      fontSize: 7,
+      lineWidth: 0.2,   // thicker lines for all cells
+      lineColor: [0, 0, 0], // black color
+    },
+    tableWidth: "wrap", // more precise
+    margin: { left: 15, right: 15 },
+    didDrawPage: function (data) {
+      doc.setFontSize(7)
+      doc.text(
+        `Page ${doc.internal.getNumberOfPages()}`,
+        data.settings.margin.left,
+        doc.internal.pageSize.getHeight() - 5
+      )
+    },
+    didDrawTable: function (data) {
+      const tableWidth = data.table.width
+      const safeMargin = 15 // minimal margin
+      let centerX = (pageWidth - tableWidth) / 2
+      if (centerX < safeMargin) centerX = safeMargin
+      data.settings.margin.left = centerX
+    }
+  }
+
+  // === Billing Kasir ===
+  // Body
+  const mapBillingKasir = (items) => {
+    if (!items || items.length === 0) {
+      return [["Data Kosong"]];
+    }
+    return items.map((v, i) => [
+      i + 1, // No
+      v.no_buktibayar ?? "-",
+      formatDateID(v.tgl_buktibayar),
+      v.no_closingkasir ?? "-",
+      v.pasien_nama ?? "-",
+      v.no_pendaftaran ?? "-",
+      formatDateID(v.tgl_pelayanan),
+      v.jenis_tagihan ?? "-",
+      v.carabayar_nama ?? "-",
+      v.cara_pembayaran ?? "-",
+      v.bank_tujuan ?? "-",
+      formatCurrency(v.total), 
+      formatCurrency(v.jumlah_netto > 0 ? v.jumlah_netto : v.total_jumlah_netto)
+    ])
+  }
+  const headersBillingKasir = [
+    "No",
+    "No.\nKwitansi",
+    "Tgl.\nKwitansi",
+    "No Closing",
+    "Nama\nPasien",
+    "No.\nPendaftaran",
+    "Tgl.\nPelayanan",
+    "Jenis\nTagihan",
+    "Metode\nBayar",
+    "Cara\nPembayaran",
+    "Bank",
+    "Jumlah\nBruto",
+    "Jumlah\nNetto"
+  ]
+  const bodyBillingKasir = mapBillingKasir(billing_kasir)
+  // Footer
+  const footerBillingkasir = [
+    [
+      { content: "Total", colSpan: headersBillingKasir.length - 2, styles: { halign: "right", fontStyle: "bold" } },
+      hitungTotalBruto(billing_kasir),
+      hitungTotalNetto(billing_kasir),
+    ]
+  ]
+  doc.text("Billing Kasir", pageWidth / 2, tableY, { align: "center" })
+  autoTable(doc, { 
+    ...defaultTableConfig,
+    startY: tableY + 5, 
+    head: [headersBillingKasir], 
+    body: bodyBillingKasir,
+    foot: footerBillingkasir,
+    columnStyles: {
+      1: { cellWidth: 35, overflow: "linebreak" }, // No. Kwitansi
+      4: { cellWidth: 40, overflow: "linebreak" }, // Nama Pasien
+      5: { cellWidth: 35, overflow: "linebreak" }, // No. Pendaftaran
+      11: { cellWidth: 20, halign: "right" },      // Jumlah Bruto
+      12: { cellWidth: 20, halign: "right" },      // Jumlah Netto
+    }
+  })
+  tableY = doc.lastAutoTable.finalY + 10
+
+  // === Penerimaan Selisih ===
+  // Body
+  const mapPenerimaanSelisih = (items) => {
+    if (!items || items.length === 0) {
+      return [["Data Kosong"]];
+    }
+    return items.map((v, i) => [
+      i + 1, // No
+      v.no_buktibayar ?? "-",
+      formatDateID(v.tgl_buktibayar),
+      v.no_closingkasir ?? "-",
+      v.pasien_nama ?? "-",
+      v.no_pendaftaran ?? "-",
+      formatDateID(v.tgl_pelayanan),
+      v.jenis_tagihan ?? "-",
+      v.carabayar_nama ?? "-",
+      v.cara_pembayaran ?? "-",
+      v.bank_tujuan ?? "-",
+      formatCurrency(v.total), 
+      formatCurrency(v.total_jumlah_netto), 
+    ])
+  }
+  const headersPenerimaanSelisih = [
+    "No",
+    "No.\nKwitansi",
+    "Tgl.\nKwitansi",
+    "No Closing",
+    "Nama\nPasien",
+    "No.\nPendaftaran",
+    "Tgl.\nPelayanan",
+    "Jenis\nTagihan",
+    "Metode\nBayar",
+    "Cara\nPembayaran",
+    "Bank",
+    "Jumlah\nBruto",
+    "Jumlah\nNetto"
+  ]
+  const bodyPenerimaanSelisih = mapPenerimaanSelisih(penerimaan_selisih)
+  // Footer
+  const footerPenerimaanSelisih = [
+    [
+      { content: "Total", colSpan: headersPenerimaanSelisih.length - 2, styles: { halign: "right", fontStyle: "bold" } },
+      hitungTotalBruto(penerimaan_selisih),
+      hitungTotalNetto(penerimaan_selisih),
+    ]
+  ]
+  doc.text("Penerimaan Selisih", pageWidth / 2, tableY, { align: "center" })
+  autoTable(doc, {
+    ...defaultTableConfig,
+    startY: tableY + 5,
+    head: [headersPenerimaanSelisih],
+    body: bodyPenerimaanSelisih,
+    foot: footerPenerimaanSelisih,
+    columnStyles: {
+      1: { cellWidth: 35, overflow: "linebreak" }, // No. Kwitansi
+      4: { cellWidth: 40, overflow: "linebreak" }, // Nama Pasien
+      5: { cellWidth: 35, overflow: "linebreak" }, // No. Pendaftaran
+      11: { cellWidth: 20, halign: "right" },      // Jumlah Bruto
+      12: { cellWidth: 20, halign: "right" },      // Jumlah Netto
+    }
+  })
+  tableY = doc.lastAutoTable.finalY + 10
+
+  // === Penerimaan Lain ===
+  // Body
+  const mapPenerimaanLain = (items) => {
+    if (!items || items.length === 0) {
+      return [["Data Kosong"]];
+    }
+    return items.map((v, i) => [
+      i + 1, // No
+      v.no_bayar ?? "-",
+      formatDateID(v.tgl_bayar),
+      v.pihak3 ?? "-",
+      v.uraian ?? "-",
+      v.no_dokumen ?? "-",
+      formatDateID(v.tgl_dokumen),
+      v.sumber?.sumber_nama ?? "-", // handle nested object
+      v.cara_pembayaran ?? "-",
+      v.bank_tujuan ?? "-",
+      formatCurrency(v.total), 
+      formatCurrency(v.total_jumlah_netto), 
+    ])
+  }
+  const headersPenerimaanLain = [
+    "No",
+    "No.\nBayar",
+    "Tgl.\nBayar",
+    "Penyetor",
+    "Uraian",
+    "No.\nDokumen",
+    "Tgl.\nDokumen",
+    "Sumber\nTransaksi",
+    "Cara\nPembayaran",
+    "Bank",
+    "Jumlah\nBruto",
+    "Jumlah\nNetto"
+  ]
+  const bodyPenerimaanLain = mapPenerimaanLain(penerimaan_lain)
+  // Footer
+  const footerPenerimaanLain = [
+    [
+      { content: "Total", colSpan: headersPenerimaanLain.length - 2, styles: { halign: "right", fontStyle: "bold" } },
+      hitungTotalBruto(penerimaan_lain),
+      hitungTotalNetto(penerimaan_lain),
+    ]
+  ]
+  doc.text("Penerimaan Lain", pageWidth / 2, tableY, { align: "center" })
+  autoTable(doc, {
+    ...defaultTableConfig,
+    startY: tableY + 5,
+    head: [headersPenerimaanLain],
+    body: bodyPenerimaanLain,
+    foot: footerPenerimaanLain,
+    columnStyles: {
+      1: { cellWidth: 35, overflow: "linebreak" }, // No. Bayar
+      3: { cellWidth: 40, overflow: "linebreak" }, // Penyetor
+      4: { cellWidth: 40, overflow: "linebreak" }, // Uraian
+      5: { cellWidth: 35, overflow: "linebreak" }, // No. Dokumen
+      11: { cellWidth: 20, halign: "right" },      // Jumlah Bruto
+      12: { cellWidth: 20, halign: "right" },      // Jumlah Netto
+    }
+  })
+  tableY = doc.lastAutoTable.finalY + 10
+
+  doc.save(`bukti_setor_${rcId}.pdf`)
 }
 </script>
 
@@ -550,9 +847,6 @@ const onSort = (event) => {
       ref="modalSetor"
       v-model="showModalSetor" 
       :item="selectedItem" 
-      :options="{
-        bank: bankOptions,
-      }"
     />
     <Toast />
   </div>
