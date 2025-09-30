@@ -39,6 +39,9 @@
             :showTime="false" :showSeconds="false" :showMilliseconds="false" />
         </div>
       </template>
+      <!-- slot additional -->
+      <slot name="additional" :form="additionalForm"></slot>
+
       <div class="self-end">
         <label class="block mb-1 text-sm font-medium text-gray-700"></label>
         <Button label="Cari" icon="pi pi-search" class="p-button-info" :disabled="!validatedForm" @click="searchData" />
@@ -55,10 +58,9 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { formatDateToYYYYMMDD } from '@/utils/dateUtils'
-import { handle } from '@primeuix/themes/aura/imagecompare'
 
 
-const emit = defineEmits(['search', 'openSyncDialog'])
+const emit = defineEmits(['search'])
 
 onMounted(() => {
   initForm()
@@ -85,6 +87,7 @@ const jenisPeriodeOptions = ref([
 ])
 
 const form = ref({})
+const additionalForm = ref({})
 
 const tahunPeriodeOptions = Array.from(
   { length: 10 },
@@ -109,6 +112,8 @@ function initForm() {
     tglAwal: null,
     tglAkhir: null,
   }
+
+  additionalForm.value = {}
 }
 
 function buildQuery() {
@@ -125,6 +130,15 @@ function buildQuery() {
     if (form.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(form.value.tglAwal)
     if (form.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(form.value.tglAkhir)
   }
+
+  if (additionalForm.value) {
+    Object.keys(additionalForm.value).forEach(key => {
+      if (additionalForm.value[key] !== null) {
+        q[key] = additionalForm.value[key]
+      }
+    })
+  }
+
 
   return q
 }

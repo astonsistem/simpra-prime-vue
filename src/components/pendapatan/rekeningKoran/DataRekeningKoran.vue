@@ -1,5 +1,5 @@
 <template>
-  <FilterDataTable @search="searchData" @openSyncDialog="openSyncDialog" />
+  <FilterDataTable @search="searchData"></FilterDataTable>
   <div>
     <div
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
@@ -21,8 +21,9 @@
           <div class="flex justify-between">
             <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />
             <div class="flex gap-2">
-              <!-- <Button label="Tambah Data" icon="pi pi-plus" class="p-button-primary" @click="handleAdd" />
-              <Button label="Export Excel" icon="pi pi-file-excel" class="p-button-success" @click="handleExportExcel" /> -->
+              <Button label="Request Data dari Bank JATIM" icon="pi pi-sync" severity="info" size="small" class="p-button-border" @click="handleRequest" />
+              <Button label="Import Bank Pilihan" icon="pi pi-search" severity="help" size="small" @click="handleImport" />
+              <Button label="Export" icon="pi pi-file-excel" class="p-button-success" size="small" @click="handleExportExcel" />
             </div>
           </div>
         </template>
@@ -195,6 +196,8 @@
     </div>
   </div>
 
+  <RequestBankJatim v-model="modalRequest" />
+
   <FormDataTransaksi v-model="modalForm" :item="selectedItem" @saved="onSaved" /> 
 
   <Dialog :visible="showModalCancelValidasi" @update:visible="showModalCancelValidasi = $event" modal
@@ -233,6 +236,7 @@ import { formatCurrency } from '@/utils/utils';
 import useRekeningKoran from '@/composables/useRekeningKoran';
 import useDataTransaksiActions from '@/composables/selisih/useDataTransaksiActions';
 import FilterDataTable from '@/components/FilterDataTable.vue';
+import RequestBankJatim from './RequestBankJatim.vue';
 
 const modalForm = ref(false)
 const selectedItem = ref(null)
@@ -240,6 +244,7 @@ const toast = useToast()
 const showModalValidasi = ref(false)
 const showModalSetor = ref(false)
 const showModalCancelValidasi = ref(false)
+const modalRequest = ref(false)
 
 const { create, show, destroy } = useDataTransaksiActions()
 const { 
@@ -264,6 +269,8 @@ onMounted(async () => {
   await loadData()
 })
 
+function handleImport() {}
+
 function searchData(data) {
   setAdditionalFilter(data)
   loadData()
@@ -273,6 +280,10 @@ function onSaved() {
   loadData({
     ...sort.value
   })
+}
+
+function handleRequest () {
+  modalRequest.value = true
 }
 
 function handleExportExcel() {
@@ -295,6 +306,8 @@ function handleBKU(item) {
   selectedItem.value = item
   showModalSetor.value = true
 }
+
+
 
 function handleDelete(item) {
   toast.add({
