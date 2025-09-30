@@ -127,7 +127,7 @@ async function handleRequest () {
 async function sync () {
   try {
     loadingSync.value = true
-    await syncBankJatim()
+    await syncBankJatim(form.value)
   } catch (error) {
     console.log(error)
   }finally {
