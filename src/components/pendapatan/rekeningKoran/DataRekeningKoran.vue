@@ -97,7 +97,7 @@
 
         <Column field="akun_data" header="Klarifikasi Monev" sortable :showFilterMatchModes="false" :showClearButton="true">
           <template #body="{ data }">
-            {{ data.akun_data?.akun_nama }}
+            {{ data.akun_data }}
           </template>
           <template #filter="{ filterModel, applyFilter }">
             <InputText v-model="filterModel.value" @keyup.enter="applyFilter" placeholder="Cari Klarifikasi Monev" />
@@ -198,6 +198,7 @@
 
   <RequestBankJatim v-model="modalRequest" />
   <ImportBankPilihan v-model="modalImport" @sync="() => loadData()" />
+  <EditRekeningKoran v-model="modalEdit" :item="selectedItem" @saved="onSaved" />
 
   <FormDataTransaksi v-model="modalForm" :item="selectedItem" @saved="onSaved" /> 
 
@@ -239,8 +240,10 @@ import useDataTransaksiActions from '@/composables/selisih/useDataTransaksiActio
 import FilterDataTable from '@/components/FilterDataTable.vue';
 import RequestBankJatim from './RequestBankJatim.vue';
 import ImportBankPilihan from './ImportBankPilihan.vue';
+import EditRekeningKoran from './EditRekeningKoran.vue';
 
 const modalForm = ref(false)
+const modalEdit = ref(false)
 const selectedItem = ref(null)
 const toast = useToast()
 const showModalValidasi = ref(false)
@@ -296,10 +299,8 @@ function handleExportExcel() {
 }
 
 function handleEdit(item) {
-  show(item).then((data) => {
-    selectedItem.value = data
-    modalForm.value = true
-  })
+  selectedItem.value = item
+  modalEdit.value = true
 }
 
 function handlePB(item) {
