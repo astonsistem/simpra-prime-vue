@@ -25,17 +25,37 @@
         </div>
         <div class="w-1/4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Pilih File</label>
-          <FileUpload  mode="basic" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></FileUpload>
+          <FileUpload 
+            ref="fileUploadRef"
+            mode="basic" 
+            accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+            @select="onFileSelect"
+            :maxFileSize="5000000"
+            chooseLabel="Pilih File Excel"
+            class=""
+          />
         </div>
         <div class="w-1/4">
           <label class="block mb-1 text-sm font-medium text-gray-700">&nbsp;</label>
-         <Button 
-              label="Preview" 
+          <div class="flex gap-2">
+
+            <!-- <Button 
+                 label="Preview" 
+                 severity="info" 
+                 :icon="loadingRequest ? 'pi pi-spin pi-spinner' : 'pi pi-eye'" 
+                 @click="handlePreview" 
+                 class="ml-2"
+                 :disabled="loadingRequest || !form.bank || !form.file"/> -->
+
+          <Button 
+              label="Sinkronisasi" 
               severity="info" 
-              :icon="loadingRequest ? 'pi pi-spin pi-spinner' : 'pi pi-eye'" 
-              @click="preview" 
-              class="ml-2"
-              :disabled="loadingRequest || !form.bank || !form.file"/>
+              :icon="loadingSync ? 'pi pi-spin pi-spinner' : 'pi pi-sync'" 
+              @click="handleSync" 
+              :disabled="!hasRequest || loadingSync" />
+          </div>
+
+              
         </div>
       </div>
     </Fieldset>
@@ -53,30 +73,41 @@
               label="Sinkronisasi" 
               severity="info" 
               :icon="loadingSync ? 'pi pi-spin pi-spinner' : 'pi pi-sync'" 
-              @click="sync" 
+              @click="handleSync" 
               :disabled="!hasRequest || loadingSync" />
           </div>
         </div>
-        <DataTable :value="items" :loading="loadingSync" striped-rows dataKey="id" class="p-datatable-sm text-xs">
-          <Column field="reffno" header="No Reff"></Column>
-          <Column field="dateTime" header="Tgl">
-            <template #body="{ data }">
-              {{ formatDateToYYYYMMDD(data.dateTime) }}
+        <DataTable :value="items" :loading="loadingSync" striped-rows show-gridlines dataKey="id" class="p-datatable-sm text-xs">
+          <Column field="no" header="No" style="width: 5%;text-align: center">
+            <template #body="{ index }">
+              {{ index + 1 }}
             </template>
           </Column>
-          <Column field="transactionCode" header="Kode Transaksi"></Column>
-          <Column field="ccy" header="Currency"></Column>
-          <Column field="amount" header="Nominal">
+          <Column field="no_rc" header="No. RC" style="min-width: 12rem"></Column>
+          <Column field="tgl_rc" header="Tgl. RC" style="min-width: 10rem">
             <template #body="{ data }">
-              {{ formatCurrency(data.amount) }}
+              {{ data.tgl_rc }}
             </template>
           </Column>
-          <Column field="flag" header="Flag"></Column>
-          <Column field="description" header="Deskripsi"></Column>
+          <Column field="rek_dari" header="Rek Dari" style="min-width: 12rem"></Column>
+          <Column field="nama_dari" header="Nama Dari" style="min-width: 15rem"></Column>
+          <Column field="uraian" header="Uraian" style="min-width: 20rem"></Column>
+          <Column field="bank" header="Bank" style="min-width: 8rem"></Column>
+          <Column field="debit" header="Debit" style="text-align: right; min-width: 10rem">
+            <template #body="{ data }">
+              {{ formatCurrency(data.debit || 0) }}
+            </template>
+          </Column>
+          <Column field="kredit" header="Kredit" style="text-align: right; min-width: 10rem">
+            <template #body="{ data }">
+              {{ formatCurrency(data.kredit || 0) }}
+            </template>
+          </Column>
+
         </DataTable>
       </template>
       <template v-else>
-        <p class="text-sm text-gray-500">Silahkan request data terlebih dahulu</p>
+        <p class="text-sm text-gray-500">Silahkan pilih bank dan unggah file excel terlebih dahulu</p>
       </template>
     </Fieldset>
   </Dialog>
@@ -96,16 +127,18 @@ const loadingRequest = ref(false)
 const loadingSync = ref(false)
 const hasSync = ref(false)
 const dialogWidth = ref('75vw')
+const fileUploadRef = ref(null)
 
 const {
   items,
-  bankOptions,
   preview,
+  sync,
+  resetData
 } = useImportBankPilihan()
 
 const {
   fetchList: fetchBankTujuan,
-  items: bankTujuanOptions
+  options: bankTujuanOptions
 } = useBankTujuan()
 
 onMounted(() => {
@@ -127,10 +160,61 @@ function initForm() {
     bank: null,
     file: null,
   }
+  hasRequest.value = false
+  resetData()
 }
 
+function onFileSelect(event) {
+  if (event.files && event.files.length > 0) {
+    form.value.file = event.files[0]
+    handlePreview()
+  }
+}
 
-function reset () {
+async function handlePreview() {
+  if (!form.value.bank || !form.value.file) {
+    return
+  }
+  
+  try {
+    loadingRequest.value = true
+    await preview({
+      bank: form.value.bank,
+      file: form.value.file
+    })
+    hasRequest.value = true
+  } catch (error) {
+    console.error('Error during preview:', error)
+  } finally {
+    loadingRequest.value = false
+  }
+}
+
+async function handleSync() {
+  if (!hasRequest.value) {
+    return
+  }
+  
+  try {
+    loadingSync.value = true
+    await sync()
+    hasSync.value = true
+    // Reset form after successful sync
+    initForm()
+    if (fileUploadRef.value) {
+      fileUploadRef.value.clear()
+    }
+  } catch (error) {
+    console.error('Error during sync:', error)
+  } finally {
+    loadingSync.value = false
+  }
+}
+
+function reset() {
   initForm()
+  if (fileUploadRef.value) {
+    fileUploadRef.value.clear()
+  }
 }
 </script>
