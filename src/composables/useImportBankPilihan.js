@@ -14,9 +14,13 @@ export default function useImportBankPilihan() {
     'JATIM': transformJatimExcel,
     'BANK JATIM': transformJatimExcel,
     'MANDIRI': transformMandiriExcel,
+    'BANK MANDIRI': transformMandiriExcel,
     'BCA': transformBcaExcel,
+    'BANK BCA': transformBcaExcel,
     'BNI': transformBniExcel,
+    'BANK BNI': transformBniExcel,
     'BRI': transformBriExcel,
+    'BANK BRI': transformBriExcel,
     'DEFAULT': transformDefaultExcel
   }
 
@@ -27,18 +31,19 @@ export default function useImportBankPilihan() {
       
       // Read Excel file
       const data = await readExcelFile(file)
+      console.log('data from excel: ', data)
       
       // Get bank name from bank ID
       const bankName = await getBankName(bank)
       
       // Transform data based on bank transformer
       const transformedData = transformExcelData(data, bankName)
-      
+      console.log('transformedData', transformedData)
       // Filter only rows with valid date
       const filteredData = transformedData.filter(row => row.tgl_rc && row.tgl_rc !== '')
-      
       items.value = filteredData
       previewData.value = filteredData
+
       
       toast.add({
         severity: 'success',
@@ -190,7 +195,7 @@ export default function useImportBankPilihan() {
     return dataRows.map((row, index) => {
       const transformedRow = {
         id: index + 1,
-        bank: bankName,
+        bank: 'JATIM',
         tgl: new Date().toISOString().split('T')[0]
       }
 
@@ -203,7 +208,7 @@ export default function useImportBankPilihan() {
             transformedRow[fieldName] = parseExcelDate(value)
           } else if (fieldName === 'debit' || fieldName === 'kredit') {
             transformedRow[fieldName] = parseFloat(value) || 0
-          } else if (fieldName === 'no_rc' && value) {
+          } else if (['no_rc', 'rek_dari', 'nama_dari'].includes(fieldName) && value) {
             transformedRow[fieldName] = value.toString()
           } else {
             transformedRow[fieldName] = value
@@ -217,25 +222,25 @@ export default function useImportBankPilihan() {
 
   /**
    * Transformer untuk Bank Mandiri
-   * TODO: Sesuaikan dengan format Excel Bank Mandiri
+   * Format: Tgl. | Tgl. Val. | Rincian Transaksi | No. Referensi | Debit | Kredit | Saldo | Branch Code
    */
   function transformMandiriExcel(excelData, bankName) {
     const headers = excelData[0]
     const dataRows = excelData.slice(1)
     
-    // TODO: Mapping sesuai format Bank Mandiri
     const mapping = {
-      'Tanggal': 'tgl_rc',
-      'Keterangan': 'uraian',
-      'Debet': 'debit',
+      'Tgl.': 'tgl_rc',
+      'Rincian Transaksi': 'uraian',
+      'No. Referensi': 'no_rc',
+      'Debit': 'debit',
       'Kredit': 'kredit',
-      'No Referensi': 'no_rc'
+      'Branch Code': 'rek_dari'
     }
 
     return dataRows.map((row, index) => {
       const transformedRow = {
         id: index + 1,
-        bank: bankName,
+        bank: 'MANDIRI',
         tgl: new Date().toISOString().split('T')[0]
       }
 
@@ -248,6 +253,8 @@ export default function useImportBankPilihan() {
             transformedRow[fieldName] = parseExcelDate(value)
           } else if (fieldName === 'debit' || fieldName === 'kredit') {
             transformedRow[fieldName] = parseFloat(value) || 0
+          } else if (['no_rc', 'rek_dari', 'nama_dari'].includes(fieldName) && value) {
+            transformedRow[fieldName] = value.toString()
           } else {
             transformedRow[fieldName] = value
           }
@@ -260,39 +267,99 @@ export default function useImportBankPilihan() {
 
   /**
    * Transformer untuk Bank BCA
-   * TODO: Sesuaikan dengan format Excel Bank BCA
+   * Format: Tanggal Transaksi | Keterangan | Cabang | jumlah
+   * Special: kolom 'jumlah' mengandung DB/CR yang menentukan debit/kredit
    */
   function transformBcaExcel(excelData, bankName) {
     const headers = excelData[0]
     const dataRows = excelData.slice(1)
     
-    // TODO: Mapping sesuai format Bank BCA
     const mapping = {
-      'Date': 'tgl_rc',
-      'Description': 'uraian',
-      'Debit': 'debit',
-      'Credit': 'kredit',
-      'Reference': 'no_rc'
+      'Tanggal Transaksi': 'tgl_rc',
+      'Keterangan': 'uraian'
     }
 
     return dataRows.map((row, index) => {
       const transformedRow = {
         id: index + 1,
-        bank: bankName,
-        tgl: new Date().toISOString().split('T')[0]
+        bank: 'BCA',
+        tgl: new Date().toISOString().split('T')[0],
+        no_rc: `BCA-${Date.now()}-${index + 1}`, // Generate unique reference
+        debit: 0,
+        kredit: 0
       }
 
       headers.forEach((header, colIndex) => {
         const fieldName = mapping[header]
-        if (fieldName && row[colIndex] !== undefined && row[colIndex] !== null) {
-          let value = row[colIndex]
-          
+        let value = row[colIndex]
+        
+        if (fieldName && value !== undefined && value !== null) {
           if (fieldName === 'tgl_rc' && value) {
             transformedRow[fieldName] = parseExcelDate(value)
-          } else if (fieldName === 'debit' || fieldName === 'kredit') {
-            transformedRow[fieldName] = parseFloat(value) || 0
+          } else if (['no_rc', 'rek_dari', 'nama_dari'].includes(fieldName) && value) {
+            transformedRow[fieldName] = value.toString()
           } else {
             transformedRow[fieldName] = value
+          }
+        }
+        
+        // Handle special 'jumlah' column with DB/CR logic
+        if (header.toLowerCase() === 'jumlah' && value !== undefined && value !== null) {
+          const valueStr = value.toString().toUpperCase()
+          
+          // Extract numeric value - handle Indonesian format (99.000,00) and English format (99,000.00)
+          let cleanValue = valueStr
+          
+          // Remove DB/CR indicators first
+          cleanValue = cleanValue.replace(/\s*(DB|CR)\s*/g, '')
+          
+          // Check if it's Indonesian format (dot as thousand separator, comma as decimal)
+          if (cleanValue.includes('.') && cleanValue.includes(',')) {
+            // Indonesian format: 99.000,00 -> remove dots, replace comma with dot
+            cleanValue = cleanValue.replace(/\./g, '').replace(',', '.')
+          } else if (cleanValue.includes(',') && !cleanValue.includes('.')) {
+            // Could be Indonesian format without decimal: 99.000 or English with comma: 99,000
+            // Check if comma is followed by 2 digits (decimal) or 3 digits (thousand separator)
+            const commaIndex = cleanValue.lastIndexOf(',')
+            const afterComma = cleanValue.substring(commaIndex + 1)
+            if (afterComma.length === 2) {
+              // Indonesian decimal: 99.000,00
+              cleanValue = cleanValue.replace(/\./g, '').replace(',', '.')
+            } else {
+              // English thousand separator: 99,000
+              cleanValue = cleanValue.replace(/,/g, '')
+            }
+          } else if (cleanValue.includes('.')) {
+            // Could be Indonesian thousand separator (99.000) or English decimal (99.00)
+            const dotIndex = cleanValue.lastIndexOf('.')
+            const afterDot = cleanValue.substring(dotIndex + 1)
+            if (afterDot.length === 3) {
+              // Indonesian thousand separator: 99.000
+              cleanValue = cleanValue.replace(/\./g, '')
+            }
+            // Otherwise keep as is (English decimal)
+          }
+          
+          // Remove any remaining non-numeric characters except dot and minus
+          cleanValue = cleanValue.replace(/[^\d.-]/g, '')
+          const amount = parseFloat(cleanValue) || 0
+          
+          // Check if value contains DB or CR indicator
+          if (valueStr.includes('DB')) {
+            transformedRow.debit = Math.abs(amount)
+            transformedRow.kredit = 0
+          } else if (valueStr.includes('CR')) {
+            transformedRow.kredit = Math.abs(amount)
+            transformedRow.debit = 0
+          } else {
+            // If no DB/CR indicator, check if it's a negative number
+            if (amount < 0) {
+              transformedRow.debit = Math.abs(amount)
+              transformedRow.kredit = 0
+            } else {
+              transformedRow.kredit = amount
+              transformedRow.debit = 0
+            }
           }
         }
       })
@@ -303,42 +370,67 @@ export default function useImportBankPilihan() {
 
   /**
    * Transformer untuk Bank BNI
-   * TODO: Sesuaikan dengan format Excel Bank BNI
+   * Format: No. | Tanggal Kirim | Cabang | Journal No. | Deskripsi | Amount | Db/Cr
+   * Special: kolom 'Db/Cr' menentukan apakah Amount masuk ke debit (D) atau kredit (C)
    */
   function transformBniExcel(excelData, bankName) {
     const headers = excelData[0]
     const dataRows = excelData.slice(1)
     
-    // TODO: Mapping sesuai format Bank BNI
     const mapping = {
-      'Tanggal': 'tgl_rc',
-      'Keterangan': 'uraian',
-      'Debit': 'debit',
-      'Kredit': 'kredit',
-      'No Ref': 'no_rc'
+      'Tanggal Kirim': 'tgl_rc',
+      'Cabang': 'nama_dari',
+      'Journal No.': 'no_rc',
+      'Deskripsi': 'uraian'
     }
 
     return dataRows.map((row, index) => {
       const transformedRow = {
         id: index + 1,
-        bank: bankName,
-        tgl: new Date().toISOString().split('T')[0]
+        bank: 'BNI',
+        tgl: new Date().toISOString().split('T')[0],
+        debit: 0,
+        kredit: 0
       }
+
+      let amountValue = null
+      let dbCrIndicator = null
 
       headers.forEach((header, colIndex) => {
         const fieldName = mapping[header]
-        if (fieldName && row[colIndex] !== undefined && row[colIndex] !== null) {
-          let value = row[colIndex]
-          
+        let value = row[colIndex]
+        
+        if (fieldName && value !== undefined && value !== null) {
           if (fieldName === 'tgl_rc' && value) {
             transformedRow[fieldName] = parseExcelDate(value)
-          } else if (fieldName === 'debit' || fieldName === 'kredit') {
-            transformedRow[fieldName] = parseFloat(value) || 0
+          } else if (['no_rc', 'rek_dari', 'nama_dari'].includes(fieldName) && value) {
+            transformedRow[fieldName] = value.toString()
           } else {
             transformedRow[fieldName] = value
           }
         }
+
+        // Capture Amount value
+        if (header === 'Amount' && value !== undefined && value !== null) {
+          amountValue = parseFloat(value) || 0
+        }
+
+        // Capture Db/Cr indicator
+        if (header === 'Db/Cr' && value !== undefined && value !== null) {
+          dbCrIndicator = value.toString().toUpperCase()
+        }
       })
+
+      // Set debit or kredit based on Db/Cr indicator
+      if (amountValue !== null && dbCrIndicator) {
+        if (dbCrIndicator === 'D' || dbCrIndicator === 'DB') {
+          transformedRow.debit = Math.abs(amountValue)
+          transformedRow.kredit = 0
+        } else if (dbCrIndicator === 'C' || dbCrIndicator === 'CR') {
+          transformedRow.kredit = Math.abs(amountValue)
+          transformedRow.debit = 0
+        }
+      }
 
       return transformedRow
     })
@@ -346,25 +438,24 @@ export default function useImportBankPilihan() {
 
   /**
    * Transformer untuk Bank BRI
-   * TODO: Sesuaikan dengan format Excel Bank BRI
+   * Format: ID | NOREK | TGL_TRAN | TGL_EFEKTIF | JAM_TRAN | SEQ | DESK_TRAN | SALDO_AWAL_MUTASI | MUTASI_DEBIT | MUTASI_KREDIT
    */
   function transformBriExcel(excelData, bankName) {
     const headers = excelData[0]
     const dataRows = excelData.slice(1)
     
-    // TODO: Mapping sesuai format Bank BRI
     const mapping = {
-      'Tanggal': 'tgl_rc',
-      'Keterangan': 'uraian',
-      'Debit': 'debit',
-      'Kredit': 'kredit',
-      'No Referensi': 'no_rc'
+      'TGL_TRAN': 'tgl_rc',
+      'JAM_TRAN': 'no_rc',
+      'DESK_TRAN': 'uraian',
+      'MUTASI_DEBIT': 'debit',
+      'MUTASI_KREDIT': 'kredit'
     }
 
     return dataRows.map((row, index) => {
       const transformedRow = {
         id: index + 1,
-        bank: bankName,
+        bank: 'BRI',
         tgl: new Date().toISOString().split('T')[0]
       }
 
@@ -377,6 +468,8 @@ export default function useImportBankPilihan() {
             transformedRow[fieldName] = parseExcelDate(value)
           } else if (fieldName === 'debit' || fieldName === 'kredit') {
             transformedRow[fieldName] = parseFloat(value) || 0
+          } else if (['no_rc', 'rek_dari', 'nama_dari'].includes(fieldName) && value) {
+            transformedRow[fieldName] = value.toString()
           } else {
             transformedRow[fieldName] = value
           }

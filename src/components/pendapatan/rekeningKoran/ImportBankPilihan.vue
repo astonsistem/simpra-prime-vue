@@ -128,6 +128,7 @@ const loadingSync = ref(false)
 const hasSync = ref(false)
 const dialogWidth = ref('75vw')
 const fileUploadRef = ref(null)
+const emit = defineEmits(['sync'])
 
 const {
   items,
@@ -197,13 +198,14 @@ async function handleSync() {
   
   try {
     loadingSync.value = true
-    await sync()
+    const response = await sync()
     hasSync.value = true
     // Reset form after successful sync
     initForm()
     if (fileUploadRef.value) {
       fileUploadRef.value.clear()
     }
+    emit('sync', response)
   } catch (error) {
     console.error('Error during sync:', error)
   } finally {

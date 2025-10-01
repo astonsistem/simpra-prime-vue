@@ -197,7 +197,7 @@
   </div>
 
   <RequestBankJatim v-model="modalRequest" />
-  <ImportBankPilihan v-model="modalImport" />
+  <ImportBankPilihan v-model="modalImport" @sync="() => loadData()" />
 
   <FormDataTransaksi v-model="modalForm" :item="selectedItem" @saved="onSaved" /> 
 
