@@ -1,5 +1,5 @@
 <template>
-  <FilterDataTable @search="searchData"></FilterDataTable>
+  <FilterDataTable ref="filterDataTableRef" @search="searchData"></FilterDataTable>
   <div>
     <div
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
@@ -67,7 +67,7 @@
         </Column>
 
         <Column field="no_rc" header="No. RC" sortable :showFilterMatchModes="false" :showClearButton="true"
-          style="min-width: 12rem">
+          >
           <template #body="{ data }">
             {{ data.no_rc }}
           </template>
@@ -77,7 +77,7 @@
         </Column>
 
         <Column field="tgl_rc" header="Tgl. RC" sortable :showFilterMatchModes="false" :showClearButton="true"
-          style="min-width: 12rem">
+          >
           <template #body="{ data }">
             {{ data.tgl_rc }}
           </template>
@@ -114,7 +114,7 @@
         </Column>
 
         <Column field="bank" header="Bank" sortable :showFilterMatchModes="false" :showClearButton="true"
-          style="min-width: 12rem">
+          >
           <template #body="{ data }">
             {{ data.bank }}
           </template>
@@ -124,7 +124,7 @@
         </Column>
 
         <Column field="pb" header="PB dari Bank" sortable :showFilterMatchModes="false"
-          :showClearButton="true" style="min-width: 12rem">
+          :showClearButton="true" >
           <template #body="{ data }">
             {{ data.pb }}
           </template>
@@ -179,7 +179,7 @@
         </Column>
         
         <Column field="rekening_dpa" header="Rekening DPA" :showFilterMatchModes="false"
-          :showClearButton="true" style="min-width: 12rem">
+          :showClearButton="true" >
           <template #body="{ data }">
             {{ data.rekening_dpa?.rek_nama ?? '' }}
           </template>
@@ -242,6 +242,7 @@ import RequestBankJatim from './RequestBankJatim.vue';
 import ImportBankPilihan from './ImportBankPilihan.vue';
 import EditRekeningKoran from './EditRekeningKoran.vue';
 
+const filterDataTableRef = ref(null)
 const modalForm = ref(false)
 const modalEdit = ref(false)
 const selectedItem = ref(null)
@@ -260,7 +261,7 @@ const {
   total,
   filters,
   sort,
-  clearFilter,
+  clearFilter: clearTableFilter,
   setAdditionalFilter,
   loading,
   loadData,
@@ -278,6 +279,16 @@ onMounted(async () => {
 function searchData(data) {
   setAdditionalFilter(data)
   loadData()
+}
+
+function clearFilter() {
+  // Clear table column filters
+  clearTableFilter()
+  
+  // Clear period filter in FilterDataTable
+  if (filterDataTableRef.value && filterDataTableRef.value.resetFilter) {
+    filterDataTableRef.value.resetFilter()
+  }
 }
 
 function onSaved() {

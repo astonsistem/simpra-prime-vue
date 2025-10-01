@@ -124,8 +124,8 @@ function buildQuery() {
 
   if (form.value.jenisPeriode === 'BULANAN') {
     if (form.value.tahunPeriode) q.year = form.value.tahunPeriode
-    if (form.value.bulanAwal) q.month_start = form.value.bulanAwal
-    if (form.value.bulanAkhir) q.month_end = form.value.bulanAkhir
+    if (form.value.bulanAwal) q.bulan_awal = form.value.bulanAwal
+    if (form.value.bulanAkhir) q.bulan_akhir = form.value.bulanAkhir
   } else if (form.value.jenisPeriode === 'TANGGAL') {
     if (form.value.tglAwal) q.tgl_awal = formatDateToYYYYMMDD(form.value.tglAwal)
     if (form.value.tglAkhir) q.tgl_akhir = formatDateToYYYYMMDD(form.value.tglAkhir)
@@ -153,5 +153,9 @@ function searchData() {
   emit('search', q)
 }
 
+// Expose resetFilter untuk dipanggil dari parent component
+defineExpose({
+  resetFilter
+})
 
 </script>

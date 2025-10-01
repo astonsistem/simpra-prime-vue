@@ -66,7 +66,9 @@ export default function useRekeningKoran() {
 
   function clearFilter() {
     initFilters()
+    additionalFilters.value = {}
     sort.value = {}
+    first.value = 0
 
     loadData()
   }
