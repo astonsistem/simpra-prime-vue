@@ -133,33 +133,41 @@ export default function useRekeningKoran() {
     loadData({ page, per_page: event.rows })
   }
 
-  async function exportExcel(modul = 'Data Selisih') {
+  async function exportExcel(modul = 'Data Rekening Koran') {
     try {
       const headers = [
         'No',
-        'Tgl. Setor',
-        'No Bukti',
-        'Tgl. Bukti',
-        'Penyetor',
-        'Jenis',
+        'No. RC',
+        'Tgl. RC',
+        'Uraian',
+        'Klarifikasi Monev',
+        'Verifikasi Langsung',
+        'Bank',
+        'PB dari Bank',
+        'Debit',
+        'Kredit',
+        'Terklarifikasi',
+        'Belum Terklarifikasi',
         'Rekening DPA',
-        'Nilai',
-        'Tersetor',
       ]
 
-      const response = await fetchData({ export: true })
+      const response = await fetchData({ export: true, per_page: 10000 })
 
       const dataExcel = response.data.data
       const excelData = dataExcel.map((item, index) => [
-        item.no || index + 1,
-        item.tgl_setor || '',
-        item.no_buktibayar || '',
-        item.tgl_buktibayar || '',
-        item.penyetor || '',
-        item.jenis || '',
+        index + 1,
+        item.no_rc || '',
+        item.tgl_rc || '',
+        item.uraian || '',
+        item.akun_data?.akun_nama || '',
+        item.akunls_data?.akunls_nama || '',
+        item.bank || '',
+        item.pb || '',
+        item.debit || 0,
+        item.kredit || 0,
+        item.terklarifikasi || 0,
+        item.belum_terklarifikasi || 0,
         item.rekening_dpa?.rek_nama || '',
-        item.nilai || 0,
-        item.tersetor || 0,
       ])
 
       exportExcelUtils(modul, excelData, headers)
@@ -182,6 +190,12 @@ export default function useRekeningKoran() {
         })
     } catch (error) {
       console.error('Error export ', error)
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Terjadi kesalahan saat mengekspor data',
+        life: 3000,
+      })
     }
   }
 
