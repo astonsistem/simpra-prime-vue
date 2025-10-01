@@ -197,6 +197,7 @@
   </div>
 
   <RequestBankJatim v-model="modalRequest" />
+  <ImportBankPilihan v-model="modalImport" />
 
   <FormDataTransaksi v-model="modalForm" :item="selectedItem" @saved="onSaved" /> 
 
@@ -237,6 +238,7 @@ import useRekeningKoran from '@/composables/useRekeningKoran';
 import useDataTransaksiActions from '@/composables/selisih/useDataTransaksiActions';
 import FilterDataTable from '@/components/FilterDataTable.vue';
 import RequestBankJatim from './RequestBankJatim.vue';
+import ImportBankPilihan from './ImportBankPilihan.vue';
 
 const modalForm = ref(false)
 const selectedItem = ref(null)
@@ -245,6 +247,7 @@ const showModalValidasi = ref(false)
 const showModalSetor = ref(false)
 const showModalCancelValidasi = ref(false)
 const modalRequest = ref(false)
+const modalImport = ref(false)
 
 const { create, show, destroy } = useDataTransaksiActions()
 const { 
@@ -269,8 +272,6 @@ onMounted(async () => {
   await loadData()
 })
 
-function handleImport() {}
-
 function searchData(data) {
   setAdditionalFilter(data)
   loadData()
@@ -284,6 +285,10 @@ function onSaved() {
 
 function handleRequest () {
   modalRequest.value = true
+}
+
+function handleImport() {
+  modalImport.value = true
 }
 
 function handleExportExcel() {
@@ -326,10 +331,6 @@ function onConfirmDelete(event) {
     loadData()
     toast.removeGroup('confirm')
   })
-}
-
-function openSyncDialog() {
-  emit('openSyncDialog')
 }
 
 function rowStyle(rowData) {
