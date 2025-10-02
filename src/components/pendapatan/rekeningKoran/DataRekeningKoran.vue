@@ -51,7 +51,7 @@
               {
                 label: 'PB',
                 icon: 'pi pi-check',
-                // visible: () => !slotProps.data.is_valid,
+                disabled: () => !canShowPB(slotProps.data),
                 command: () => handlePB(slotProps.data),
               },
               {
@@ -97,7 +97,7 @@
 
         <Column field="akun_data" header="Klarifikasi Monev" sortable :showFilterMatchModes="false" :showClearButton="true">
           <template #body="{ data }">
-            {{ data.akun_data }}
+            {{ data.akun_data?.akun_data_nama }}
           </template>
           <template #filter="{ filterModel, applyFilter }">
             <InputText v-model="filterModel.value" @keyup.enter="applyFilter" placeholder="Cari Klarifikasi Monev" />
@@ -199,6 +199,7 @@
   <RequestBankJatim v-model="modalRequest" />
   <ImportBankPilihan v-model="modalImport" @sync="() => loadData()" />
   <EditRekeningKoran v-model="modalEdit" :item="selectedItem" @saved="onSaved" />
+  <PbRekeningKoran v-model="modalPb" :item="selectedItem" @saved="onSaved" />
 
   <FormDataTransaksi v-model="modalForm" :item="selectedItem" @saved="onSaved" /> 
 
@@ -241,10 +242,12 @@ import FilterDataTable from '@/components/FilterDataTable.vue';
 import RequestBankJatim from './RequestBankJatim.vue';
 import ImportBankPilihan from './ImportBankPilihan.vue';
 import EditRekeningKoran from './EditRekeningKoran.vue';
+import PbRekeningKoran from './PbRekeningKoran.vue';
 
 const filterDataTableRef = ref(null)
 const modalForm = ref(false)
 const modalEdit = ref(false)
+const modalPb = ref(false)
 const selectedItem = ref(null)
 const toast = useToast()
 const showModalValidasi = ref(false)
@@ -314,9 +317,19 @@ function handleEdit(item) {
   modalEdit.value = true
 }
 
+function canShowPB(item) {
+  // Check business rules for PB visibility
+  return (
+    item.kredit > 0 &&
+    !item.akun_id &&
+    !item.akunls_id &&
+    !item.bku_id
+  )
+}
+
 function handlePB(item) {
   selectedItem.value = item
-  showModalValidasi.value = true
+  modalPb.value = true
 }
 
 function handleBKU(item) {
