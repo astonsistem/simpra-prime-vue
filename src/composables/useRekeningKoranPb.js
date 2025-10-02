@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import apiClient from '@/api/client'
 import { useToast } from 'primevue/usetoast'
+import { formatDateToYYYYMMDD } from '@/utils/dateUtils'
 
 export default function useRekeningKoranPb() {
   const toast = useToast()
@@ -48,7 +49,7 @@ export default function useRekeningKoranPb() {
     try {
       const response = await apiClient.get('/rekening_koran/pb/uncheck', {
         params: {
-          tgl_rc: tglRc,
+          tgl_rc: formatDateToYYYYMMDD(tglRc),
           page,
           per_page: perPage
         }
