@@ -738,7 +738,7 @@ function setor(data) {
           'rekeningDpa',
           'bank',
         ]" :rowStyle="(rowData) => {
-          if (!!rowData.rcId || !!rowData.rc_id) return { backgroundColor: '#d4edda', color: '#155724' }
+          if (!!rowData.rcId && rowData.rcId > 0) return { backgroundColor: '#d4edda', color: '#155724' }
         }" class="p-datatable-sm">
         <template #header>
           <div class="flex justify-between">
