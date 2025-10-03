@@ -1,166 +1,283 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { Chart } from 'chart.js/auto'
+import ChartDataLabels from 'chartjs-plugin-datalabels'
+import api from '@/api/client.js'
+import { useToast } from 'primevue/usetoast'
+import Toast from 'primevue/toast'
 
-const realizationChart = ref(null)
-const targetCompositionChart = ref(null)
+Chart.register(ChartDataLabels)
+
+const toast = useToast()
+const saldoKas = ref(0)
+const penerimaan = ref(0)
+const potensiPenerimaan = ref(0)
+const realisasiPercent = ref(0)
+const realisasiChart = ref(null)
+const monevPenerimaanLainnyaPercent = ref(0)
+const monevPenerimaanLayananPercent = ref(0)
+const monevRekeningKoranPercent = ref(0)
+const komposisiTargetPendapatanLayananPercent = ref(0)
+const komposisiTargetChart = ref(null)
 const monthlyComparisonChart = ref(null)
 const lineChart = ref(null)
 
-onMounted(() => {
-  // Realisasi Pendapatan Chart
-  const realizationCtx = realizationChart.value.getContext('2d')
-  new Chart(realizationCtx, {
-    type: 'doughnut',
-    data: {
-      datasets: [
-        {
-          data: [75, 25],
-          backgroundColor: ['#3B82F6', '#E5E7EB'],
-          borderWidth: 0,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '70%',
-      plugins: {
-        legend: {
-          display: false,
-        },
-      },
-    },
-  })
+const formatID = (number) => {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(number || 0) 
+}
 
-  // Komposisi Target Pendapatan Chart
-  const targetCompositionCtx = targetCompositionChart.value.getContext('2d')
-  new Chart(targetCompositionCtx, {
-    type: 'doughnut',
-    data: {
-      datasets: [
-        {
-          data: [60, 40],
-          backgroundColor: ['#3B82F6', '#E5E7EB'],
-          borderWidth: 0,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '70%',
-      plugins: {
-        legend: {
-          display: false,
-        },
-      },
-    },
-  })
+onMounted(async () => {
+  try {
+    // Get all data for dashbarod
+    const response = await api.get('statistik/dashboard')
+    const res = response.data
 
-  // Pendapatan Selain Restribusi Layanan Chart
-  const monthlyComparisonCtx = monthlyComparisonChart.value.getContext('2d')
-  new Chart(monthlyComparisonCtx, {
-    type: 'bar',
-    data: {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      datasets: [
-        {
-          label: 'Pendapatan Bulanan',
-          backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#1F2937', '#9CA3AF', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'],
-          data: [65, 59, 80, 81, 56, 55, 40, 60, 70, 75, 80, 90],
-          borderRadius: 5,
-          borderWidth: 0,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: false,
-        },
+    // Saldo Kas Per Hari ini
+    saldoKas.value = res.saldoKas
+
+    // Penerimaan Hari Ini
+    penerimaan.value = res.penerimaan
+
+    // Potensi Penerimaan Hari Ini
+    potensiPenerimaan.value = res.potensiPenerimaan
+
+    // Realisasi Pendapatan Chart
+    if (res.realisasiPendapatanJumlah > 0) {
+      realisasiPercent.value = (res.realisasiPendapatanNetto / res.realisasiPendapatanJumlah) * 100
+      realisasiPercent.value = Number(realisasiPercent.value.toFixed(2))
+    }
+    const realisasiCtx = realisasiChart.value.getContext('2d')
+    new Chart(realisasiCtx, {
+      type: 'doughnut',
+      data: {
+        datasets: [
+          {
+            data: [realisasiPercent.value, (100 - realisasiPercent.value)],
+            backgroundColor: ['#3B82F6', '#E5E7EB'],
+            borderWidth: 0,
+          },
+        ],
       },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: {
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: {
             display: false,
           },
-          ticks: {
-            display: false,
-          },
-        },
-        x: {
-          grid: {
-            display: false,
-          },
-          ticks: {
-            display: true,
+          datalabels: {
+            color: 'black', // text color (white so it's visible on blue/grey)
+            font: {
+              weight: 'bold',
+              size: 14,
+            },
+            formatter: (value, context) => {
+              return '';
+            },
           },
         },
       },
-    },
-  })
+    })
 
-  // Grafik Garis untuk Pendapatan, Dokumen Klaim, dan Penerimaan Pelayanan
-  const lineCtx = lineChart.value.getContext('2d')
-  new Chart(lineCtx, {
-    type: 'line',
-    data: {
-      labels: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'],
-      datasets: [
-        {
-          label: 'Pendapatan', // Perbaikan: Revenue -> Pendapatan
-          data: [50, 60, 55, 70],
-          borderColor: '#3B82F6',
-          backgroundColor: 'rgba(59, 130, 246, 0.2)',
-          fill: true,
-          tension: 0.4
-        },
-        {
-          label: 'Dokumen Klaim', // Perbaikan: Claim Documents -> Dokumen Klaim
-          data: [40, 45, 50, 42],
-          borderColor: '#F59E0B',
-          backgroundColor: 'rgba(245, 158, 11, 0.2)',
-          fill: true,
-          tension: 0.4
-        },
-        {
-          label: 'Penerimaan Pelayanan', // Perbaikan: Service Income -> Penerimaan Pelayanan
-          data: [35, 55, 60, 65],
-          borderColor: '#10B981',
-          backgroundColor: 'rgba(16, 185, 129, 0.2)',
-          fill: true,
-          tension: 0.4
+    // Data Yang Harus Dimonev
+    if (res.monevPenerimaanLainnyaAll > 0) {
+      monevPenerimaanLainnyaPercent.value = (res.monevPenerimaanLainnya / res.monevPenerimaanLainnyaAll) * 100
+      monevPenerimaanLainnyaPercent.value = Number(monevPenerimaanLainnyaPercent.value.toFixed(2))
+    }
+    if (res.monevPenerimaanLayananAll > 0) {
+      monevPenerimaanLayananPercent.value = (res.monevPenerimaanLayanan / res.monevPenerimaanLayananAll) * 100
+      monevPenerimaanLayananPercent.value = Number(monevPenerimaanLayananPercent.value.toFixed(2))
+    }
+    if (res.monevRekeningKoranAll > 0) {
+      monevRekeningKoranPercent.value = (res.monevRekeningKoran / res.monevRekeningKoranAll) * 100
+      monevRekeningKoranPercent.value = Number(monevRekeningKoranPercent.value.toFixed(2))
+    }
+
+    // Komposisi Target Pendapatan Chart
+    if (res.komposisiTargetPendapatanAll > 0) {
+      komposisiTargetPendapatanLayananPercent.value = (res.komposisiTargetPendapatanLayanan / res.komposisiTargetPendapatanAll) * 100
+      komposisiTargetPendapatanLayananPercent.value = Number(komposisiTargetPendapatanLayananPercent.value.toFixed(2))
+    }
+    let chartData = [komposisiTargetPendapatanLayananPercent.value, (100 - komposisiTargetPendapatanLayananPercent.value)]
+    if (res.komposisiTargetPendapatanLayanan == 0 && res.komposisiTargetPendapatanNotLayanan == 0) {
+      chartData = []
+    }
+    const centerTextPlugin = {
+      id: 'centerTextPlugin',
+      afterDraw(chart) {
+        const data = chart.data.datasets[0].data
+        const total = data.reduce((a, b) => a + b, 0)
+
+        const { ctx, chartArea: { width, height } } = chart
+        ctx.save()
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+
+        if (total === 0) {
+          // Show only "Empty Data"
+          ctx.font = 'bold 14px sans-serif'
+          ctx.fillStyle = '#999'
+          ctx.fillText('Data Kosong', width / 2, height / 2)
         }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'bottom',
+        ctx.restore()
+      }
+    }
+    const komposisiTargetCtx = komposisiTargetChart.value.getContext('2d')
+    new Chart(komposisiTargetCtx, {
+      type: 'pie',
+      data: {
+        labels: ['Restribusi Layanan', 'Selain Layanan'],
+        datasets: [
+          {
+            data: chartData,
+            backgroundColor: ['#3B82F6', '#E5E7EB'],
+            borderWidth: 0,
+            borderColor: 'transparent',
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '0%', // make it donut; remove or set '0%' for pie
+        plugins: {
+          legend: {
+            display: false,
+          },
+          tooltip: {
+            enabled: false, // disable hover tooltips
+          },
+          datalabels: {
+            color: 'black', // text color (white so it's visible on blue/grey)
+            font: {
+              weight: 'bold',
+              size: 14,
+            },
+            formatter: (value, ctx) => {
+              const total = ctx.chart.data.datasets[0].data
+                .reduce((a, b) => a + b, 0)
+              const percent = (value / total * 100).toFixed(1) + '%'
+              return percent
+            },
+          },
         },
       },
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: {
-            color: '#E5E7EB',
-          }
+      plugins: [centerTextPlugin]
+    })
+
+    // Pendapatan Selain Restribusi Layanan Chart
+    const monthlyComparisonCtx = monthlyComparisonChart.value.getContext('2d')
+    new Chart(monthlyComparisonCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        datasets: [
+          {
+            label: 'Pendapatan Bulanan',
+            backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#1F2937', '#9CA3AF', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'],
+            data: [65, 59, 80, 81, 56, 55, 40, 60, 70, 75, 80, 90],
+            borderRadius: 5,
+            borderWidth: 0,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          },
         },
-        x: {
-          grid: {
-            display: false
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              display: false,
+            },
+            ticks: {
+              display: false,
+            },
+          },
+          x: {
+            grid: {
+              display: false,
+            },
+            ticks: {
+              display: true,
+            },
+          },
+        },
+      },
+    })
+
+    // Grafik Garis untuk Pendapatan, Dokumen Klaim, dan Penerimaan Pelayanan
+    const lineCtx = lineChart.value.getContext('2d')
+    new Chart(lineCtx, {
+      type: 'line',
+      data: {
+        labels: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'],
+        datasets: [
+          {
+            label: 'Pendapatan', // Perbaikan: Revenue -> Pendapatan
+            data: [50, 60, 55, 70],
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            fill: true,
+            tension: 0.4
+          },
+          {
+            label: 'Dokumen Klaim', // Perbaikan: Claim Documents -> Dokumen Klaim
+            data: [40, 45, 50, 42],
+            borderColor: '#F59E0B',
+            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+            fill: true,
+            tension: 0.4
+          },
+          {
+            label: 'Penerimaan Pelayanan', // Perbaikan: Service Income -> Penerimaan Pelayanan
+            data: [35, 55, 60, 65],
+            borderColor: '#10B981',
+            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+            fill: true,
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: '#E5E7EB',
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
           }
         }
       }
-    }
-  })
+    })
+  } catch (error) {
+    console.error('Gagal memuat data:', error)
+    toast.add({ severity: 'error', summary: 'Gagal', detail: 'Gagal memuat data', life: 3000 })
+  }
 })
 </script>
 
@@ -169,36 +286,33 @@ onMounted(() => {
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       <div class="bg-white p-4 rounded-lg shadow">
         <h3 class="text-sm text-gray-500">Saldo Kas Per Hari Ini</h3>
-        <div class="flex justify-between items-center mt-2">
-          <p class="text-2xl font-bold">Rp 2.450.000</p>
+        <div class="flex justify-between items-center mt-10">
+          <p class="text-2xl font-bold">{{ formatID(saldoKas) }}</p>
           <i class="pi pi-wallet text-xl text-blue-500"></i>
         </div>
-        <p class="text-xs text-gray-400 mt-2">Updated 5 min ago</p>
       </div>
 
       <div class="bg-white p-4 rounded-lg shadow">
         <h3 class="text-sm text-gray-500">Penerimaan Hari Ini</h3>
-        <div class="flex justify-between items-center mt-2">
-          <p class="text-2xl font-bold">Rp 1.850.000</p>
+        <div class="flex justify-between items-center mt-10">
+          <p class="text-2xl font-bold">{{ formatID(penerimaan) }}</p>
           <i class="pi pi-arrow-up text-xl text-green-500 bg-green-100 rounded-full p-1"></i>
         </div>
-        <p class="text-xs text-green-500 mt-2">+12% Dari Kemarin</p>
       </div>
 
       <div class="bg-white p-4 rounded-lg shadow">
         <h3 class="text-sm text-gray-500">Potensi Penerimaan Hari Ini</h3>
-        <div class="flex justify-between items-center mt-2">
-          <p class="text-2xl font-bold">Rp 3.850.000</p>
+        <div class="flex justify-between items-center mt-10">
+          <p class="text-2xl font-bold">{{ formatID(potensiPenerimaan) }}</p>
           <i class="pi pi-chart-line text-xl text-yellow-500 bg-yellow-100 rounded-full p-1"></i>
         </div>
-        <p class="text-xs text-gray-400 mt-2">Proyeksi Untuk Hari Ini</p>
       </div>
 
       <div class="bg-white p-4 rounded-lg shadow flex flex-col items-center justify-center">
         <h3 class="text-sm text-gray-500 mb-2">Realisasi Pendapatan</h3>
         <div class="relative w-28 h-28">
-          <canvas ref="realizationChart"></canvas>
-          <div class="absolute inset-0 flex items-center justify-center text-xl font-bold">75%</div>
+          <canvas ref="realisasiChart"></canvas>
+          <div class="absolute inset-0 flex items-center justify-center text-xl font-bold">{{ realisasiPercent }}%</div>
         </div>
       </div>
     </div>
@@ -213,10 +327,10 @@ onMounted(() => {
                 <span class="text-sm"
                   ><i class="pi pi-circle-fill text-yellow-400 mr-2"></i>Penerimaan Lainnya</span
                 >
-                <span class="text-sm font-semibold">45%</span>
+                <span class="text-sm font-semibold">{{ monevPenerimaanLainnyaPercent }}%</span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div class="bg-yellow-400 h-2.5 rounded-full" style="width: 45%"></div>
+                <div class="bg-yellow-400 h-2.5 rounded-full" :style="{ width: monevPenerimaanLainnyaPercent + '%' }"></div>
               </div>
             </div>
             <div>
@@ -224,10 +338,10 @@ onMounted(() => {
                 <span class="text-sm"
                   ><i class="pi pi-circle-fill text-green-400 mr-2"></i>Penerimaan Layanan</span
                 >
-                <span class="text-sm font-semibold">45%</span>
+                <span class="text-sm font-semibold">{{ monevPenerimaanLayananPercent }}%</span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div class="bg-green-400 h-2.5 rounded-full" style="width: 45%"></div>
+                <div class="bg-green-400 h-2.5 rounded-full" :style="{ width: monevPenerimaanLayananPercent + '%' }"></div>
               </div>
             </div>
             <div>
@@ -235,10 +349,10 @@ onMounted(() => {
                 <span class="text-sm"
                   ><i class="pi pi-circle-fill text-purple-400 mr-2"></i>Rekening Koran</span
                 >
-                <span class="text-sm font-semibold">45%</span>
+                <span class="text-sm font-semibold">{{ monevRekeningKoranPercent }}%</span>
               </div>
               <div class="w-full bg-gray-200 rounded-full h-2.5">
-                <div class="bg-purple-400 h-2.5 rounded-full" style="width: 45%"></div>
+                <div class="bg-purple-400 h-2.5 rounded-full" :style="{ width: monevRekeningKoranPercent + '%' }"></div>
               </div>
             </div>
           </div>
@@ -247,14 +361,11 @@ onMounted(() => {
         <div class="bg-white p-4 rounded-lg shadow flex flex-col items-center justify-center">
           <h3 class="font-bold mb-2">Komposisi Target Pendapatan</h3>
           <div class="relative w-36 h-36 mb-4">
-            <canvas ref="targetCompositionChart"></canvas>
-            <div class="absolute inset-0 flex items-center justify-center text-2xl font-bold">
-              75%
-            </div>
+            <canvas ref="komposisiTargetChart"></canvas>
           </div>
           <div class="text-sm text-center">
-            <p><i class="pi pi-circle-fill text-blue-500 mr-2"></i>Restribusi Layanan (60%)</p>
-            <p><i class="pi pi-circle-fill text-gray-300 mr-2"></i>Selain Layanan (40%)</p>
+            <p><i class="pi pi-circle-fill text-blue-500 mr-2"></i>Restribusi Layanan</p>
+            <p><i class="pi pi-circle-fill text-gray-300 mr-2"></i>Selain Layanan</p>
           </div>
         </div>
 
@@ -312,6 +423,8 @@ onMounted(() => {
         <p><i class="pi pi-circle-fill text-green-500 mr-2"></i>Penerimaan Pelayanan</p>
       </div>
     </div>
+
+    <Toast />
   </div>
 </template>
 
