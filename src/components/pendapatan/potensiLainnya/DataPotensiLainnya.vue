@@ -437,6 +437,7 @@ const exportExcel = () => {
       'No',
       'No Dokumen',
       'Tgl Dokumen',
+      'Akun',
       'Pihak ke-3',
       'Uraian',
       'Tgl Berlaku',
@@ -452,6 +453,7 @@ const exportExcel = () => {
       item.no || index + 1,
       item.no_dokumen || '',
       item.tgl_dokumen || '',
+      item.akun_nama || '',
       item.pihak3 || '',
       item.uraian || '',
       item.tgl_berlaku || '',
@@ -514,6 +516,7 @@ const initFilters = () => {
   filters.value = {
     global: { value: null, matchMode: FilterMatchMode.CONTAINS },
     no_dokumen: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    akun_nama: { value: null, matchMode: FilterMatchMode.EQUALS },
     pihak3: { value: null, matchMode: FilterMatchMode.CONTAINS },
     uraian: { value: null, matchMode: FilterMatchMode.CONTAINS },
     sisa_potensi: { value: null, matchMode: FilterMatchMode.EQUALS },
@@ -701,6 +704,29 @@ const onSort = (event) => {
         >
           <template #body="{ data }">
             {{ formatDateID(data.tgl_dokumen) }}
+          </template>
+        </Column>
+        <Column
+          field="akun_nama"
+          header="Akun"
+          :showFilterMatchModes="false"
+          style="min-width: 8rem"
+        >
+          <template #body="{ data }">
+            {{ data.akun_nama }}
+          </template>
+          <template #filter="{ filterModel }">
+            <Dropdown
+              v-model="filterModel.value"
+              :options="akunOptions"
+              optionLabel="label"
+              optionValue="label"
+              placeholder="Select Akun"
+              class="p-column-filter"
+              showClear
+              filter
+              filterPlaceholder="Search Akun"
+            />
           </template>
         </Column>
         <Column 
