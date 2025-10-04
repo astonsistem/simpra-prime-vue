@@ -19,7 +19,18 @@
         ]" class="p-datatable-sm text-sm">
         <template #header>
           <div class="flex justify-between">
-            <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />
+            <div class="flex gap-2">
+              <Button type="button" icon="pi pi-filter-slash" label="Clear" outlined @click="clearFilter()" />
+              <Button 
+                type="button" 
+                :icon="filterBKU ? 'pi pi-times' : 'pi pi-book'" 
+                :label="filterBKU ? 'Clear BKU' : 'Filter BKU'" 
+                :severity="filterBKU ? 'danger' : 'secondary'"
+                outlined 
+                size="small"
+                @click="toggleFilterBKU()" 
+              />
+            </div>
             <div class="flex gap-2">
               <Button label="Request Data dari Bank JATIM" icon="pi pi-sync" severity="info" size="small" class="p-button-border" @click="handleRequest" />
               <Button label="Import Bank Pilihan" icon="pi pi-search" severity="help" size="small" @click="handleImport" />
@@ -56,8 +67,8 @@
               },
               {
                 label: 'BKU',
-                icon: 'pi pi-dollar',
-                // visible: () => !!slotProps.data.is_valid,
+                icon: 'pi pi-book', //  book
+                disabled: () => !canShowBKU(slotProps.data),
                 command: () => handleBKU(slotProps.data),
               }
 
@@ -200,6 +211,7 @@
   <ImportBankPilihan v-model="modalImport" @sync="() => loadData()" />
   <EditRekeningKoran v-model="modalEdit" :item="selectedItem" @saved="onSaved" />
   <PbRekeningKoran v-model="modalPb" :item="selectedItem" @saved="onSaved" />
+  <BkuRekeningKoran v-model="modalBku" :item="selectedItem" @saved="onSaved" />
 
   <FormDataTransaksi v-model="modalForm" :item="selectedItem" @saved="onSaved" /> 
 
@@ -237,17 +249,19 @@ import { ref, onMounted } from 'vue';
 import { useToast } from 'primevue/usetoast';
 import { formatCurrency } from '@/utils/utils';
 import useRekeningKoran from '@/composables/useRekeningKoran';
-import useDataTransaksiActions from '@/composables/selisih/useDataTransaksiActions';
 import FilterDataTable from '@/components/FilterDataTable.vue';
 import RequestBankJatim from './RequestBankJatim.vue';
 import ImportBankPilihan from './ImportBankPilihan.vue';
 import EditRekeningKoran from './EditRekeningKoran.vue';
 import PbRekeningKoran from './PbRekeningKoran.vue';
+import BkuRekeningKoran from './BkuRekeningKoran.vue';
+import useRekeningKoranEdit from '@/composables/useRekeningKoranEdit';
 
 const filterDataTableRef = ref(null)
 const modalForm = ref(false)
 const modalEdit = ref(false)
 const modalPb = ref(false)
+const modalBku = ref(false)
 const selectedItem = ref(null)
 const toast = useToast()
 const showModalValidasi = ref(false)
@@ -255,8 +269,9 @@ const showModalSetor = ref(false)
 const showModalCancelValidasi = ref(false)
 const modalRequest = ref(false)
 const modalImport = ref(false)
+const filterBKU = ref(false)
 
-const { create, show, destroy } = useDataTransaksiActions()
+const { show } = useRekeningKoranEdit()
 const { 
   items,
   first,
@@ -292,6 +307,27 @@ function clearFilter() {
   if (filterDataTableRef.value && filterDataTableRef.value.resetFilter) {
     filterDataTableRef.value.resetFilter()
   }
+  
+  // Clear BKU filter
+  filterBKU.value = false
+}
+
+function toggleFilterBKU() {
+  filterBKU.value = !filterBKU.value
+  
+  if (filterBKU.value) {
+    // Apply BKU filter: akunls_id is not null and bku_id is null
+    setAdditionalFilter({
+      bku_filter: true
+    })
+  } else {
+    // Remove BKU filter
+    setAdditionalFilter({
+      bku_filter: null
+    })
+  }
+  
+  loadData()
 }
 
 function onSaved() {
@@ -332,9 +368,15 @@ function handlePB(item) {
   modalPb.value = true
 }
 
+function canShowBKU(item) {
+  // Check business rules for BKU visibility
+  // Requirements: akunls_id is not null and bku_id is null
+  return item.akunls_id != null && item.bku_id == null
+}
+
 function handleBKU(item) {
   selectedItem.value = item
-  showModalSetor.value = true
+  modalBku.value = true
 }
 
 

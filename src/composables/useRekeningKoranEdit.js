@@ -6,6 +6,25 @@ export default function useRekeningKoranEdit() {
   const error = ref(null)
 
   /**
+   * Show rekening koran
+   * @param {string|number} id - RC ID
+   * @returns {Promise<Object>}
+   */
+  async function show(id) {
+    loading.value = true
+    error.value = null
+    try {
+      const response = await api.get(`/rekening_koran/${id}`)
+      return response.data
+    } catch (err) {
+      error.value = err
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  /**
    * Update rekening koran
    * @param {string|number} id - RC ID
    * @param {Object} data - Data to update
@@ -28,6 +47,7 @@ export default function useRekeningKoranEdit() {
   return {
     loading,
     error,
-    updateRekeningKoran
+    updateRekeningKoran,
+    show
   }
 }
