@@ -19,7 +19,11 @@ const monevPenerimaanLayananPercent = ref(0)
 const monevRekeningKoranPercent = ref(0)
 const komposisiTargetPendapatanLayananPercent = ref(0)
 const komposisiTargetChart = ref(null)
-const monthlyComparisonChart = ref(null)
+const jumlahPersonil = ref(0)
+const jumlahPenjamin = ref(0)
+const jumlahLoket = ref(0)
+const jumlahInstalasi = ref(0)
+const pendapatanSelainRetribusiLayananChart = ref(null)
 const lineChart = ref(null)
 
 const formatID = (number) => {
@@ -171,17 +175,28 @@ onMounted(async () => {
       plugins: [centerTextPlugin]
     })
 
+    // Jumlah Personil Penerimaan
+    jumlahPersonil.value = res.jumlahPersonil
+    // Jumlah Personil Penerimaan
+    jumlahPenjamin.value = res.jumlahPenjamin
+    // Jumlah Personil Penerimaan
+    jumlahLoket.value = res.jumlahLoket
+    // Jumlah Personil Penerimaan
+    jumlahInstalasi.value = res.jumlahInstalasi
+
     // Pendapatan Selain Restribusi Layanan Chart
-    const monthlyComparisonCtx = monthlyComparisonChart.value.getContext('2d')
-    new Chart(monthlyComparisonCtx, {
+    const valuesPendapatan = res.pendapatanSelainRetribusi;
+    const colorsPendapatan = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#1F2937', '#9CA3AF'];
+    const pendapatanCtx = pendapatanSelainRetribusiLayananChart.value.getContext('2d')
+    new Chart(pendapatanCtx, {
       type: 'bar',
       data: {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        labels: ['Parkir', 'Sewa', 'Air & Listrik', 'Kerjasama', 'Diklat', 'Litbang', 'Lain-lain'],
         datasets: [
           {
-            label: 'Pendapatan Bulanan',
-            backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#1F2937', '#9CA3AF', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444'],
-            data: [65, 59, 80, 81, 56, 55, 40, 60, 70, 75, 80, 90],
+            label: 'Pendapatan Selain Retribusi Layanan',
+            backgroundColor: colorsPendapatan,
+            data: valuesPendapatan,
             borderRadius: 5,
             borderWidth: 0,
           },
@@ -191,27 +206,49 @@ onMounted(async () => {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                return `${context.label}: ${formatID(context.parsed.y)}`;
+              },
+            },
+          },
+          datalabels: {
             display: false,
+          },
+          annotation: {
+            annotations: valuesPendapatan.map((val, i) => {
+              return {
+                type: 'line',
+                yMin: val,
+                yMax: val,
+                borderColor: colorsPendapatan[i],
+                borderWidth: 1,
+                borderDash: [4, 4],
+                label: {
+                  enabled: true,
+                  content: formatID(val),
+                  position: 'end',
+                },
+              }
+            }),
           },
         },
         scales: {
           y: {
             beginAtZero: true,
-            grid: {
-              display: false,
-            },
-            ticks: {
-              display: false,
+            grid: { display: true },
+            ticks: { 
+              display: true,
+              callback: function (value) {
+                return formatID(value);
+              }, 
             },
           },
           x: {
-            grid: {
-              display: false,
-            },
-            ticks: {
-              display: true,
-            },
+            grid: { display: false },
+            ticks: { display: true },
           },
         },
       },
@@ -222,27 +259,27 @@ onMounted(async () => {
     new Chart(lineCtx, {
       type: 'line',
       data: {
-        labels: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4'],
+        labels: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'],
         datasets: [
           {
-            label: 'Pendapatan', // Perbaikan: Revenue -> Pendapatan
-            data: [50, 60, 55, 70],
+            label: 'Pendapatan',
+            data: res.pendapatanDokumenPenerimaan['Pendapatan Pelayanan'],
             borderColor: '#3B82F6',
             backgroundColor: 'rgba(59, 130, 246, 0.2)',
             fill: true,
             tension: 0.4
           },
           {
-            label: 'Dokumen Klaim', // Perbaikan: Claim Documents -> Dokumen Klaim
-            data: [40, 45, 50, 42],
+            label: 'Dokumen Klaim',
+            data: res.pendapatanDokumenPenerimaan['Dokumen Klaim'],
             borderColor: '#F59E0B',
             backgroundColor: 'rgba(245, 158, 11, 0.2)',
             fill: true,
             tension: 0.4
           },
           {
-            label: 'Penerimaan Pelayanan', // Perbaikan: Service Income -> Penerimaan Pelayanan
-            data: [35, 55, 60, 65],
+            label: 'Penerimaan Pelayanan',
+            data: res.pendapatanDokumenPenerimaan['Penerimaan Layanan'],
             borderColor: '#10B981',
             backgroundColor: 'rgba(16, 185, 129, 0.2)',
             fill: true,
@@ -254,26 +291,39 @@ onMounted(async () => {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: {
-            display: true,
-            position: 'bottom',
+          legend: { display: false },
+          tooltip: {
+            enabled: true, // show on hover
+            callbacks: {
+              label: function(context) {
+                let value = context.raw;
+                let formatted = formatID(value);
+                return context.dataset.label + ': ' + formatted;
+              }
+            }
           },
+          datalabels: {
+            display: false // hide numbers on line
+          }
         },
         scales: {
           y: {
+            // type: 'logarithmic', PAKE INI JIKA MODELNYA MAU LEBIH JELAS LANGSUNG TERLIHAT TIAP LINE TANPA HARUS MULAI DARI NOL DAN RAPI
+            // beginAtZero: false,
             beginAtZero: true,
-            grid: {
-              color: '#E5E7EB',
+            grid: { color: '#E5E7EB' },
+            ticks: {
+              callback: function(value) {
+                return formatID(value);
+              }
             }
           },
           x: {
-            grid: {
-              display: false
-            }
+            grid: { display: false }
           }
         }
       }
-    })
+    });
   } catch (error) {
     console.error('Gagal memuat data:', error)
     toast.add({ severity: 'error', summary: 'Gagal', detail: 'Gagal memuat data', life: 3000 })
@@ -372,7 +422,7 @@ onMounted(async () => {
         <div class="bg-white p-4 rounded-lg shadow md:col-span-2">
           <h3 class="font-bold mb-4">Pendapatan Selain Restribusi Layanan</h3>
           <div class="h-48">
-            <canvas ref="monthlyComparisonChart"></canvas>
+            <canvas ref="pendapatanSelainRetribusiLayananChart"></canvas>
           </div>
           <p class="text-center text-sm text-gray-500 mt-2">Perbandingan Bulanan</p>
         </div>
@@ -382,28 +432,28 @@ onMounted(async () => {
         <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
           <div>
             <h4 class="text-sm text-gray-500">Jumlah personil Penerimaan</h4>
-            <p class="text-2xl font-bold">8</p>
+            <p class="text-2xl font-bold">{{ jumlahPersonil }}</p>
           </div>
           <i class="pi pi-users text-xl text-blue-500"></i>
         </div>
         <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
           <div>
             <h4 class="text-sm text-gray-500">Jumlah Penjamin Pasien</h4>
-            <p class="text-2xl font-bold">156</p>
+            <p class="text-2xl font-bold">{{ jumlahPenjamin }}</p>
           </div>
           <i class="pi pi-shield text-xl text-yellow-500"></i>
         </div>
         <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
           <div>
             <h4 class="text-sm text-gray-500">Jumlah Loket Kasir</h4>
-            <p class="text-2xl font-bold">8</p>
+            <p class="text-2xl font-bold">{{ jumlahLoket }}</p>
           </div>
           <i class="pi pi-desktop text-xl text-green-500"></i>
         </div>
         <div class="bg-white p-4 rounded-lg shadow flex justify-between items-center">
           <div>
-            <h4 class="text-sm text-gray-500">Jumlah Instalansi</h4>
-            <p class="text-2xl font-bold">12</p>
+            <h4 class="text-sm text-gray-500">Jumlah Instalasi</h4>
+            <p class="text-2xl font-bold">{{ jumlahInstalasi }}</p>
           </div>
           <i class="pi pi-cog text-xl text-gray-500"></i>
         </div>
@@ -412,7 +462,7 @@ onMounted(async () => {
 
     <div class="mt-6 p-4 bg-white rounded-lg shadow">
       <h2 class="text-lg font-semibold text-gray-800 mb-4">
-        Pendapatan,Dokumen Klaim dan Penerimaan Pelayanan
+        Pendapatan, Dokumen Klaim dan Penerimaan Pelayanan
       </h2>
       <div class="h-96">
         <canvas ref="lineChart"></canvas>
