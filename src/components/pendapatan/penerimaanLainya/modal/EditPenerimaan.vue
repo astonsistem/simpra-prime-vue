@@ -418,8 +418,7 @@ watch(() => formData.value, (newValue) => {
 const jumlahNetto = computed(() => {
   return (
     (parseInt(formData.value.total || 0) -
-    parseInt(formData.value.admin_kredit || 0) -
-    parseInt(formData.value.admin_debit || 0)) +
+    parseInt(formData.value.admin_kredit || 0)) +
     parseInt(formData.value.selisih || 0)
   )
 })

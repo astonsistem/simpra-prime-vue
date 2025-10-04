@@ -368,9 +368,8 @@ watch(
 const hitungJumlahNetto = () => {
   const total = formData.value.total || 0
   const adminKredit = formData.value.admin_kredit || 0
-  const adminDebit = formData.value.admin_debit || 0
   const selisih = formData.value.selisih || 0
-  return ( parseInt(total) - parseInt(adminKredit) - parseInt(adminDebit) )  + parseInt(selisih)
+  return ( parseInt(total) - parseInt(adminKredit)  )  + parseInt(selisih)
 }
 
 const jumlahNetto = computed(() => {

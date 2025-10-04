@@ -131,7 +131,7 @@
         <Column field="tersetor" header="Tersetor" sortable :showFilterMatchModes="false" :showClearButton="true"
           style="text-align: right">
           <template #body="slotProps">
-            {{ formatCurrency(slotProps.data.tersetor) }}
+            {{ formatCurrency(slotProps.data.jumlah) }}
           </template>
           <template #filter="{ filterModel, applyFilter }">
             <InputNumber v-model="filterModel.value" @keyup.enter="applyFilter" locale="id-ID"

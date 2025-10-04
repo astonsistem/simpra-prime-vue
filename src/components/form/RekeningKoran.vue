@@ -14,7 +14,7 @@
         @sort="onSort($event)"
         @row-select="onRowSelect($event)"
         @filter="onFilter($event)"
-        selectionMode="single" dataKey="rc_id" size="small" tableClass="w-full">
+        selectionMode="single" dataKey="rc_id" size="small" tableClass="w-full" class="p-datatable-sm text-sm">
 
         <template #header>
           <div class="flex justify-between">
