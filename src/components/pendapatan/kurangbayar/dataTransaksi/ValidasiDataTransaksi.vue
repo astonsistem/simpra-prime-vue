@@ -83,7 +83,7 @@ const props = defineProps({
   modelValue: Boolean,
   item: Object,
   bank: String,
-  date: String,
+  date: String | Date,
   header: {
     type: String,
     default: 'Penerimaan',

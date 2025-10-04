@@ -1,6 +1,7 @@
 import api from '../../api/client'
 import { ref } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import { formatDateToYYYYMMDD } from '@/utils/dateUtils'
 
 export default function useDataTransaksiForm() {
   const toast = useToast()
@@ -51,6 +52,9 @@ export default function useDataTransaksiForm() {
     try {
       loading.value = true
       errors.value = {}
+      // convert date to yyyymmdd
+      data.tgl_setor = formatDateToYYYYMMDD(data.tgl_setor)
+      data.tgl_buktibayar = formatDateToYYYYMMDD(data.tgl_buktibayar)
 
       const response = await api.post('/kurangbayar/data_transaksi', data)
 
@@ -86,6 +90,9 @@ export default function useDataTransaksiForm() {
     try {
       loading.value = true
       errors.value = {}
+      // convert date to yyyymmdd
+      data.tgl_setor = formatDateToYYYYMMDD(data.tgl_setor)
+      data.tgl_buktibayar = formatDateToYYYYMMDD(data.tgl_buktibayar)
 
       const response = await api.put(`/kurangbayar/data_transaksi/${data.id}`, data)
 
