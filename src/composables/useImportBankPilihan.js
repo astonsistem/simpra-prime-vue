@@ -415,8 +415,8 @@ export default function useImportBankPilihan() {
           amountValue = parseFloat(value) || 0
         }
 
-        // Capture Db/Cr indicator
-        if (header === 'Db/Cr' && value !== undefined && value !== null) {
+        // Capture Db/Cr indicator (handle both 'Db/ Cr' and 'Db/Cr' formats)
+        if ((header === 'Db/ Cr' || header === 'Db/Cr') && value !== undefined && value !== null) {
           dbCrIndicator = value.toString().toUpperCase()
         }
       })
@@ -438,7 +438,7 @@ export default function useImportBankPilihan() {
 
   /**
    * Transformer untuk Bank BRI
-   * Format: ID | NOREK | TGL_TRAN | TGL_EFEKTIF | JAM_TRAN | SEQ | DESK_TRAN | SALDO_AWAL_MUTASI | MUTASI_DEBIT | MUTASI_KREDIT
+   * Format: ID | NOREK | TGL_TRAN | TGL_EFEKTIF | JAM_TRAN | SEQ | DESK_TRAN | SALDO_AWAL_MUTASI | MUTASI_DEBET | MUTASI_KREDIT
    */
   function transformBriExcel(excelData, bankName) {
     const headers = excelData[0]
@@ -448,7 +448,7 @@ export default function useImportBankPilihan() {
       'TGL_TRAN': 'tgl_rc',
       'JAM_TRAN': 'no_rc',
       'DESK_TRAN': 'uraian',
-      'MUTASI_DEBIT': 'debit',
+      'MUTASI_DEBET': 'debit',
       'MUTASI_KREDIT': 'kredit'
     }
 
