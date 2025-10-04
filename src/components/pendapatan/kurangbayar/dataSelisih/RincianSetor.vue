@@ -37,9 +37,9 @@
         <Column field="tgl_setor" header="Tgl. Setor" />
         <Column field="cara_pembayaran" header="Cara Pembayaran" />
         <Column field="bank_tujuan" header="Bank" />
-        <Column field="nilai" header="Nilai">
+        <Column field="jumlah" header="Nilai">
           <template #body="slotProps">
-            {{ formatCurrency(slotProps.data.nilai) }}
+            {{ formatCurrency(slotProps.data.jumlah) }}
           </template>
         </Column>
         <Column field="aksi" header="Aksi">
@@ -115,7 +115,7 @@ const props = defineProps({
 
 const totalNilai = computed(() => {
   return props.items.reduce((total, item) => {
-    return total + item.nilai
+    return total + item.jumlah
   }, 0)
 })
 

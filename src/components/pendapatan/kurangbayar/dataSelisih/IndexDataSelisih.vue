@@ -4,18 +4,18 @@
     <div
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl mb-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xl font-semibold text-[#17316E]">Data Selisih Kurang Bayar / Setor</h3>
       </div>
       <DataTable :filters="filters" :value="items" :loading="loading" responsiveLayout="scroll" paginator lazy
         showGridlines stripedRows :totalRecords="total" :rows="rows" :first="first" :rowsPerPageOptions="[5, 10, 20, 50, 100, 1000]"
         @page="onPageChange" @filter="onTableUpdate" @sort="onTableUpdate" dataKey="id" filterDisplay="menu"
         currentPageReportTemplate="{first} to {last} of {totalRecords}"
         :rowStyle="rowStyle" :globalFilterFields="[
-          'noBukti',
-          'noSetor',
+          'no_bukti',
           'penyetor',
           'jenis',
-          'rekeningDpa',
+          'rekening_dpa',
+          'tgl_setor',
+          'tgl_bukti',
         ]" class="p-datatable-sm">
         <template #header>
           <div class="flex justify-between">
@@ -68,20 +68,20 @@
           </template>
         </Column>
 
-        <Column field="no_buktibayar" header="No. Bukti" sortable :showFilterMatchModes="false" :showClearButton="true"
+        <Column field="no_bukti" header="No. Bukti" sortable :showFilterMatchModes="false" :showClearButton="true"
           style="min-width: 12rem">
           <template #body="{ data }">
-            {{ data.no_buktibayar }}
+            {{ data.no_bukti }}
           </template>
           <template #filter="{ filterModel, applyFilter }">
             <InputText v-model="filterModel.value" @keyup.enter="applyFilter" placeholder="Search by No Bukti" />
           </template>
         </Column>
 
-        <Column field="tgl_buktibayar" header="Tgl. Bukti" sortable :showFilterMatchModes="false"
+        <Column field="tgl_bukti" header="Tgl. Bukti" sortable :showFilterMatchModes="false"
           :showApplyButton="false" :showClearButton="true" style="min-width: 12rem">
           <template #body="{ data }">
-            {{ data.tgl_buktibayar }}
+            {{ data.tgl_bukti }}
           </template>
           <template #filter="{ filterModel, applyFilter }">
             <DatePicker v-model="filterModel.value" @update:modelValue="applyFilter" dateFormat="yy-mm-dd"
@@ -131,7 +131,7 @@
         <Column field="tersetor" header="Tersetor" sortable :showFilterMatchModes="false" :showClearButton="true"
           style="text-align: right">
           <template #body="slotProps">
-            {{ formatCurrency(slotProps.data.jumlah) }}
+            {{ formatCurrency(slotProps.data.tersetor) }}
           </template>
           <template #filter="{ filterModel, applyFilter }">
             <InputNumber v-model="filterModel.value" @keyup.enter="applyFilter" locale="id-ID"
@@ -190,6 +190,7 @@ const {
   clearFilter,
   loading,
   loadData,
+  searchData,
   update: onTableUpdate,
   onPageChange,
   exportExcel 
@@ -199,14 +200,6 @@ onMounted(async () => {
   await loadData()
 })
 
-function searchData(data) {
-  periodFilters.value = data
-
-  loadData({
-    ...data,
-    ...filters.value
-  })
-}
 
 function onSaved() {
   loadData({

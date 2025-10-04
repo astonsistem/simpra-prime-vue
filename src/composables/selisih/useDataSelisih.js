@@ -5,7 +5,7 @@ import { FilterMatchMode } from '@primevue/core'
 import { formatDateToYYYYMMDD } from '@/utils/dateUtils.js'
 import { exportExcel as exportExcelUtils } from '../../utils/utils'
 
-export default function useDataTransaksi() {
+export default function useDataSelisih() {
   const loading = ref(false)
   const items = ref([])
   const toast = useToast()
@@ -42,15 +42,17 @@ export default function useDataTransaksi() {
   function initFilters() {
     filters.value = {
       global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      is_valid: { value: null, matchMode: FilterMatchMode.EQUALS },
       tgl_setor: { value: null, matchMode: FilterMatchMode.DATE_IS },
-      no_buktibayar: { value: null, matchMode: FilterMatchMode.CONTAINS },
-      tgl_buktibayar: { value: null, matchMode: FilterMatchMode.DATE_IS },
+      no_bukti: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      tgl_bukti: { value: null, matchMode: FilterMatchMode.DATE_IS },
       penyetor: { value: null, matchMode: FilterMatchMode.CONTAINS },
       jenis: { value: null, matchMode: FilterMatchMode.CONTAINS },
       rekening_dpa: { value: null, matchMode: FilterMatchMode.CONTAINS },
       nilai: { value: null, matchMode: FilterMatchMode.EQUALS },
       tersetor: { value: null, matchMode: FilterMatchMode.EQUALS },
+      bank_tujuan: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      cara_pembayaran: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      loket_nama: { value: null, matchMode: FilterMatchMode.CONTAINS },
       export: {value: null}
     }
   }
@@ -70,11 +72,18 @@ export default function useDataTransaksi() {
     loadData()
   }
 
+  function searchData(data) {
+    setAdditionalFilter(data)
+
+    loadData({
+      ...data,
+      ...filters.value
+    })
+  }
+
   function update(event) {
     filters.value = event.filters
     first.value = 0
-
-
 
     // sort if exists
     if (event.sortField !== null && event.sortOrder !== null) {
@@ -102,9 +111,9 @@ export default function useDataTransaksi() {
         },
       })
 
-      const totalResult = params && params.export ? response.data.data?.length : response.data.meta?.total
+      const totalResult = params && params.export ? response.data.length : response.data.meta?.total
 
-      items.value = response.data.data
+      items.value = params && params.export ? response.data : response.data.data
       total.value = totalResult || 0
       meta.value = response.data.meta
 
@@ -153,7 +162,7 @@ export default function useDataTransaksi() {
 
       const response = await fetchData({ export: true })
       
-      const dataExcel = response.data.data
+      const dataExcel = response.data
       const excelData = dataExcel.map((item, index) => [
         item.no || index + 1,
         item.tgl_setor || '',
@@ -163,7 +172,7 @@ export default function useDataTransaksi() {
         item.jenis || '',
         item.rekening_dpa?.rek_nama || '',
         item.nilai || 0,
-        item.tersetor || 0
+        item.total_jumlah_netto || 0
       ])
   
       exportExcelUtils(modul, excelData, headers)
@@ -202,6 +211,7 @@ export default function useDataTransaksi() {
     sort,
     setAdditionalFilter,
     clearFilter,
+    searchData,
     update,
     fetchData,
     loadData,
