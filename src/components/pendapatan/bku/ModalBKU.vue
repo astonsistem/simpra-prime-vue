@@ -18,6 +18,10 @@
             class="w-full"
           />
         </div>
+        <div v-if="isEdit">
+          <label class="block mt-2 text-sm font-medium text-gray-700">Nomor BKU</label>
+          <InputText v-model="formData.no_bku" placeholder="Keterangan" class="w-full" />
+        </div>
         <div>
           <label class="block mt-2 text-sm font-medium text-gray-700">Jenis</label>
           <Dropdown
@@ -27,6 +31,7 @@
             optionValue="value"
             placeholder="Pilih Jenis"
             class="w-full"
+            :disabled="isEdit"
           />
         </div>
         <div>
@@ -120,6 +125,7 @@ const tableRincianBKU = ref(null)
 const defaultForm = {
   bku_id: 0,
   ket: '',
+  no_bku: '',
   tgl_bku: '',
   jenis: 0,
   uraian: ''

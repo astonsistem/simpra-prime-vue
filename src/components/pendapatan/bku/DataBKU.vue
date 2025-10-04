@@ -223,11 +223,11 @@ const handleAdd = () => {
   showModal.value = true
 }
 const handleEdit = async (item) => {
-  if (item.tgl_valid) {
+  if (item.pad_id || item.pad_tgl) {
     toast.add({
       severity: 'warn',
       summary: 'Peringatan',
-      detail: 'Data yang sudah divalidasi tidak dapat melakukan aksi ubah.',
+      detail: 'Data yang sudah dikirim PAD tidak dapat melakukan aksi ubah.',
       life: 3000,
     })
     return
