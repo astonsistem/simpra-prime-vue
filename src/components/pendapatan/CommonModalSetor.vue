@@ -132,7 +132,11 @@
 							<Column field="jenis" header="Jenis"></Column>
 							<Column field="bank_tujuan" header="Bank"></Column>
 							<Column field="sumber_transaksi" header="Sumber Transaksi"></Column>
-							<Column field="rekening_dpa" header="Rekening DPA"></Column>
+							<Column field="rekening_dpa" header="Rekening DPA">
+								<template #body="{ data }">
+									{{ data.rekening_dpa?.rek_nama ?? '' }}
+								</template>
+							</Column>
 							<Column header="Jumlah Setor" field="jumlah" class="text-end">
 								<template #body="{ data }">{{ formatCurrency(data.jumlah) }}</template>
 							</Column>
