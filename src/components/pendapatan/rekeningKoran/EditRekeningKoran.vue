@@ -118,6 +118,23 @@
             />
           </div>
 
+          <!-- Rekening DPA (editable dropdown) -->
+          <div class="flex flex-col gap-2">
+            <label for="rek_id" class="font-medium">Rekening DPA</label>
+            <Select
+              id="rek_id"
+              v-model="form.rek_id"
+              :options="rekeningDpaOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Pilih Rekening DPA"
+              filter
+              class="w-full"
+              :class="{ 'p-invalid': errors.rek_id }"
+            />
+            <small v-if="errors.rek_id" class="text-red-500">{{ errors.rek_id }}</small>
+          </div>
+
           <!-- Klarifikasi Langsung (editable dropdown) -->
           <div class="flex flex-col gap-2">
             <label for="akunls_id" class="font-medium">Klarifikasi Langsung <span class="text-red-500">*</span></label>
@@ -204,6 +221,7 @@ import { formatCurrency } from '@/utils/utils'
 import useRekeningKoranEdit from '@/composables/useRekeningKoranEdit'
 import useMasterAkun from '@/composables/useMasterAkun'
 import { formatDateToYYYYMMDD } from '@/utils/dateUtils'
+import useRekeningDpa from '@/composables/useRekeningDpa'
 
 const props = defineProps({
   modelValue: {
@@ -221,6 +239,7 @@ const emit = defineEmits(['update:modelValue', 'saved'])
 const toast = useToast()
 const { updateRekeningKoran, loading: saving } = useRekeningKoranEdit()
 const { fetchAkunKlarifikasi, loading: loadingAkun } = useMasterAkun()
+const { options: rekeningDpaOptions, fetchList: fetchRekeningDpa } = useRekeningDpa()
 
 const visible = computed({
   get: () => props.modelValue,
@@ -244,6 +263,7 @@ const form = ref({
   akun_id: null,
   akun_nama: '',
   akunls_id: null,
+  rek_id: null,
   klarif_layanan: 0,
   klarif_lain: 0
 })
@@ -287,6 +307,7 @@ async function loadData(item) {
       akun_id: item.akun_id,
       akun_nama: item.akun_data?.akun_nama || '',
       akunls_id: item.akunls_id,
+      rek_id: item.rekening_dpa?.rek_id || item.rek_id || null,
       klarif_layanan: item.klarif_layanan || 0,
       klarif_lain: item.klarif_lain || 0
     }
@@ -299,6 +320,9 @@ async function loadData(item) {
       label: `${akun.akun_kode} - ${akun.akun_nama}`,
       value: akun.akun_id
     }))
+
+    // Load Rekening DPA options
+    await fetchRekeningDpa()
 
   } catch (error) {
     console.error('Error loading data:', error)
@@ -370,6 +394,7 @@ async function handleSave() {
       tgl_rc: formatDateToYYYYMMDD(form.value.tgl_rc),
       no_rc: form.value.no_rc,
       akunls_id: form.value.akunls_id,
+      rek_id: form.value.rek_id || null,
       klarif_layanan: form.value.klarif_layanan || 0,
       klarif_lain: form.value.klarif_lain || 0
     }

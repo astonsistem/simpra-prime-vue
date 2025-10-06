@@ -189,7 +189,7 @@
           </template>
         </Column>
         
-        <Column field="rekening_dpa" header="Rekening DPA" :showFilterMatchModes="false"
+        <Column field="rekening_dpa" header="Rekening DPA" sortable :showFilterMatchModes="false"
           :showClearButton="true" >
           <template #body="{ data }">
             {{ data.rekening_dpa?.rek_nama ?? '' }}
