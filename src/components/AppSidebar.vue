@@ -14,6 +14,7 @@ const emit = defineEmits(['toggle-collapse', 'close-mobile'])
 const route = useRoute()
 
 const pelaporanMenus = ref([])
+const submenuPelaporanSearch = ref('')
 
 // Menu Items Definition
 const menuItems = ref([
@@ -92,7 +93,6 @@ const isActive = (item) => {
   if (item.exact) return route.path === item.to
   return route.path === item.to || route.path.startsWith(item.to + '/')
 }
-
 const router = useRouter()
 const logout = async () => {
   try {
@@ -102,6 +102,18 @@ const logout = async () => {
     console.error('Logout failed:', error)
   }
 }
+const filteredChildren = (item) => {
+  if (!item.children) return []
+  if (item.label !== 'Pelaporan') return item.children
+  if (!submenuPelaporanSearch.value) return item.children
+
+  const query = submenuPelaporanSearch.value.toLowerCase().trim().split(/\s+/)
+  return item.children.filter((child) => {
+    const label = child.label.toLowerCase()
+    return query.every((word) => label.includes(word))
+  })
+}
+
 onMounted(async () => {
   try {
     // GET PELAPORAN MENUS LIST
@@ -109,11 +121,6 @@ onMounted(async () => {
     pelaporanMenus.value = res.data.data
 
     // Inject into menu
-    const laporanItem = menuItems.value.find((item) => item.label === 'Laporan')
-    if (laporanItem) {
-      laporanItem.children = laporanMenus.value
-    }
-
     const pelaporanItem = menuItems.value.find(item => item.label === 'Pelaporan')
     if (pelaporanItem) {
       pelaporanItem.children = pelaporanMenus.value
@@ -171,8 +178,17 @@ onMounted(async () => {
             </button>
 
             <div v-if="!collapsed && item.isOpen" class="ml-8 space-y-1">
+              <!-- Search only for submenu under Pelaporan -->
+              <div v-if="item.label === 'Pelaporan'" class="mb-2">
+                <input
+                  v-model="submenuPelaporanSearch"
+                  type="text"
+                  placeholder="Cari Pelaporan..."
+                  class="w-full px-3 py-2 text-sm rounded-md bg-white/10 text-white placeholder-white/60 focus:outline-none"
+                />
+              </div>
               <router-link
-                v-for="child in item.children"
+                v-for="child in filteredChildren(item)"
                 :key="child.label"
                 :to="child.to"
                 class="flex items-center gap-2 p-2 rounded-lg transition-colors text-white/80 hover:text-white"
