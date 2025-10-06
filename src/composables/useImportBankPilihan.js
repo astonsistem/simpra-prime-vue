@@ -38,7 +38,6 @@ export default function useImportBankPilihan() {
       
       // Transform data based on bank transformer
       const transformedData = transformExcelData(data, bankName)
-      console.log('transformedData', transformedData)
       // Filter only rows with valid date
       const filteredData = transformedData.filter(row => row.tgl_rc && row.tgl_rc !== '')
       items.value = filteredData
@@ -228,6 +227,11 @@ export default function useImportBankPilihan() {
     const headers = excelData[0]
     const dataRows = excelData.slice(1)
     
+    // Normalize headers - trim whitespace and handle variations
+    const normalizedHeaders = headers.map(h => h ? h.toString().trim() : '')
+    
+    console.log('Mandiri Excel Headers:', normalizedHeaders)
+    
     const mapping = {
       'Tgl.': 'tgl_rc',
       'Rincian Transaksi': 'uraian',
@@ -244,18 +248,27 @@ export default function useImportBankPilihan() {
         tgl: new Date().toISOString().split('T')[0]
       }
 
-      headers.forEach((header, colIndex) => {
+      normalizedHeaders.forEach((header, colIndex) => {
         const fieldName = mapping[header]
-        if (fieldName && row[colIndex] !== undefined && row[colIndex] !== null) {
-          let value = row[colIndex]
-          
+        const value = row[colIndex]
+        
+        // Debug log for Rincian Transaksi column
+        if (header === 'Rincian Transaksi') {
+          console.log(`Row ${index + 1} - Rincian Transaksi value:`, value, 'Type:', typeof value)
+        }
+        
+        if (fieldName) {
+          // Handle different field types
           if (fieldName === 'tgl_rc' && value) {
             transformedRow[fieldName] = parseExcelDate(value)
           } else if (fieldName === 'debit' || fieldName === 'kredit') {
             transformedRow[fieldName] = parseFloat(value) || 0
-          } else if (['no_rc', 'rek_dari', 'nama_dari'].includes(fieldName) && value) {
-            transformedRow[fieldName] = value.toString()
-          } else {
+          } else if (fieldName === 'uraian') {
+            // Special handling for uraian - convert to string even if empty
+            transformedRow[fieldName] = value !== undefined && value !== null ? value.toString() : ''
+          } else if (['no_rc', 'rek_dari', 'nama_dari'].includes(fieldName)) {
+            transformedRow[fieldName] = value !== undefined && value !== null ? value.toString() : ''
+          } else if (value !== undefined && value !== null) {
             transformedRow[fieldName] = value
           }
         }
