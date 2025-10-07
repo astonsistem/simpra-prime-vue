@@ -105,6 +105,7 @@
                 class="w-full"
                 filter
                 filterPlaceholder="Search Penjamin"
+                disabled
             />
           </div>
           <div>
@@ -181,6 +182,7 @@ const toast = useToast()
 const loading = ref(false)
 const visible = ref(props.modelValue)
 const defaultForm = {
+  piutang_id: '',
   pendaftaran_id: null,
   total_tagihan: 0,
   total_klaim: 0,
@@ -195,6 +197,7 @@ const defaultForm = {
   norm: '',
   nama: '',
   tgl_mrs: '',
+  no_dokumen: '',
 }
 const formData = ref({ ...defaultForm })
 const resetForm = () => {
@@ -221,18 +224,16 @@ watch(visible, (newValue) => {
 watch(
   () => props.item,
   (newItem) => {
-    if (!newItem) {
-      resetForm()
-      return
+    if (newItem) {
+      Object.keys(newItem).forEach((key) => {
+        if (key.startsWith('tgl_')) {
+            formData.value[key] = newItem[key] ? new Date(newItem[key]) : null
+        } else {
+            formData.value[key] = newItem[key]
+        }
+      })
+      console.log(formData.value)
     }
-
-    Object.keys(formData.value).forEach((key) => {
-      if (key.startsWith('tgl_')) {
-          formData.value[key] = newItem[key] ? new Date(newItem[key]) : null
-      } else {
-          formData.value[key] = newItem[key]
-      }
-    })
   },
   { immediate: true }
 )

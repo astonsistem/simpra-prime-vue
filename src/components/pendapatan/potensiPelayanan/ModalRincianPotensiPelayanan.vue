@@ -281,7 +281,10 @@ watch(
 )
 
 const createRincian = async () => {
-  selectedItem.value = null
+  selectedItem.value = {}
+  selectedItem.value.no_dokumen = formData.value.no_dokumen
+  selectedItem.value.piutang_id = formData.value.id
+  selectedItem.value.penjamin_id = formData.value.penjamin_id
   showModal.value = true
 }
 
