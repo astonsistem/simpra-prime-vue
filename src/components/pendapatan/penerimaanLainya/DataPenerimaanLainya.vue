@@ -487,18 +487,18 @@ initFilters()
             {{ slotProps.index + 1 + first }}
           </template>
         </Column>
-        <Column field="validated" :showFilterMatchModes="false" style="width: 10%; text-align: center">
+        <Column field="is_valid" sortable :showFilterMatchModes="false" :showApplyButton="false"
+          style="width: 10%; text-align: center">
           <template #header>
-            <i class="pi pi-check-circle" style="font-size: 1rem"></i>
+            &nbsp;
           </template>
           <template #body="{ data }">
-            <i class="pi pi-check-circle"
-              :class="[isValidated(data) ? 'text-green-500' : 'text-gray-300', 'cursor-pointer']"
-              v-if="isValidated(data)"></i>
+            <i v-if="data.is_valid" class="pi pi-check-circle text-green-500 cursor-pointer" @click="confirmCancelValidasi(data)"></i>
+            <i v-else class="pi pi-check-circle text-gray-300 cursor-pointer" @click="handleValidasi(data)"></i>
           </template>
-          <template #filter="{ filterModel }">
-            <Dropdown optionValue="value" optionLabel="label" v-model="filterModel.value" :options="[{ label: 'Tervalidasi', value: '1' }, { label: 'Belum Tervalidasi', value: '0' }]"
-              placeholder="Filter Validasi" class="w-full" />
+          <template #filter="{ filterModel, applyFilter }">
+            <ToggleSwitch v-model="filterModel.value" @update:modelValue="applyFilter" />
+            <span>{{ filterModel.value ? 'Tervalidasi' : 'Belum Tervalidasi' }}</span>
           </template>
         </Column>
         <Column header="Action" style="width: 15%">
