@@ -16,6 +16,15 @@ export default function useDataTransaksiForm() {
 
       const { data } = response
       selectedItem.value = data.data
+      // data_transaksi
+      if(data.exists_data_transaksi) {
+        const data_transaksi = data.data_transaksi[0]
+        
+        selectedItem.value.rek_id = data_transaksi.rek_id
+        selectedItem.value.rekening_dpa = data_transaksi.rekening_dpa
+        selectedItem.value.sumber_transaksi = data_transaksi.sumber_transaksi
+        selectedItem.value.klasifikasi = data_transaksi.klasifikasi
+      }
 
       return Promise.resolve(data)
     } catch (error) {
