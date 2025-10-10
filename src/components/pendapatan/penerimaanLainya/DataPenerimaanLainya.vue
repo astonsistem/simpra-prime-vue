@@ -571,6 +571,19 @@ initFilters()
           </template>
         </Column>
         <Column
+          field="sumber_transaksi"
+          header="Jenis Penerimaan"
+          :showFilterMatchModes="false"
+          style="min-width: 12rem"
+        >
+          <template #body="{ data }">
+            {{ data.sumber?.sumber_nama }}
+          </template>
+          <template #filter="{ filterModel }">
+            <InputText v-model="filterModel.value" type="text" placeholder="Search by Jenis Penerimaan" />
+          </template>
+        </Column>
+        <Column
           field="pihak3"
           header="Pihak3"
           :showFilterMatchModes="false"
