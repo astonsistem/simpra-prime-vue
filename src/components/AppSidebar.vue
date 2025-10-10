@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authService } from '../services/authService.js'
 import api from '@/services/http.js'
@@ -89,9 +89,29 @@ const menuItems = ref([
 ])
 
 const isActive = (item) => {
-  if (item.exact) return route.path === item.to
-  return route.path === item.to || route.path.startsWith(item.to + '/')
+  const current = (route.path || '').toLowerCase()
+  const to = (item.to || '').toLowerCase()
+  if (item.exact) return current === to
+  return current === to || current.startsWith(to + '/')
 }
+
+// Ensure parent groups open when one of their children is active
+const syncOpenStates = () => {
+  menuItems.value.forEach((item) => {
+    if (item.children) {
+      item.isOpen = item.children.some((child) => isActive(child))
+    }
+  })
+}
+
+// Keep open states in sync with the current route
+watch(
+  () => route.path,
+  () => {
+    syncOpenStates()
+  },
+  { immediate: true }
+)
 
 const router = useRouter()
 const logout = async () => {
@@ -111,13 +131,16 @@ onMounted(async () => {
     // Inject into menu
     const laporanItem = menuItems.value.find((item) => item.label === 'Laporan')
     if (laporanItem) {
-      laporanItem.children = laporanMenus.value
+      laporanItem.children = pelaporanMenus.value
     }
 
     const pelaporanItem = menuItems.value.find(item => item.label === 'Pelaporan')
     if (pelaporanItem) {
       pelaporanItem.children = pelaporanMenus.value
     }
+
+    // Re-evaluate open states after async menu injection
+    syncOpenStates()
 
   } catch (error) {
     console.error('Failed to load menus:', error)
