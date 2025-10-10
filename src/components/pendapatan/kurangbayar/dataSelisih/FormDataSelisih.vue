@@ -130,8 +130,8 @@
         <div class="mb-4">
           <label class="block mb-1 text-sm font-medium text-gray-700">Klasifikasi</label>
           <Dropdown v-model="form.klasifikasi" :options="[
-            { label: 'Pendapatan', value: 'Pendapatan' },
-            { label: 'Piutang', value: 'Piutang' },
+            { label: 'Pendapatan', value: 'PENDAPATAN' },
+            { label: 'Piutang', value: 'PIUTANG' },
             { label: 'PDD', value: 'PDD' },
           ]" optionLabel="label" optionValue="value" placeholder="Klasifikasi" class="w-full"
             :invalid="errors?.klasifikasi?.length" />
