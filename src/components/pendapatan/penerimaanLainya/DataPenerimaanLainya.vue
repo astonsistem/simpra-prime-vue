@@ -571,13 +571,13 @@ initFilters()
           </template>
         </Column>
         <Column
-          field="sumber_transaksi"
+          field="akun_nama"
           header="Jenis Penerimaan"
           :showFilterMatchModes="false"
           style="min-width: 12rem"
         >
           <template #body="{ data }">
-            {{ data.sumber?.sumber_nama }}
+            {{ data.akun_nama }}
           </template>
           <template #filter="{ filterModel }">
             <InputText v-model="filterModel.value" type="text" placeholder="Search by Jenis Penerimaan" />
