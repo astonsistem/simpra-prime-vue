@@ -315,6 +315,27 @@ const handleKirimPAD = async (item) => {
       }
   })
 }
+const handleBatalPAD = async (item) => {
+  if (!item.pad_id) {
+    toast.add({
+      severity: 'warn',
+      summary: 'Peringatan',
+      detail: 'Data yang belum dikirim PAD tidak dapat melakukan aksi batal PAD.',
+      life: 3000,
+    })
+    return
+  }
+  toast.add({
+      severity: 'warn',
+      summary: 'Konfirmasi',
+      detail: 'Apakah Anda yakin ingin membatalkan PAD data ini?',
+      group: 'confirm',
+      data: {
+          url: `/bku/batal_pad/${item.bku_id}`,
+          title: 'batal pad'
+      }
+  })
+}
 const handleBatalValidasi = async (item) => {
   if (!item.tgl_valid) {
     toast.add({
@@ -871,6 +892,7 @@ async function exportPDF(bkuId) {
                 { label: 'Lihat', icon: 'pi pi-download', command: () => handleLihat(slotProps.data) },
                 { label: 'Validasi', icon: 'pi pi-check', command: () => handleValidasi(slotProps.data) },
                 { label: 'Kirim PAD', icon: 'pi pi-send', command: () => handleKirimPAD(slotProps.data) },
+                { label: 'Batal PAD', icon: 'pi pi-times', command: () => handleBatalPAD(slotProps.data) },
                 { label: 'Batal Validasi', icon: 'pi pi-times', command: () => handleBatalValidasi(slotProps.data) },
                 { label: 'Hapus', icon: 'pi pi-trash', command: () => handleDelete(slotProps.data) },
               ]"

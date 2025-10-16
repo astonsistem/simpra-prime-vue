@@ -76,11 +76,7 @@ defineEmits(['toggle-mobile'])
         <Menu ref="menu" id="overlay_menu" :model="items" :popup="true">
           <template #start>
             <div class="flex flex-col items-center p-4">
-              <img
-                alt="logo"
-                src="https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png"
-                class="w-16 h-16 rounded-full"
-              />
+              <i class="pi pi-user text-5xl text-gray-600"></i>
               <span class="font-bold mt-2">Admin</span>
             </div>
           </template>
