@@ -26,7 +26,7 @@ export function usePenerimaanLain() {
       uraian: { value: null, matchMode: FilterMatchMode.CONTAINS },
       no_dokumen: { value: null, matchMode: FilterMatchMode.CONTAINS },
       tgl_dokumen: { value: null, matchMode: FilterMatchMode.DATE_IS },
-      sumber_transaksi: { value: null, matchMode: FilterMatchMode.CONTAINS },
+      akun_nama: { value: null, matchMode: FilterMatchMode.CONTAINS },
       instalasi: { value: null, matchMode: FilterMatchMode.CONTAINS },
       cara_pembayaran: { value: null, matchMode: FilterMatchMode.CONTAINS },
       rekening_dpa: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -35,7 +35,7 @@ export function usePenerimaanLain() {
       admin_kredit: { value: null, matchMode: FilterMatchMode.EQUALS },
       admin_debit: { value: null, matchMode: FilterMatchMode.EQUALS },
       selisih: { value: null, matchMode: FilterMatchMode.EQUALS },
-      validated: { value: null, matchMode: FilterMatchMode.EQUALS },
+      is_valid: { value: null, matchMode: FilterMatchMode.EQUALS },
       jumlahBruto: { value: null, min: null, max: null, matchMode: FilterMatchMode.BETWEEN },
       jumlahNetto: { value: null, min: null, max: null, matchMode: FilterMatchMode.BETWEEN },
       export: {value: null}

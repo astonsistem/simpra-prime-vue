@@ -633,7 +633,7 @@ const initFilters = () => {
     selisih: { value: null, matchMode: FilterMatchMode.EQUALS },
     jumlahBruto: { value: null, min: null, max: null, matchMode: FilterMatchMode.BETWEEN },
     jumlahNetto: { value: null, min: null, max: null, matchMode: FilterMatchMode.BETWEEN },
-    validated: { value: null, matchMode: FilterMatchMode.EQUALS },
+    is_valid: { value: null, matchMode: FilterMatchMode.EQUALS },
   }
 }
 
@@ -828,7 +828,21 @@ function setor(data) {
         <Column field="no" header="No" style="width: 5%">
           <template #body="{ data, index }">{{ index + 1 + first }}</template>
         </Column>
-        <Column field="validated" :showFilterMatchModes="false" style="width: 10%; text-align: center">
+        <Column field="is_valid" sortable :showFilterMatchModes="false" :showApplyButton="false"
+          style="width: 10%; text-align: center">
+          <template #header>
+            &nbsp;
+          </template>
+          <template #body="{ data }">
+            <i v-if="data.is_valid" class="pi pi-check-circle text-green-500 cursor-pointer" @click="confirmCancelValidasi(data)"></i>
+            <i v-else class="pi pi-check-circle text-gray-300 cursor-pointer" @click="handleValidasi(data)"></i>
+          </template>
+          <template #filter="{ filterModel, applyFilter }">
+            <ToggleSwitch v-model="filterModel.value" @update:modelValue="applyFilter" />
+            <span>{{ filterModel.value ? 'Tervalidasi' : 'Belum Tervalidasi' }}</span>
+          </template>
+        </Column>
+        <!-- <Column field="validated" :showFilterMatchModes="false" style="width: 10%; text-align: center">
           <template #header>
             <i class="pi pi-check-circle" style="font-size: 1rem"></i>
           </template>
@@ -841,7 +855,7 @@ function setor(data) {
             <Dropdown optionValue="value" optionLabel="label" v-model="filterModel.value" :options="[{ label: 'Tervalidasi', value: '1' }, { label: 'Belum Tervalidasi', value: '0' }]"
               placeholder="Filter Validasi" class="w-full" />
           </template>
-        </Column>
+        </Column> -->
         <Column header="Action" style="width: 15%">
           <template #body="slotProps">
             <SplitButton label="Aksi" size="small" severity="secondary" :model="[
