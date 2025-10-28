@@ -118,6 +118,22 @@
             />
           </div>
 
+          <!-- PB dari Bank -->
+          <div class="flex flex-col gap-2">
+            <label for="pb_dari" class="font-medium">PB dari Bank</label>
+            <Select
+              id="pb_dari"
+              v-model="form.pb_dari"
+              :options="filteredBankOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Pilih Bank"
+              filter
+              showClear
+              class="w-full"
+            />
+          </div>
+
           <!-- Rekening DPA (editable dropdown) -->
           <div class="flex flex-col gap-2">
             <label for="rek_id" class="font-medium">Rekening DPA</label>
@@ -222,6 +238,7 @@ import useRekeningKoranEdit from '@/composables/useRekeningKoranEdit'
 import useMasterAkun from '@/composables/useMasterAkun'
 import { formatDateToYYYYMMDD } from '@/utils/dateUtils'
 import useRekeningDpa from '@/composables/useRekeningDpa'
+import useBankTujuan from '@/composables/useBankTujuan'
 
 const props = defineProps({
   modelValue: {
@@ -240,6 +257,7 @@ const toast = useToast()
 const { updateRekeningKoran, loading: saving } = useRekeningKoranEdit()
 const { fetchAkunKlarifikasi, loading: loadingAkun } = useMasterAkun()
 const { options: rekeningDpaOptions, fetchList: fetchRekeningDpa } = useRekeningDpa()
+const { options: bankOptions, fetchList: fetchBankList } = useBankTujuan()
 
 const visible = computed({
   get: () => props.modelValue,
@@ -249,6 +267,11 @@ const visible = computed({
 const loading = ref(false)
 const akunOptions = ref([])
 const errors = ref({})
+
+// Filter out JATIM from bank options
+const filteredBankOptions = computed(() => {
+  return bankOptions.value.filter(bank => bank.value.toUpperCase() !== 'JATIM')
+})
 
 const form = ref({
   rc_id: null,
@@ -264,6 +287,7 @@ const form = ref({
   akun_nama: '',
   akunls_id: null,
   rek_id: null,
+  pb_dari: '',
   klarif_layanan: 0,
   klarif_lain: 0
 })
@@ -308,6 +332,7 @@ async function loadData(item) {
       akun_nama: item.akun_data?.akun_nama || '',
       akunls_id: item.akunls_id,
       rek_id: item.rekening_dpa?.rek_id || item.rek_id || null,
+      pb_dari: item.pb_dari || '',
       klarif_layanan: item.klarif_layanan || 0,
       klarif_lain: item.klarif_lain || 0
     }
@@ -323,6 +348,9 @@ async function loadData(item) {
 
     // Load Rekening DPA options
     await fetchRekeningDpa()
+
+    // Load Bank options
+    await fetchBankList()
 
   } catch (error) {
     console.error('Error loading data:', error)
@@ -395,6 +423,7 @@ async function handleSave() {
       no_rc: form.value.no_rc,
       akunls_id: form.value.akunls_id,
       rek_id: form.value.rek_id || null,
+      pb_dari: form.value.pb_dari || null,
       klarif_layanan: form.value.klarif_layanan || 0,
       klarif_lain: form.value.klarif_lain || 0
     }
