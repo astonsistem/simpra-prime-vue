@@ -134,10 +134,10 @@
           </template>
         </Column>
 
-        <Column field="pb" header="PB dari Bank" sortable :showFilterMatchModes="false"
+        <Column field="pb_dari" header="PB dari Bank" sortable :showFilterMatchModes="false"
           :showClearButton="true" >
           <template #body="{ data }">
-            {{ data.pb }}
+            {{ data.pb_dari }}
           </template>
           <template #filter="{ filterModel, applyFilter }">
             <InputText v-model="filterModel.value" @keyup.enter="applyFilter"
@@ -355,11 +355,14 @@ function handleEdit(item) {
 
 function canShowPB(item) {
   // Check business rules for PB visibility
+  // Requirements: kredit > 0, no akun_id, no akunls_id, no bku_id, and pb_dari must be filled
   return (
     item.kredit > 0 &&
     !item.akun_id &&
     !item.akunls_id &&
-    !item.bku_id
+    !item.bku_id &&
+    item.pb_dari != null &&
+    item.pb_dari !== ''
   )
 }
 
