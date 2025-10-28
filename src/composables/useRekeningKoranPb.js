@@ -41,19 +41,25 @@ export default function useRekeningKoranPb() {
   /**
    * Get unlinked records (mutations that can be linked to this Bank Jatim record)
    * @param {string} tglRc - The tgl_rc of the Bank Jatim record
+   * @param {string} pbDari - The pb_dari (bank name) to filter by
    * @param {number} page - Page number
    * @param {number} perPage - Records per page
    */
-  const getUnlinkedRecords = async (tglRc, page = 1, perPage = 10) => {
+  const getUnlinkedRecords = async (tglRc, pbDari = null, page = 1, perPage = 10) => {
     loading.value = true
     try {
-      const response = await apiClient.get('/rekening_koran/pb/uncheck', {
-        params: {
-          tgl_rc: formatDateToYYYYMMDD(tglRc),
-          page,
-          per_page: perPage
-        }
-      })
+      const params = {
+        tgl_rc: formatDateToYYYYMMDD(tglRc),
+        page,
+        per_page: perPage
+      }
+      
+      // Add pb_dari filter if provided
+      if (pbDari) {
+        params.pb_dari = pbDari
+      }
+
+      const response = await apiClient.get('/rekening_koran/pb/uncheck', { params })
       unlinkedRecords.value = response.data.data || []
       unlinkedTotal.value = response.data.total || 0
       unlinkedPage.value = response.data.current_page || 1

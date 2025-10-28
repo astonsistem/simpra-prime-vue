@@ -282,6 +282,17 @@ watch(
   }
 )
 
+// Watch for pb_dari changes to refresh unlinked records
+watch(
+  () => formData.value.pb_dari,
+  async (newPbDari) => {
+    if (props.modelValue && props.item) {
+      // Refresh unlinked records when pb_dari changes
+      await getUnlinkedRecords(props.item.tgl_rc, newPbDari, 1, 10)
+    }
+  }
+)
+
 const loadData = async () => {
   if (!props.item?.rc_id) return
 
@@ -292,9 +303,6 @@ const loadData = async () => {
     // Fetch PB data and linked records
     await getPbData(props.item.rc_id)
 
-    // Fetch unlinked records
-    await getUnlinkedRecords(props.item.tgl_rc, 1, 10)
-
     // Populate form data
     formData.value = {
       no_rc: pbData.value?.no_rc || props.item.no_rc,
@@ -303,8 +311,11 @@ const loadData = async () => {
       bank: pbData.value?.bank || props.item.bank,
       kredit: pbData.value?.kredit || props.item.kredit,
       mutasi: pbData.value?.mutasi || false,
-      pb_dari: pbData.value?.pb_dari || ''
+      pb_dari: pbData.value?.pb_dari || props.item.pb_dari || ''
     }
+
+    // Fetch unlinked records with pb_dari filter
+    await getUnlinkedRecords(props.item.tgl_rc, formData.value.pb_dari, 1, 10)
   } catch (error) {
     console.error('Error loading PB data:', error)
   }
@@ -313,7 +324,7 @@ const loadData = async () => {
 const onUnlinkedPageChange = async (event) => {
   const page = event.page + 1
   const perPage = event.rows
-  await getUnlinkedRecords(props.item.tgl_rc, page, perPage)
+  await getUnlinkedRecords(props.item.tgl_rc, formData.value.pb_dari, page, perPage)
 }
 
 const handleCancelLink = (record) => {
