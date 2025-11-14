@@ -261,7 +261,8 @@ const defaultForm = {
   desc_piutang_pelayanan: '',
   desc_piutang_lain: '',
   piutang_id: '',
-  piutanglain_id: ''
+  piutanglain_id: '',
+  sumber_transaksi: ''
 }
 const formData = ref({ ...defaultForm })
 const resetForm = () => {
@@ -307,6 +308,7 @@ watch(
         formData.value.pdd = 0
         formData.value.desc_piutang_pelayanan = newItem.uraian
         formData.value.desc_piutang_lain = ''
+        formData.value.sumber_transaksi = 'POTENSI1'
       } else {
         formData.value.id = ''
         formData.value.piutanglain_id = newItem.id
@@ -317,6 +319,7 @@ watch(
         formData.value.piutang = 0
         formData.value.desc_piutang_pelayanan = ''
         formData.value.desc_piutang_lain = newItem.uraian
+        formData.value.sumber_transaksi = 'POTENSI2'
       }
     }
   },

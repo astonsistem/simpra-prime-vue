@@ -217,9 +217,9 @@ const router = createRouter({
           meta: { roles: ['admin'], breadcrumb: ['Admin', 'Anggaran'] },
         },
         {
-          path: 'admin/user-management',
-          name: 'admin-user-management',
-          component: () => import('../views/admin/UserManagement.vue'),
+          path: 'admin/manajemen-user',
+          name: 'admin-manajemen-user',
+          component: () => import('../views/admin/ManajemenUser.vue'),
           meta: { roles: ['admin'], breadcrumb: ['Admin', 'Manajemen User'] },
         },
         {

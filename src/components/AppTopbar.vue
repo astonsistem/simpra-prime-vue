@@ -6,6 +6,7 @@ import { ref, watch } from 'vue'
 import Menu from 'primevue/menu'
 import { authService } from '../services/authService'
 
+const user = JSON.parse(localStorage.getItem('user')).data
 const route = useRoute()
 const router = useRouter()
 const breadcrumb = ref(route.meta.breadcrumb || [])
@@ -59,7 +60,7 @@ defineEmits(['toggle-mobile'])
   >
     <div class="flex justify-between items-center">
       <div class="flex flex-col">
-        <h1 class="text-2xl font-bold text-[#17316E]">SIMPRA – RSUD Soetomo</h1>
+        <h1 class="text-2xl font-bold text-[#17316E]">SIMPRA - RSUD Soetomo</h1>
         <nav class="text-sm text-[#17316E]">
           {{ breadcrumb.join(' › ') }}
         </nav>
@@ -77,7 +78,7 @@ defineEmits(['toggle-mobile'])
           <template #start>
             <div class="flex flex-col items-center p-4">
               <i class="pi pi-user text-5xl text-gray-600"></i>
-              <span class="font-bold mt-2">Admin</span>
+              <span class="font-bold mt-2">{{ user.username }}</span>
             </div>
           </template>
         </Menu>

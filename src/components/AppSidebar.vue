@@ -76,7 +76,7 @@ const menuItems = ref([
     isOpen: false,
     children: [
       { label: 'Anggaran', to: '/admin/anggaran' },
-      { label: 'Manajemen User', to: '/admin/user-management' },
+      { label: 'Manajemen User', to: '/admin/manajemen-user' },
       { label: 'Sinkronisasi', to: '/admin/sinkronisasi' },
     ],
   },

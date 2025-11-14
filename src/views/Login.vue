@@ -122,7 +122,7 @@ const login = async () => {
     toast.add({
       severity: 'success',
       summary: 'Login Successful',
-      detail: `Welcome, ${user.nama || user.username || 'User'}!`,
+      detail: `Welcome, ${user.data.nama || user.data.username || 'User'}!`,
       life: 3000,
     })
 
