@@ -207,11 +207,15 @@ watch(
     <div
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full"
     >
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xl font-semibold text-[#17316E]">Manajemen User</h3>
+      <div class="flex justify-end items-center mb-2">
         <div class="flex gap-2">
           <Button label="Tambah Data" icon="pi pi-plus" class="p-button-success" @click="handleAdd" />
-          <InputText v-model="filters['global'].value" placeholder="Search User..." />
+          <IconField>
+            <InputIcon>
+              <i class="pi pi-search" />
+            </InputIcon>
+            <InputText v-model="filters['global'].value" placeholder="Search User..." />
+          </IconField>
         </div>
       </div>
       <DataTable

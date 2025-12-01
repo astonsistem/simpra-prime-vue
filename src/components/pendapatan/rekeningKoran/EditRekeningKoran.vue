@@ -134,6 +134,12 @@
             />
           </div>
 
+          <!-- Mutasi -->
+          <div class="flex mt-2 items-center gap-2">
+            <Checkbox v-model="form.mutasi" binary />
+            <label>Mutasi</label>
+          </div>
+
           <!-- Rekening DPA (editable dropdown) -->
           <div class="flex flex-col gap-2">
             <label for="rek_id" class="font-medium">Rekening DPA</label>
@@ -233,6 +239,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useToast } from 'primevue/usetoast'
+import Checkbox from 'primevue/checkbox'
 import { formatCurrency } from '@/utils/utils'
 import useRekeningKoranEdit from '@/composables/useRekeningKoranEdit'
 import useMasterAkun from '@/composables/useMasterAkun'
@@ -288,6 +295,7 @@ const form = ref({
   akunls_id: null,
   rek_id: null,
   pb_dari: '',
+  mutasi: false,
   klarif_layanan: 0,
   klarif_lain: 0
 })
@@ -333,6 +341,7 @@ async function loadData(item) {
       akunls_id: item.akunls_id,
       rek_id: item.rekening_dpa?.rek_id || item.rek_id || null,
       pb_dari: item.pb_dari || '',
+      mutasi: item.mutasi || false,
       klarif_layanan: item.klarif_layanan || 0,
       klarif_lain: item.klarif_lain || 0
     }
@@ -424,6 +433,7 @@ async function handleSave() {
       akunls_id: form.value.akunls_id,
       rek_id: form.value.rek_id || null,
       pb_dari: form.value.pb_dari || null,
+      mutasi: form.value.mutasi || false,
       klarif_layanan: form.value.klarif_layanan || 0,
       klarif_lain: form.value.klarif_lain || 0
     }

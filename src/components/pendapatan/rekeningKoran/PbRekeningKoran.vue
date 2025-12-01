@@ -124,12 +124,12 @@
         <TabPanel header="Mutasi bank yang belum dimasukkan">
           <DataTable
             :value="unlinkedRecords"
-            :loading="loading"
+            :loading="loadingUnlinked"
             paginator
             lazy
+            :first="unlinkedFirst"
             :rows="unlinkedPerPage"
             :totalRecords="unlinkedTotal"
-            :first="(unlinkedPage - 1) * unlinkedPerPage"
             @page="onUnlinkedPageChange"
             :rowsPerPageOptions="[5, 10, 20]"
             responsiveLayout="scroll"
@@ -148,7 +148,7 @@
             <Column field="uraian" header="Uraian">
               <template #body="{ data }">
                 <div :title="data.uraian">
-                  {{ data.uraian.length > 30 ? data.uraian.slice(0, 30) + '...' : data.uraian }}
+                  {{ data.uraian?.length > 30 ? data.uraian.slice(0, 30) + '...' : data.uraian ?? '-' }}
                 </div>
               </template>
             </Column>
@@ -253,11 +253,13 @@ const selectedRecord = ref(null)
 
 const {
   loading,
+  loadingUnlinked,
   pbData,
   linkedRecords,
   unlinkedRecords,
   unlinkedTotal,
   unlinkedPage,
+  unlinkedFirst,
   unlinkedPerPage,
   getPbData,
   getUnlinkedRecords,
@@ -288,6 +290,8 @@ watch(
   async (newPbDari) => {
     if (props.modelValue && props.item) {
       // Refresh unlinked records when pb_dari changes
+      unlinkedFirst.value = 0
+      unlinkedPerPage.value = 10
       await getUnlinkedRecords(props.item.tgl_rc, newPbDari, 1, 10)
     }
   }
@@ -315,6 +319,8 @@ const loadData = async () => {
     }
 
     // Fetch unlinked records with pb_dari filter
+    unlinkedFirst.value = 0
+    unlinkedPerPage.value = 10
     await getUnlinkedRecords(props.item.tgl_rc, formData.value.pb_dari, 1, 10)
   } catch (error) {
     console.error('Error loading PB data:', error)
@@ -322,9 +328,16 @@ const loadData = async () => {
 }
 
 const onUnlinkedPageChange = async (event) => {
+  unlinkedFirst.value = event.first
   const page = event.page + 1
   const perPage = event.rows
-  await getUnlinkedRecords(props.item.tgl_rc, formData.value.pb_dari, page, perPage)
+
+  await getUnlinkedRecords(
+    props.item.tgl_rc,
+    formData.value.pb_dari,
+    page,
+    perPage
+  )
 }
 
 const handleCancelLink = (record) => {

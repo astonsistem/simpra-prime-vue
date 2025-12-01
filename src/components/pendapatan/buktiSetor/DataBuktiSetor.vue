@@ -696,10 +696,7 @@ async function exportPDF(rcId) {
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full"
     >
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xl font-semibold text-[#17316E]">Data Bukti Setor</h3>
-        <div class="flex gap-2">
-          <Button label="Clear Column Filters" icon="pi pi-filter-slash" class="p-button-success" @click="clearTableFilters" />
-        </div>
+        <Button label="Clear Column Filters" icon="pi pi-filter-slash" outlined @click="clearTableFilters" />
       </div>
       <DataTable
         :filters="filters"

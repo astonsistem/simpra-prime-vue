@@ -867,9 +867,10 @@ watch(showModalPenjamin1, (newVal, oldVal) => {
             </div>
             <div class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
               <div class="flex justify-between items-center mb-2">
-                <h3 class="text-xl font-semibold text-[#17316E]">Data Pendapatan Pelayanan</h3>
                 <div class="flex gap-2">
-                  <Button label="Clear Column Filters" icon="pi pi-filter-slash" class="p-button-success" @click="clearTableFilters" />
+                  <Button label="Clear Column Filters" icon="pi pi-filter-slash" outlined @click="clearTableFilters" />
+                </div>
+                <div class="flex gap-2">
                   <Button label="Export Excel" icon="pi pi-download" class="p-button-success" @click="exportExcel" />
                 </div>
               </div>
@@ -1225,9 +1226,8 @@ watch(showModalPenjamin1, (newVal, oldVal) => {
             </div>
             <div class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30">
               <div class="flex justify-between items-center mb-2">
-                <h3 class="text-xl font-semibold text-[#17316E]">Data Penjamin</h3>
+                <Button label="Clear Column Filters" icon="pi pi-filter-slash" outlined @click="clearTableFiltersP1" />
                 <div class="flex gap-2">
-                  <Button label="Clear Column Filters" icon="pi pi-filter-slash" class="p-button-success" @click="clearTableFiltersP1" />
                   <Button label="Export Excel" icon="pi pi-download" class="p-button-success" @click="exportExcelP1" />
                 </div>
               </div>

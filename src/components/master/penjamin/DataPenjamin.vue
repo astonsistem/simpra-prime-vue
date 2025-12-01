@@ -156,10 +156,9 @@ const syncData = async () => {
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full"
     >
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xl font-semibold text-[#17316E]">Data Penjamin</h3>
+        <Button label="Clear Column Filters" icon="pi pi-filter-slash" outlined @click="clearTableFilters" />
         <div class="flex gap-2">
           <Button label="Sinkronisasi Data" icon="pi pi-sync" class="p-button-success"  @click="syncData" />
-          <Button label="Clear Column Filters" icon="pi pi-filter-slash" class="p-button-success" @click="clearTableFilters" />
           <InputText v-model="filters['global'].value" placeholder="Search Penjamin..." />
         </div>
       </div>

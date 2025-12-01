@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import apiClient from '@/api/client'
 import { useToast } from 'primevue/usetoast'
 import { formatDateToYYYYMMDD } from '@/utils/dateUtils'
@@ -10,8 +10,12 @@ export default function useRekeningKoranPb() {
   const linkedRecords = ref([])
   const unlinkedRecords = ref([])
   const unlinkedTotal = ref(0)
-  const unlinkedPage = ref(1)
+  const unlinkedPage = ref(0)       
   const unlinkedPerPage = ref(10)
+  const unlinkedFirst = ref(0)  
+  const isFetchingUnlinked = ref(false)
+  let lastUnlinkedKey = null
+  const loadingUnlinked = ref(false)
 
   /**
    * Get PB data for a specific rekening koran record
@@ -46,36 +50,26 @@ export default function useRekeningKoranPb() {
    * @param {number} perPage - Records per page
    */
   const getUnlinkedRecords = async (tglRc, pbDari = null, page = 1, perPage = 10) => {
-    loading.value = true
+    loadingUnlinked.value = true
+
     try {
       const params = {
         tgl_rc: formatDateToYYYYMMDD(tglRc),
         page,
         per_page: perPage
       }
-      
-      // Add pb_dari filter if provided
+
       if (pbDari) {
         params.pb_dari = pbDari
       }
 
       const response = await apiClient.get('/rekening_koran/pb/uncheck', { params })
+
       unlinkedRecords.value = response.data.data || []
       unlinkedTotal.value = response.data.total || 0
-      unlinkedPage.value = response.data.current_page || 1
-      unlinkedPerPage.value = response.data.per_page || 10
-      return response.data
-    } catch (error) {
-      console.error('Error fetching unlinked records:', error)
-      toast.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: error.response?.data?.message || 'Gagal memuat data mutasi',
-        life: 3000
-      })
-      throw error
+
     } finally {
-      loading.value = false
+      loadingUnlinked.value = false
     }
   }
 
@@ -172,12 +166,14 @@ export default function useRekeningKoranPb() {
 
   return {
     loading,
+    loadingUnlinked,
     pbData,
     linkedRecords,
     unlinkedRecords,
     unlinkedTotal,
     unlinkedPage,
     unlinkedPerPage,
+    unlinkedFirst,
     getPbData,
     getUnlinkedRecords,
     updatePb,

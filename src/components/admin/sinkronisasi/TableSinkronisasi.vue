@@ -121,27 +121,26 @@ const clearFilter = () => {
     >
       <template #header>
         <div class="flex justify-between items-center">
-          <h5 class="m-0">Sinkronisasi</h5>
+          <Button
+            type="button"
+            icon="pi pi-filter-slash"
+            label="Clear"
+            outlined
+            @click="clearFilter()"
+          />
           <div class="flex gap-2">
-            <Button
-              type="button"
-              icon="pi pi-filter-slash"
-              label="Clear"
-              outlined
-              @click="clearFilter()"
-            />
-            <IconField>
-              <InputIcon>
-                <i class="pi pi-search" />
-              </InputIcon>
-              <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
-            </IconField>
             <Button
               label="Add Sync"
               icon="pi pi-plus"
               class="p-button-success"
               @click="$emit('add')"
             />
+            <IconField>
+              <InputIcon>
+                <i class="pi pi-search" />
+              </InputIcon>
+              <InputText v-model="filters['global'].value" placeholder="Search Sinkronisasi..." />
+            </IconField>
           </div>
         </div>
       </template>

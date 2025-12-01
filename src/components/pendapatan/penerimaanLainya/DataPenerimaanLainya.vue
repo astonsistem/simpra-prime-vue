@@ -415,7 +415,13 @@ initFilters()
       class="bg-surface-0 dark:bg-surface-900 rounded-2xl my-6 px-6 py-4 md:px-6 md:py-3 border-b md:border border-surface-200 dark:border-surface-700 w-full sticky top-0 z-30"
     >
       <div class="flex justify-between items-center mb-2">
-        <h3 class="text-xl font-semibold text-[#17316E]">Data Penerimaan Lainnya</h3>
+        <Button
+          type="button"
+          icon="pi pi-filter-slash"
+          label="Clear"
+          outlined
+          @click="clearFilters()"
+        />
         <div class="flex gap-2">
           <Button
             label="Tambah Data"
@@ -435,6 +441,12 @@ initFilters()
             class="p-button-success"
             @click="exportExcel"
           />
+          <IconField>
+            <InputIcon>
+              <i class="pi pi-search" />
+            </InputIcon>
+            <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
+          </IconField>
         </div>
       </div>
 
@@ -459,23 +471,6 @@ initFilters()
         stripedRows
         :rowStyle="rowStyle"
       >
-        <template #header>
-          <div class="flex justify-between">
-            <Button
-              type="button"
-              icon="pi pi-filter-slash"
-              label="Clear"
-              outlined
-              @click="clearFilters()"
-            />
-            <IconField>
-              <InputIcon>
-                <i class="pi pi-search" />
-              </InputIcon>
-              <InputText v-model="filters['global'].value" placeholder="Keyword Search" />
-            </IconField>
-          </div>
-        </template>
         <template #empty>
             <div class="flex items-center text-gray-500 min-h-24">
               <i class="pi pi-info-circle mr-2" style="font-size: 1.5rem"></i>
