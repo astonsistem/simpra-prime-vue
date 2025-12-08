@@ -1,8 +1,7 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { authService } from '../services/authService.js'
-import api from '@/services/http.js'
 
 const props = defineProps({
   collapsed: Boolean,
@@ -12,9 +11,6 @@ const props = defineProps({
 const emit = defineEmits(['toggle-collapse', 'close-mobile'])
 
 const route = useRoute()
-
-const pelaporanMenus = ref([])
-const submenuPelaporanSearch = ref('')
 
 // Menu Items Definition
 const menuItems = ref([
@@ -83,9 +79,8 @@ const menuItems = ref([
   {
     label: 'Pelaporan',
     icon: 'pi pi-file',
-
-    children: [],
-
+    to: '/pelaporan',
+    exact: true,
   },
 ])
 
@@ -96,24 +91,6 @@ const isActive = (item) => {
   return current === to || current.startsWith(to + '/')
 }
 
-// Ensure parent groups open when one of their children is active
-const syncOpenStates = () => {
-  menuItems.value.forEach((item) => {
-    if (item.children) {
-      item.isOpen = item.children.some((child) => isActive(child))
-    }
-  })
-}
-
-// Keep open states in sync with the current route
-watch(
-  () => route.path,
-  () => {
-    syncOpenStates()
-  },
-  { immediate: true }
-)
-
 const router = useRouter()
 const logout = async () => {
   try {
@@ -123,42 +100,7 @@ const logout = async () => {
     console.error('Logout failed:', error)
   }
 }
-const filteredChildren = (item) => {
-  if (!item.children) return []
-  if (item.label !== 'Pelaporan') return item.children
-  if (!submenuPelaporanSearch.value) return item.children
 
-  const query = submenuPelaporanSearch.value.toLowerCase().trim().split(/\s+/)
-  return item.children.filter((child) => {
-    const label = child.label.toLowerCase()
-    return query.every((word) => label.includes(word))
-  })
-}
-
-onMounted(async () => {
-  try {
-    // GET PELAPORAN MENUS LIST
-    const res = await api.get('/pelaporan-list')
-    pelaporanMenus.value = res.data.data
-
-    // Inject into menu
-    const laporanItem = menuItems.value.find((item) => item.label === 'Laporan')
-    if (laporanItem) {
-      laporanItem.children = pelaporanMenus.value
-    }
-
-    const pelaporanItem = menuItems.value.find(item => item.label === 'Pelaporan')
-    if (pelaporanItem) {
-      pelaporanItem.children = pelaporanMenus.value
-    }
-
-    // Re-evaluate open states after async menu injection
-    syncOpenStates()
-
-  } catch (error) {
-    console.error('Failed to load menus:', error)
-  }
-})
 </script>
 
 
@@ -207,15 +149,6 @@ onMounted(async () => {
             </button>
 
             <div v-if="!collapsed && item.isOpen" class="ml-8 space-y-1">
-              <!-- Search only for submenu under Pelaporan -->
-              <div v-if="item.label === 'Pelaporan'" class="mb-2">
-                <input
-                  v-model="submenuPelaporanSearch"
-                  type="text"
-                  placeholder="Cari Pelaporan..."
-                  class="w-full px-3 py-2 text-sm rounded-md bg-white/10 text-white placeholder-white/60 focus:outline-none"
-                />
-              </div>
               <router-link
                 v-for="child in filteredChildren(item)"
                 :key="child.label"

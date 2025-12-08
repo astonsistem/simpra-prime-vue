@@ -194,21 +194,6 @@ const router = createRouter({
           component: () => import('../views/master/Penjamin.vue'),
           meta: { roles: ['admin'], breadcrumb: ['Master', 'Penjamin'] },
         },
-        // Pelaporan Routes
-        {
-          path: '/pelaporan/:slug',
-          name: 'pelaporan',
-          component: () => import('../views/Pelaporan.vue'),
-          props: true,
-          meta: { 
-            roles: ['admin'], 
-            breadcrumb: (route) => {
-              const slug = route.params.slug
-              const label = slug.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-              return ['Pelaporan', label]
-            }
-          },
-        },
         // ADMIN ROUTES
         {
           path: 'admin/anggaran',
@@ -233,6 +218,27 @@ const router = createRouter({
           name: 'profile',
           component: () => import('../views/Profile.vue'),
           meta: { roles: ['admin', 'accountant'], breadcrumb: ['Profil'] },
+        },
+        // Pelaporan Routes
+        {
+          path: '/pelaporan',
+          name: 'pelaporan.index',
+          component: () => import('../views/PelaporanIndex.vue'),
+          meta: { roles: ['admin'], breadcrumb: ['Pelaporan'] },
+        },
+        {
+          path: '/pelaporan/:slug',
+          name: 'pelaporan.view',
+          component: () => import('../views/Pelaporan.vue'),
+          props: true,
+          meta: { 
+            roles: ['admin'], 
+            breadcrumb: (route) => {
+              const slug = route.params.slug
+              const label = slug.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+              return ['Pelaporan', label]
+            }
+          },
         },
       ],
     },
