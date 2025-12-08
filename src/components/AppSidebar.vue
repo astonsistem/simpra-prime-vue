@@ -150,7 +150,7 @@ const logout = async () => {
 
             <div v-if="!collapsed && item.isOpen" class="ml-8 space-y-1">
               <router-link
-                v-for="child in filteredChildren(item)"
+                v-for="child in item.children"
                 :key="child.label"
                 :to="child.to"
                 class="flex items-center gap-2 p-2 rounded-lg transition-colors text-white/80 hover:text-white"
