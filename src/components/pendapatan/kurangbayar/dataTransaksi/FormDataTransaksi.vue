@@ -140,6 +140,21 @@
             }}</Message>
         </div>
 
+        <div class="mb-4">
+          <label class="block mb-1 text-sm font-medium text-gray-700">Keterangan</label>
+          <Textarea
+            v-model="form.keterangan"
+            placeholder="Masukkan keterangan..."
+            rows="4"
+            autoResize
+            class="w-full"
+            :invalid="errors?.keterangan?.length"
+          />
+          <Message v-if="errors.keterangan" severity="error" size="small" variant="simple">{{
+            errors?.keterangan[0]
+            }}</Message>
+        </div>
+
       </div>
       <Fieldset legend="Bukti Kwitansi / Setor">
 

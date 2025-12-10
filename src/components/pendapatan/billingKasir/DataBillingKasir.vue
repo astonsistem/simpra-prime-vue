@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { FilterMatchMode } from '@primevue/core/api'
 import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
@@ -59,6 +59,12 @@ const bulanOptions = ref([
   { label: 'Desember', value: 12 },
 ])
 
+const sumberTransaksiOptions = ref([])
+const caraPembayaranOptions = ref([])
+const rekeningDPAOptions = ref([])
+const caraBayarOptions = ref([])
+const kasirOptions = ref([])
+const bankOptions = ref([])
 const data = ref([])
 const totalRecords = ref(0)
 const rows = ref(10)
@@ -575,6 +581,13 @@ const isValidated = (rowData) => {
 
 onMounted(async () => {
   loadData(1, rows.value)
+  
+  await fetchSumberTransaksi()
+  await fetchCaraPembayaran()
+  await fetchRekeningDPA()
+  await fetchCaraBayar()
+  await fetchKasir()
+  await fetchBank()
 })
 
 watch(selectedSync, (val) => {
@@ -660,6 +673,102 @@ function setor(data) {
   selectedItem.value = data
   showModalSetor.value = true
 }
+
+const fetchSumberTransaksi = async () => {
+  try {
+    const response = await api.get('/sumbertransaksi/list')
+    if (response.data && response.data.data) {
+      sumberTransaksiOptions.value = response.data.data.map((item) => ({
+        label: item.sumber_nama,
+        value: item.sumber_nama,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data sumber transaksi:', error)
+  }
+}
+const fetchCaraPembayaran = async () => {
+  try {
+    const response = await api.get('/carapembayaran/list')
+    if (response.data && response.data.data) {
+      caraPembayaranOptions.value = response.data.data.map((item) => ({
+        label: item.bayar_nama,
+        value: item.bayar_nama,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data cara pembayaran:', error)
+  }
+}
+const fetchRekeningDPA = async () => {
+  try {
+    const response = await api.get('/akun/list/pendapatan')
+    if (response.data && response.data.data) {
+      rekeningDPAOptions.value = response.data.data.map((item) => ({
+        label: item.rek_nama,
+        value: item.rek_id,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data rekening DPA:', error)
+  }
+}
+const fetchCaraBayar = async () => {
+  try {
+    const response = await api.get('/carabayar/list')
+    if (response.data && response.data.data) {
+      caraBayarOptions.value = response.data.data.map((item) => ({
+        label: item.carabayar_nama,
+        value: item.carabayar_id,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data cara bayar:', error)
+  }
+}
+const fetchKasir = async () => {
+  try {
+    const response = await api.get('/kasir/list')
+    if (response.data && response.data.data) {
+      kasirOptions.value = response.data.data.map((item) => ({
+        label: item.kasir_nama,
+        value: item.kasir_nama,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data kasir:', error)
+  }
+}
+const fetchBank = async () => {
+  try {
+    const response = await api.get('/bank/list')
+    if (response.data && response.data.data) {
+      bankOptions.value = response.data.data.map((item) => ({
+        label: item.bank_nama,
+        value: item.bank_id,
+      }))
+    }
+  } catch (error) {
+    console.error('Gagal memuat data bank:', error)
+  }
+}
+
+const toNumber = (v) => Number(v) || 0
+const subtotalJumlahBruto = computed(() =>
+  data.value.reduce((s, i) => s + toNumber(i.jumlahBruto), 0)
+)
+const subtotalBiayaAdminEdc = computed(() =>
+  data.value.reduce((s, i) => s + toNumber(i.biayaAdminEdc), 0)
+)
+const subtotalBiayaAdminQris = computed(() =>
+  data.value.reduce((s, i) => s + toNumber(i.biayaAdminQris), 0)
+)
+const subtotalSelisih = computed(() =>
+  data.value.reduce((s, i) => s + toNumber(i.selisih), 0)
+)
+const subtotalJumlahNetto = computed(() =>
+  data.value.reduce((s, i) => s + toNumber(i.jumlahNetto), 0)
+)
 </script>
 
 <template>
@@ -868,7 +977,15 @@ function setor(data) {
             {{ data.sumberTransaksi }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Sumber Transaksi" />
+            <Dropdown
+              v-model="filterModel.value"
+              :options="sumberTransaksiOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select Sumber Transaksi"
+              class="p-column-filter"
+              showClear
+            />
           </template>
         </Column>
 
@@ -895,7 +1012,15 @@ function setor(data) {
             {{ data.caraPembayaran }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Cara Pembayaran" />
+            <Dropdown
+              v-model="filterModel.value"
+              :options="caraPembayaranOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select Cara Pembayaran"
+              class="p-column-filter"
+              showClear
+            />
           </template>
         </Column>
 
@@ -904,7 +1029,15 @@ function setor(data) {
             {{ data.rekeningDpa?.rekNama }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Rekening DPA" />
+            <Dropdown
+              v-model="filterModel.value"
+              :options="rekeningDPAOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select Rekening DPA"
+              class="p-column-filter"
+              showClear
+            />
           </template>
         </Column>
 
@@ -913,7 +1046,15 @@ function setor(data) {
             {{ data.caraBayar }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Cara Bayar" />
+            <Dropdown
+              v-model="filterModel.value"
+              :options="caraBayarOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select Cara Bayar"
+              class="p-column-filter"
+              showClear
+            />
           </template>
         </Column>
 
@@ -922,7 +1063,17 @@ function setor(data) {
             {{ data.kasir }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Kasir" />
+            <Dropdown
+              v-model="filterModel.value"
+              :options="kasirOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select Kasir"
+              class="p-column-filter"
+              showClear
+              filter
+              filterPlaceholder="Search Kasir"
+            />
           </template>
         </Column>
 
@@ -931,7 +1082,15 @@ function setor(data) {
             {{ data.bank }}
           </template>
           <template #filter="{ filterModel }">
-            <InputText v-model="filterModel.value" type="text" placeholder="Search by Bank" />
+            <Dropdown
+              v-model="filterModel.value"
+              :options="bankOptions"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Select Bank"
+              class="p-column-filter"
+              showClear
+            />
           </template>
         </Column>
 
@@ -972,6 +1131,17 @@ function setor(data) {
             {{ new Intl.NumberFormat('id-ID').format(slotProps.data.jumlahNetto || 0) }}
           </template>
         </Column>
+
+        <ColumnGroup type="footer">
+            <Row>
+                <Column footer="SUB TOTAL" :colspan="17" footerStyle="text-align:right;height:70px" />
+                <Column :footer="new Intl.NumberFormat('id-ID').format(subtotalJumlahBruto || 0)" footerStyle="text-align:right" />
+                <Column :footer="new Intl.NumberFormat('id-ID').format(subtotalBiayaAdminEdc || 0)" footerStyle="text-align:right" />
+                <Column :footer="new Intl.NumberFormat('id-ID').format(subtotalBiayaAdminQris || 0)" footerStyle="text-align:right" />
+                <Column :footer="new Intl.NumberFormat('id-ID').format(subtotalSelisih || 0)" footerStyle="text-align:right" />
+                <Column :footer="new Intl.NumberFormat('id-ID').format(subtotalJumlahNetto || 0)" footerStyle="text-align:right" />
+            </Row>
+        </ColumnGroup>
       </DataTable>
     </div>
 

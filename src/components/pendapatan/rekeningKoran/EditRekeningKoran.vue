@@ -159,7 +159,7 @@
 
           <!-- Klarifikasi Langsung (editable dropdown) -->
           <div class="flex flex-col gap-2">
-            <label for="akunls_id" class="font-medium">Klarifikasi Langsung <span class="text-red-500">*</span></label>
+            <label for="akunls_id" class="font-medium">Klarifikasi Langsung </label>
             <Select 
               id="akunls_id"
               v-model="form.akunls_id" 
@@ -389,11 +389,6 @@ function validateForm() {
 
   if (!form.value.no_rc) {
     errors.value.no_rc = 'No. RC harus diisi'
-    isValid = false
-  }
-
-  if (!form.value.akunls_id) {
-    errors.value.akunls_id = 'Klarifikasi Langsung harus dipilih'
     isValid = false
   }
 
